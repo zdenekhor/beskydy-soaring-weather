@@ -36,7 +36,7 @@ type ForecastData = {
   };
 };
 
-const FIELD_ELEVATION_MSL = 430;
+const FIELD_ELEVATION_MSL = 439;
 const APP_VERSION = "v0.3.1";
 const APP_UPDATED = "17 Mar 2026";
 
