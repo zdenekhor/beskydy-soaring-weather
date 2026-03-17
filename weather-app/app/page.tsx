@@ -1,14 +1,4 @@
-import WeatherChart from "../components/WeatherChart";
-import {
-  Cloud,
-  Wind,
-  Plane,
-  Gauge,
-  TrendingUp,
-  Thermometer,
-  ArrowUp,
-  MapPinned,
-} from "lucide-react";
+import WeatherChart from "@/components/WeatherChart";
 
 type ForecastData = {
   hourly: {
@@ -16,19 +6,19 @@ type ForecastData = {
     temperature_2m: number[];
     dew_point_2m: number[];
     cloud_cover: number[];
-    cloud_cover_low?: number[];
-    cloud_cover_mid?: number[];
-    cloud_cover_high?: number[];
-    precipitation?: number[];
-    precipitation_probability?: number[];
-    shortwave_radiation?: number[];
-    pressure_msl?: number[];
+    cloud_cover_low: number[];
+    cloud_cover_mid: number[];
+    cloud_cover_high: number[];
+    precipitation: number[];
+    precipitation_probability: number[];
+    shortwave_radiation: number[];
+    pressure_msl: number[];
     wind_speed_10m: number[];
-    wind_direction_10m?: number[];
-    wind_speed_850hPa?: number[];
-    wind_direction_850hPa?: number[];
-    wind_speed_700hPa?: number[];
-    wind_direction_700hPa?: number[];
+    wind_direction_10m: number[];
+    wind_speed_850hPa: number[];
+    wind_direction_850hPa: number[];
+    wind_speed_700hPa: number[];
+    wind_direction_700hPa: number[];
   };
   daily: {
     sunrise: string[];
@@ -36,23 +26,41 @@ type ForecastData = {
   };
 };
 
-const FIELD_ELEVATION_MSL = 430;
-const APP_VERSION = "v0.3.1";
-const APP_UPDATED = "17 Mar 2026";
-
-import { headers } from "next/headers";
-
 async function getWeather(): Promise<ForecastData> {
-  const h = await headers();
-  const host = h.get("host");
+  const latitude = 49.592;
+  const longitude = 18.359;
 
-  if (!host) {
-    throw new Error("Missing host header.");
-  }
+  const hourlyParams = [
+    "temperature_2m",
+    "dew_point_2m",
+    "cloud_cover",
+    "cloud_cover_low",
+    "cloud_cover_mid",
+    "cloud_cover_high",
+    "precipitation",
+    "precipitation_probability",
+    "shortwave_radiation",
+    "pressure_msl",
+    "wind_speed_10m",
+    "wind_direction_10m",
+    "wind_speed_850hPa",
+    "wind_direction_850hPa",
+    "wind_speed_700hPa",
+    "wind_direction_700hPa",
+  ].join(",");
 
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const dailyParams = ["sunrise", "sunset"].join(",");
 
-  const res = await fetch(`${protocol}://${host}/api/forecast`, {
+  const url =
+    `https://api.open-meteo.com/v1/forecast` +
+    `?latitude=${latitude}` +
+    `&longitude=${longitude}` +
+    `&hourly=${hourlyParams}` +
+    `&daily=${dailyParams}` +
+    `&forecast_days=3` +
+    `&timezone=auto`;
+
+  const res = await fetch(url, {
     cache: "no-store",
   });
 
@@ -64,538 +72,14 @@ async function getWeather(): Promise<ForecastData> {
   return res.json();
 }
 
-function getWindArrow(deg: number) {
-  if (deg >= 337 || deg < 22) return "⬆";
-  if (deg < 67) return "↗";
-  if (deg < 112) return "➡";
-  if (deg < 157) return "↘";
-  if (deg < 202) return "⬇";
-  if (deg < 247) return "↙";
-  if (deg < 292) return "⬅";
-  if (deg < 337) return "↖";
-  return "•";
-}
-
-function kmhToKt(value: number | undefined) {
-  if (typeof value !== "number" || Number.isNaN(value)) return 0;
-  return Math.round(value * 0.54);
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
-}
-
-function safeArrayValue(
-  arr: number[] | undefined,
-  index: number,
-  fallback = 0
-) {
-  if (!arr || index < 0 || index >= arr.length) return fallback;
-  const value = arr[index];
-  return typeof value === "number" && !Number.isNaN(value) ? value : fallback;
-}
-
-function findNearestHourIndex(times: string[]) {
-  if (!times.length) return 0;
-
-  const now = Date.now();
-  let bestIndex = 0;
-  let bestDiff = Infinity;
-
-  for (let i = 0; i < times.length; i++) {
-    const ts = new Date(times[i]).getTime();
-    const diff = Math.abs(ts - now);
-
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      bestIndex = i;
-    }
-  }
-
-  return bestIndex;
-}
-
-function formatHourMinute(dateString: string) {
-  return new Date(dateString).toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function getDateKey(dateString: string) {
-  const d = new Date(dateString);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-export default async function Home() {
+export default async function Page() {
   const data = await getWeather();
 
-  const now = new Date();
-
-  const formattedDate = now.toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-
-  const formattedTime = now.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const currentIndex = findNearestHourIndex(data.hourly.time);
-
-  const currentDateKey = getDateKey(data.hourly.time[currentIndex]);
-
-  const dailyIndex = data.daily.sunrise.findIndex(
-    (s: string) => getDateKey(s) === currentDateKey
-  );
-
-  const sunriseRaw =
-    dailyIndex >= 0 ? data.daily.sunrise[dailyIndex] : data.daily.sunrise[0];
-
-  const sunsetRaw =
-    dailyIndex >= 0 ? data.daily.sunset[dailyIndex] : data.daily.sunset[0];
-
-  const sunriseTime = sunriseRaw ? new Date(sunriseRaw) : null;
-  const sunsetTime = sunsetRaw ? new Date(sunsetRaw) : null;
-
-  const sunriseLabel = sunriseRaw ? formatHourMinute(sunriseRaw) : "-";
-  const sunsetLabel = sunsetRaw ? formatHourMinute(sunsetRaw) : "-";
-
-  const temperature = safeArrayValue(data.hourly.temperature_2m, currentIndex);
-const dewpoint = safeArrayValue(data.hourly.dew_point_2m, currentIndex);
-const spread = temperature - dewpoint;
-
-const clouds = safeArrayValue(data.hourly.cloud_cover, currentIndex);
-const radiation = safeArrayValue(
-  data.hourly.shortwave_radiation,
-  currentIndex,
-  0
-);
-const windKmh = safeArrayValue(data.hourly.wind_speed_10m, currentIndex);
-  const wind = kmhToKt(windKmh);
-
-  const windDirection = safeArrayValue(
-    data.hourly.wind_direction_10m,
-    currentIndex,
-    0
-  );
-  const windArrow = getWindArrow(windDirection);
-
-  const wind850Kmh = safeArrayValue(
-    data.hourly.wind_speed_850hPa,
-    currentIndex,
-    0
-  );
-  const wind850 = kmhToKt(wind850Kmh);
-
-  const wind850Dir = safeArrayValue(
-    data.hourly.wind_direction_850hPa,
-    currentIndex,
-    0
-  );
-  const wind850Arrow = getWindArrow(wind850Dir);
-
-  const wind700Kmh = safeArrayValue(
-    data.hourly.wind_speed_700hPa,
-    currentIndex,
-    0
-  );
-  const wind700 = kmhToKt(wind700Kmh);
-
-  const wind700Dir = safeArrayValue(
-    data.hourly.wind_direction_700hPa,
-    currentIndex,
-    0
-  );
-  const wind700Arrow = getWindArrow(wind700Dir);
-
-  const lcl = Math.round(Math.max(0, 125 * spread));
-  const cloudBaseMSL = lcl + FIELD_ELEVATION_MSL;
-
-  let expectedClimb = spread / 2.5;
-  if (clouds > 70) expectedClimb *= 0.85;
-  if (clouds > 85) expectedClimb *= 0.7;
-  if (wind > 15) expectedClimb *= 0.85;
-  expectedClimb = Number(Math.max(0, expectedClimb).toFixed(1));
-
-  let climbRating = "🔴 Weak";
-  if (expectedClimb > 2) climbRating = "🟡 Good";
-  if (expectedClimb > 3) climbRating = "🟢 Very good";
-  if (expectedClimb > 4) climbRating = "🔵 XC thermal";
-
-  const thermalDrift = Math.round(wind * 0.4 + wind850 * 0.6);
-  const thermalTop = lcl + 300;
-
-  const lclArray = data.hourly.temperature_2m.map((temp: number, i: number) => {
-    const td = safeArrayValue(data.hourly.dew_point_2m, i);
-    return Math.round(Math.max(0, 125 * (temp - td)));
-  });
-
-  const thermalArray = data.hourly.temperature_2m.map(
-    (temp: number, i: number) => {
-      const td = safeArrayValue(data.hourly.dew_point_2m, i);
-      const cc = safeArrayValue(data.hourly.cloud_cover, i);
-      let thermal = (temp - td) / 4;
-
-      if (cc > 70) thermal *= 0.85;
-      if (cc > 85) thermal *= 0.7;
-
-      return Math.max(0, Number(thermal.toFixed(1)));
-    }
-  );
-
-  const hours = data.hourly.time.map((t: string) => {
-    const date = new Date(t);
-    return date.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  });
-
-  const temperatureAll = data.hourly.temperature_2m;
-
-  const wind850All =
-    data.hourly.wind_speed_850hPa?.map((v: number) => kmhToKt(v)) ??
-    Array(hours.length).fill(0);
-
-  const wind700All =
-    data.hourly.wind_speed_700hPa?.map((v: number) => kmhToKt(v)) ??
-    Array(hours.length).fill(0);
-
-  const wind850DirAll =
-  data.hourly.wind_direction_850hPa?.map((v: number) => Math.round(v)) ??
-  Array(hours.length).fill(0);
-
-const wind700DirAll =
-  data.hourly.wind_direction_700hPa?.map((v: number) => Math.round(v)) ??
-  Array(hours.length).fill(0);
-
-  const thermalNow = safeArrayValue(thermalArray, currentIndex, 0);
-
-  let soaringIndex = thermalNow * 25 + lcl / 120 - wind * 2 - clouds * 0.15;
-  soaringIndex = Math.round(clamp(soaringIndex, 0, 100));
-
-  let soaringRating = "🔴 Poor";
-  if (soaringIndex > 30) soaringRating = "🟡 Weak";
-  if (soaringIndex > 50) soaringRating = "🟢 Good";
-  if (soaringIndex > 70) soaringRating = "🔵 XC day";
-
-  const THERMAL_THRESHOLD = 1.5;
-
-  const sunriseTs = sunriseTime ? sunriseTime.getTime() : null;
-  const sunsetTs = sunsetTime ? sunsetTime.getTime() : null;
-
-  const vfrIndices = data.hourly.time
-    .map((t: string, i: number) => {
-      const ts = new Date(t).getTime();
-      const sameDay = getDateKey(t) === currentDateKey;
-      const withinVfr =
-        sameDay &&
-        sunriseTs !== null &&
-        sunsetTs !== null &&
-        ts >= sunriseTs &&
-        ts <= sunsetTs;
-
-      return withinVfr ? i : -1;
-    })
-    .filter((i: number) => i >= 0);
-
-  const thermalStartIndex =
-    vfrIndices.find((i: number) => thermalArray[i] > THERMAL_THRESHOLD) ?? -1;
-
-  let thermalMaxIndex = -1;
-  let bestThermalValue = -1;
-
-  for (const i of vfrIndices) {
-    if (thermalArray[i] > bestThermalValue) {
-      bestThermalValue = thermalArray[i];
-      thermalMaxIndex = i;
-    }
-  }
-
-  let thermalEndIndex = -1;
-  for (let j = vfrIndices.length - 1; j >= 0; j--) {
-    const i = vfrIndices[j];
-    if (thermalArray[i] > 0.4) {
-      thermalEndIndex = i;
-      break;
-    }
-  }
-
-  const thermalStart = thermalStartIndex >= 0 ? hours[thermalStartIndex] : "-";
-  const thermalMax = thermalMaxIndex >= 0 ? hours[thermalMaxIndex] : "-";
-  const thermalEnd = thermalEndIndex >= 0 ? hours[thermalEndIndex] : "-";
-
-  let flyingCondition = "🟡 Weak soaring conditions";
-
-  if (wind < 8 && lcl > 800 && clouds < 60) {
-    flyingCondition = "🟢 Good soaring conditions";
-  }
-
-  if (wind > 15 || clouds > 90 || lcl < 400) {
-    flyingCondition = "🔴 Poor soaring conditions";
-  }
-
-  let flightSummary = "Weak morning";
-
-  if (expectedClimb > 2) {
-    flightSummary = "Good thermals expected";
-  }
-
-  if (expectedClimb > 3) {
-    flightSummary = "Very good soaring day";
-  }
-
-  if (wind > 12) {
-    flightSummary += " • Wind getting stronger";
-  }
-
-  if (clouds > 80) {
-    flightSummary += " • Risk of overcast";
-  }
-
-  if (lcl > 1200 && expectedClimb > 3) {
-    flightSummary += " • Good XC potential";
-  }
-
-  let xcPotential = "Low";
-
-  if (expectedClimb > 2 && lcl > 800) {
-    xcPotential = "Moderate";
-  }
-
-  if (expectedClimb > 3 && lcl > 1200) {
-    xcPotential = "Good";
-  }
-
-  if (expectedClimb > 4 && lcl > 1500 && wind < 10) {
-    xcPotential = "XC day";
-  }
-
-  const forecastTimeLabel = data.hourly.time[currentIndex]
-  
-    ? new Date(data.hourly.time[currentIndex]).toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "n/a";
-let climbClass = "badgeRed";
-if (expectedClimb > 2) climbClass = "badgeYellow";
-if (expectedClimb > 3) climbClass = "badgeGreen";
-if (expectedClimb > 4) climbClass = "badgeBlue";
-
-let soaringClass = "badgeRed";
-if (soaringIndex > 30) soaringClass = "badgeYellow";
-if (soaringIndex > 50) soaringClass = "badgeGreen";
-if (soaringIndex > 70) soaringClass = "badgeBlue";
-
-let flyingClass = "badgeYellow";
-if (flyingCondition.includes("🟢")) flyingClass = "badgeGreen";
-if (flyingCondition.includes("🔴")) flyingClass = "badgeRed";
-
-let xcClass = "badgeRed";
-if (xcPotential === "Moderate") xcClass = "badgeYellow";
-if (xcPotential === "Good") xcClass = "badgeGreen";
-if (xcPotential === "XC day") xcClass = "badgeBlue";
-
-let skyType = "Mixed sky";
-
-let skyTypeClass = "badgeYellow";
-
-if (radiation < 120 && clouds < 80) {
-  skyType = "Morning stable";
-  skyTypeClass = "badgeYellow";
-}
-
-if (clouds > 90 && radiation < 150) {
-  skyType = "Overcast";
-  skyTypeClass = "badgeRed";
-} else if (
-  radiation >= 350 &&
-  spread >= 4 &&
-  clouds >= 20 &&
-  clouds <= 70 &&
-  lcl >= 700
-) {
-  skyType = "Cu day";
-  skyTypeClass = "badgeGreen";
-} else if (radiation >= 450 && spread >= 6 && clouds < 25) {
-  skyType = "Blue day";
-  skyTypeClass = "badgeBlue";
-} else if (
-  radiation >= 250 &&
-  clouds >= 20 &&
-  clouds <= 50 &&
-  lcl >= 600
-) {
-  skyType = "Possible Cu";
-  skyTypeClass = "badgeGreen";
-}
-
   return (
-    <main className="container">
+    <main style={{ padding: 20 }}>
       <h1>SPL Weather – Beskydy</h1>
-      <h2>Frýdlant nad Ostravicí</h2>
 
-     <p className="metaLine">
-  {formattedDate} • Updated {formattedTime} local • Forecast hour{" "}
-  {forecastTimeLabel} • Version {APP_VERSION} • App update {APP_UPDATED}
-</p>
-
-      <div className="summaryBox">{flightSummary}</div>
-
-      <div className="grid">
-        <div className="card">
-          <h3>
-            <Wind size={18} /> Thermal drift
-          </h3>
-          <p className="big">{thermalDrift} kt</p>
-        </div>
-
-<div className="card">
-  <h3>
-    <Cloud size={18} /> Sky type
-  </h3>
-  <p className={`big ${skyTypeClass}`}>{skyType}</p>
- <p className="small">thermal sky estimate</p>
-</div>
-
-        <div className="card">
-          <h3>
-            <Thermometer size={18} /> Weather
-          </h3>
-          <p>Temperature: {temperature.toFixed(1)} °C</p>
-          <p>Dew point: {dewpoint.toFixed(1)} °C</p>
-          <p>Wind: {wind} kt</p>
-          <p>Clouds: {clouds} %</p>
-        <p>Sun heating: {Math.round(radiation)} W/m²</p>
-        </div>
-
-        <div className="card">
-          <h3>METAR / Info</h3>
-          <p>Check current LKMT weather information</p>
-          <a
-            href="https://metar-taf.com/metar/LKMT"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="briefingLink"
-          >
-            Open METAR / TAF
-          </a>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Cloud size={18} /> Cloud base AGL
-          </h3>
-          <p className="big">{lcl} m</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <MapPinned size={18} /> Cloud base MSL
-          </h3>
-          <p className="big">{cloudBaseMSL} m</p>
-          <p>Field elev: {FIELD_ELEVATION_MSL} m</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Wind size={18} /> Wind profile
-          </h3>
-          <p>
-            Surface: {wind} kt {windArrow} ({Math.round(windDirection)}°)
-          </p>
-          <p>
-            850 hPa: {wind850} kt {wind850Arrow} ({Math.round(wind850Dir)}°)
-          </p>
-          <p>
-            700 hPa: {wind700} kt {wind700Arrow} ({Math.round(wind700Dir)}°)
-          </p>
-        </div>
-
-        <div className="card condition">
-          <h3>
-            <Plane size={18} /> Flying conditions
-          </h3>
-          <p className={flyingClass}>{flyingCondition}</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Gauge size={18} /> Soaring index
-          </h3>
-          <p className="big">{soaringIndex}</p>
-          <p className={soaringClass}>{soaringRating}</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <TrendingUp size={18} /> Expected climb
-          </h3>
-          <p className="big">{expectedClimb} m/s</p>
-         <p className={climbClass}>{climbRating}</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Thermometer size={18} /> Spread (T − Td)
-          </h3>
-          <p className="big">{spread.toFixed(1)} °C</p>
-        </div>
-
-        <div className="card">
-          <h3>Best soaring window</h3>
-          <p>VFR day: {sunriseLabel} – {sunsetLabel}</p>
-          <p>Start: {thermalStart}</p>
-          <p>Peak: {thermalMax}</p>
-          <p>End: {thermalEnd}</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <ArrowUp size={18} /> Thermal top
-          </h3>
-          <p className="big">{thermalTop} m</p>
-          <p className="small">heuristic</p>
-        </div>
-
-        <div className="card">
-          <h3>XC potential</h3>
-         <p className={`big ${xcClass}`}>{xcPotential}</p>
-        </div>
-      </div>
-
-      <section className="chartSection">
-        <div className="chartCard">
-          <h3>📈 Development during the day</h3>
-          <div className="chartWrap">
-            <WeatherChart
-  data={{
-    labels: hours,
-    lcl: lclArray,
-    thermal: thermalArray,
-    temperature: temperatureAll,
-    wind850: wind850All,
-    wind700: wind700All,
-    wind850Dir: wind850DirAll,
-    wind700Dir: wind700DirAll,
-    sunrise: data.daily.sunrise,
-    sunset: data.daily.sunset,
-    currentIndex,
-  }}
-/>
-          </div>
-        </div>
-      </section>
+      <WeatherChart data={data} />
     </main>
   );
 }
