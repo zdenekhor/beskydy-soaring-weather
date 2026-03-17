@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SPL Weather – Beskydy",
-  description: "Gliding weather briefing for Beskydy",
+  description: "Gliding weather briefing for LKFR",
   manifest: "/manifest.webmanifest",
 };
 
