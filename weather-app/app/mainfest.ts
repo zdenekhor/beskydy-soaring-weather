@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "SPL Weather – Beskydy",
+    name: "SPL Weather LKFR – Beskydy",
     short_name: "SPL Weather",
     description: "Gliding weather briefing for Beskydy",
     start_url: "/",

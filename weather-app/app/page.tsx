@@ -37,8 +37,8 @@ type ForecastData = {
 };
 
 const FIELD_ELEVATION_MSL = 439;
-const APP_VERSION = "v0.3.1";
-const APP_UPDATED = "17 Mar 2026";
+const APP_VERSION = "v0.4.1";
+const APP_UPDATED = "19 Mar 2026";
 
 async function getWeather(): Promise<ForecastData> {
   const latitude = 49.592;
@@ -84,6 +84,51 @@ async function getWeather(): Promise<ForecastData> {
   }
 
   return res.json();
+}
+
+async function getMetarWind(icao: string) {
+  try {
+    const res = await fetch(
+      `https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`,
+      {
+        cache: "no-store",
+        headers: {
+          "User-Agent": "beskydy-soaring-weather/1.0",
+        },
+      }
+    );
+
+    if (!res.ok) return null;
+
+    const rows = await res.json();
+    const metar = Array.isArray(rows) ? rows[0] : null;
+    if (!metar) return null;
+
+    const dirRaw = metar.wdir;
+    const spdRaw = metar.wspd;
+
+    const directionDeg =
+      typeof dirRaw === "number"
+        ? dirRaw
+        : typeof dirRaw === "string" && dirRaw !== "VRB"
+        ? Number(dirRaw)
+        : 0;
+
+    const speedKt =
+      typeof spdRaw === "number"
+        ? spdRaw
+        : typeof spdRaw === "string"
+        ? Number(spdRaw)
+        : 0;
+
+    return {
+      speedKt: Number.isFinite(speedKt) ? speedKt : 0,
+      directionDeg: Number.isFinite(directionDeg) ? directionDeg : 0,
+      rawText: metar.rawOb ?? "",
+    };
+  } catch {
+    return null;
+  }
 }
 
 function getWindArrow(deg: number) {
@@ -154,6 +199,7 @@ function getDateKey(dateString: string) {
 
 export default async function Home() {
   const data = await getWeather();
+  const metarWind = await getMetarWind("LKFR");
 
   const now = new Date();
 
@@ -170,7 +216,6 @@ export default async function Home() {
   });
 
   const currentIndex = findNearestHourIndex(data.hourly.time);
-
   const currentDateKey = getDateKey(data.hourly.time[currentIndex]);
 
   const dailyIndex = data.daily.sunrise.findIndex(
@@ -199,15 +244,28 @@ export default async function Home() {
     currentIndex,
     0
   );
-  const windKmh = safeArrayValue(data.hourly.wind_speed_10m, currentIndex);
-  const wind = kmhToKt(windKmh);
 
-  const windDirection = safeArrayValue(
+  const modelWindKmh = safeArrayValue(data.hourly.wind_speed_10m, currentIndex);
+  const modelWind = kmhToKt(modelWindKmh);
+
+  const modelWindDirection = safeArrayValue(
     data.hourly.wind_direction_10m,
     currentIndex,
     0
   );
+
+  const wind = metarWind?.speedKt ?? modelWind;
+  const windDirection = metarWind?.directionDeg ?? modelWindDirection;
   const windArrow = getWindArrow(windDirection);
+
+  const runwayHeading = 84;
+  const runwayRotation = runwayHeading - 90;
+  const angleDiff = ((windDirection - runwayHeading + 540) % 360) - 180;
+  const rad = (angleDiff * Math.PI) / 180;
+
+  const headwind = Math.round(wind * Math.cos(rad));
+  const crosswind = Math.round(wind * Math.sin(rad));
+  const crosswindAbs = Math.abs(crosswind);
 
   const wind850Kmh = safeArrayValue(
     data.hourly.wind_speed_850hPa,
@@ -281,6 +339,14 @@ export default async function Home() {
   });
 
   const temperatureAll = data.hourly.temperature_2m;
+
+  const windSurfaceAll =
+    data.hourly.wind_speed_10m?.map((v: number) => kmhToKt(v)) ??
+    Array(hours.length).fill(0);
+
+  const windSurfaceDirAll =
+    data.hourly.wind_direction_10m?.map((v: number) => Math.round(v)) ??
+    Array(hours.length).fill(0);
 
   const wind850All =
     data.hourly.wind_speed_850hPa?.map((v: number) => kmhToKt(v)) ??
@@ -463,7 +529,7 @@ export default async function Home() {
 
   return (
     <main className="container">
-      <h1>SPL Weather – Beskydy</h1>
+      <h1>SPL Weather LKFR – Beskydy</h1>
       <h2>Frýdlant nad Ostravicí</h2>
 
       <p className="metaLine">
@@ -495,16 +561,16 @@ export default async function Home() {
           </h3>
           <p>Temperature: {temperature.toFixed(1)} °C</p>
           <p>Dew point: {dewpoint.toFixed(1)} °C</p>
-          <p>Wind: {wind} kt</p>
+          <p>Wind: {wind} kt {metarWind ? "(METAR)" : "(model)"}</p>
           <p>Clouds: {clouds} %</p>
           <p>Sun heating: {Math.round(radiation)} W/m²</p>
         </div>
 
         <div className="card">
           <h3>METAR / Info</h3>
-          <p>Check current LKMT weather information</p>
+          <p>Check current LKFR weather information</p>
           <a
-            href="https://metar-taf.com/metar/LKMT"
+            href="https://metar-taf.com/metar/LKFR"
             target="_blank"
             rel="noopener noreferrer"
             className="briefingLink"
@@ -542,6 +608,7 @@ export default async function Home() {
             700 hPa: {wind700} kt {wind700Arrow} ({Math.round(wind700Dir)}°)
           </p>
         </div>
+
         <div className="card">
           <h3>🧭 Ground wind</h3>
 
@@ -551,7 +618,7 @@ export default async function Home() {
           </div>
 
           <div className="groundWindSub">
-            Surface wind direction and speed
+            {metarWind ? "Live METAR wind from LKFR" : "Model surface wind"}
           </div>
         </div>
 
@@ -560,43 +627,55 @@ export default async function Home() {
 
           <div className="runwayVisualWrap">
             <svg viewBox="0 0 320 220" className="runwaySvg">
-              <g id="runwayGroup" transform="rotate(84 160 110)">
+              <text x="160" y="18" className="runwayNorthLabel">
+                N
+              </text>
+
+              <line
+                x1="160"
+                y1="24"
+                x2="160"
+                y2="42"
+                className="runwayNorthLine"
+              />
+
+              <g transform={`rotate(${runwayRotation} 160 110)`}>
                 <rect
-                  x="90"
-                  y="95"
-                  width="140"
-                  height="30"
+                  x="60"
+                  y="92"
+                  width="200"
+                  height="36"
                   rx="6"
                   className="runwayStrip"
                 />
-                <text x="82" y="114" className="runwayLabel">
-                  08
-                </text>
-                <text x="238" y="114" className="runwayLabel">
-                  26
-                </text>
+
                 <line
-                  x1="160"
-                  y1="98"
-                  x2="160"
-                  y2="122"
+                  x1="75"
+                  y1="110"
+                  x2="245"
+                  y2="110"
                   className="runwayCenterMark"
                 />
+
+                <text x="82" y="85" className="runwayLabel">
+                  08
+                </text>
+
+                <text x="238" y="85" className="runwayLabel">
+                  26
+                </text>
               </g>
 
-              <g
-                id="windArrowGroup"
-                transform={`rotate(${Math.round(windDirection)} 160 110)`}
-              >
+              <g transform={`rotate(${Math.round(windDirection)} 160 110)`}>
                 <line
                   x1="160"
-                  y1="40"
+                  y1="30"
                   x2="160"
-                  y2="170"
+                  y2="78"
                   className="windArrowLine"
                 />
                 <polygon
-                  points="160,32 153,46 167,46"
+                  points="160,18 152,34 168,34"
                   className="windArrowHead"
                 />
               </g>
@@ -609,15 +688,22 @@ export default async function Home() {
             <div>
               <strong>RWY:</strong> 08 / 26
             </div>
+
             <div>
               <strong>Wind:</strong> {Math.round(windDirection)}° / {wind} kt
             </div>
+
             <div>
-              <strong>Component:</strong> preview only
+              <strong>{headwind >= 0 ? "Headwind" : "Tailwind"}:</strong>{" "}
+              {Math.abs(headwind)} kt
+            </div>
+
+            <div>
+              <strong>Crosswind:</strong> {crosswindAbs} kt
             </div>
           </div>
         </div>
-        
+
         <div className="card condition">
           <h3>
             <Plane size={18} /> Flying conditions
@@ -682,8 +768,10 @@ export default async function Home() {
                 lcl: lclArray,
                 thermal: thermalArray,
                 temperature: temperatureAll,
+                windSurface: windSurfaceAll,
                 wind850: wind850All,
                 wind700: wind700All,
+                windSurfaceDir: windSurfaceDirAll,
                 wind850Dir: wind850DirAll,
                 wind700Dir: wind700DirAll,
                 sunrise: data.daily.sunrise,

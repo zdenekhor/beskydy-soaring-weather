@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -172,6 +171,7 @@ const windDirectionRowsPlugin = {
     const xScale = scales.x;
     if (!xScale) return;
 
+    const windSurfaceDir: number[] = pluginOptions?.windSurfaceDir ?? [];
     const wind850Dir: number[] = pluginOptions?.wind850Dir ?? [];
     const wind700Dir: number[] = pluginOptions?.wind700Dir ?? [];
     const showEvery = pluginOptions?.showEvery ?? 2;
@@ -199,16 +199,23 @@ const windDirectionRowsPlugin = {
     };
 
     drawRow(
-      wind850Dir,
+      windSurfaceDir,
       chartArea.top + 14,
-      "●",
+      "SFC",
+      "rgba(239,68,68,0.95)"
+    );
+
+    drawRow(
+      wind850Dir,
+      chartArea.top + 28,
+      "850",
       "rgba(167,139,250,0.95)"
     );
 
     drawRow(
       wind700Dir,
-      chartArea.top + 26,
-      "●",
+      chartArea.top + 42,
+      "700",
       "rgba(244,114,182,0.95)"
     );
   },
@@ -234,8 +241,10 @@ type WeatherChartProps = {
     lcl: number[];
     thermal: number[];
     temperature: number[];
+    windSurface: number[];
     wind850: number[];
     wind700: number[];
+    windSurfaceDir: number[];
     wind850Dir: number[];
     wind700Dir: number[];
     sunrise: string[];
@@ -289,6 +298,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
   const cloudColor = "#60a5fa";
   const thermalColor = "#22c55e";
   const temperatureColor = "#fbbf24";
+  const windSurfaceColor = "#ef4444";
   const wind850Color = "#a78bfa";
   const wind700Color = "#f472b6";
 
@@ -303,8 +313,10 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       lcl: data.lcl.slice(start, end),
       thermal: data.thermal.slice(start, end),
       temperature: data.temperature.slice(start, end),
+      windSurface: data.windSurface.slice(start, end),
       wind850: data.wind850.slice(start, end),
       wind700: data.wind700.slice(start, end),
+      windSurfaceDir: data.windSurfaceDir.slice(start, end),
       wind850Dir: data.wind850Dir.slice(start, end),
       wind700Dir: data.wind700Dir.slice(start, end),
     };
@@ -358,6 +370,17 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         yAxisID: "y2",
       },
       {
+        label: "Surface wind",
+        data: sliced.windSurface,
+        borderColor: windSurfaceColor,
+        backgroundColor: "rgba(239,68,68,0.20)",
+        borderWidth: 2.5,
+        tension: 0.3,
+        pointRadius: isMobile ? 1 : 2,
+        pointHoverRadius: 4,
+        yAxisID: "y3",
+      },
+      {
         label: "Wind 850 hPa",
         data: sliced.wind850,
         borderColor: wind850Color,
@@ -389,7 +412,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
     maintainAspectRatio: false,
     layout: {
       padding: {
-        top: isMobile ? 20 : 26,
+        top: isMobile ? 34 : 50,
       },
     },
     interaction: {
@@ -424,10 +447,12 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         callbacks: {
           afterTitle: function (items: TooltipItem<"line">[]) {
             const index = items?.[0]?.dataIndex ?? 0;
+            const dsfc = sliced.windSurfaceDir[index] ?? 0;
             const d850 = sliced.wind850Dir[index] ?? 0;
             const d700 = sliced.wind700Dir[index] ?? 0;
 
             return [
+              `SFC dir: ${degToArrow(dsfc)} ${Math.round(dsfc)}°`,
               `850 dir: ${degToArrow(d850)} ${Math.round(d850)}°`,
               `700 dir: ${degToArrow(d700)} ${Math.round(d700)}°`,
             ];
@@ -448,7 +473,11 @@ export default function WeatherChart({ data }: WeatherChartProps) {
               return `${label}: ${value} °C`;
             }
 
-            if (label === "Wind 850 hPa" || label === "Wind 700 hPa") {
+            if (
+              label === "Surface wind" ||
+              label === "Wind 850 hPa" ||
+              label === "Wind 700 hPa"
+            ) {
               return `${label}: ${value} kt`;
             }
 
@@ -460,8 +489,9 @@ export default function WeatherChart({ data }: WeatherChartProps) {
             Temperature: 0,
             "Cloud base": 1,
             "Thermal strength": 2,
-            "Wind 850 hPa": 3,
-            "Wind 700 hPa": 4,
+            "Surface wind": 3,
+            "Wind 850 hPa": 4,
+            "Wind 700 hPa": 5,
           };
 
           const aOrder = order[a.dataset.label ?? ""] ?? 99;
@@ -482,6 +512,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         currentIndexInDay,
       },
       windDirectionRows: {
+        windSurfaceDir: sliced.windSurfaceDir,
         wind850Dir: sliced.wind850Dir,
         wind700Dir: sliced.wind700Dir,
         showEvery: isMobile ? 3 : 2,
@@ -506,9 +537,6 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       y: {
         type: "linear",
         position: "left",
-        title: {
-          display: false,
-        },
         ticks: {
           color: cloudColor,
           font: {
@@ -525,9 +553,6 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       y1: {
         type: "linear",
         position: "right",
-        title: {
-          display: false,
-        },
         ticks: {
           color: thermalColor,
           font: {
@@ -548,9 +573,6 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         ticks: {
           display: false,
         },
-        title: {
-          display: false,
-        },
         border: {
           display: false,
         },
@@ -563,11 +585,8 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         type: "linear",
         position: "right",
         offset: true,
-        title: {
-          display: false,
-        },
         ticks: {
-          color: wind850Color,
+          color: "#ef4444",
           font: {
             size: isMobile ? 9 : 11,
           },
@@ -576,7 +595,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
           drawOnChartArea: false,
         },
         border: {
-          color: wind850Color,
+          color: "#ef4444",
         },
       },
     },
@@ -638,7 +657,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       <div
         style={{
           width: "100%",
-          height: isMobile ? "220px" : "320px",
+          height: isMobile ? "240px" : "340px",
         }}
       >
         <Line data={chartData} options={options} />

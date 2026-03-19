@@ -3,7 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SPL Weather – Beskydy",
+  title: "SPL Weather LKFR– Beskydy",
   description: "Gliding weather briefing for Beskydy",
   manifest: "/manifest.webmanifest",
 };
