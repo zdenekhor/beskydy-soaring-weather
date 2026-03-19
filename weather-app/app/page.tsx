@@ -542,7 +542,82 @@ export default async function Home() {
             700 hPa: {wind700} kt {wind700Arrow} ({Math.round(wind700Dir)}°)
           </p>
         </div>
+        <div className="card">
+          <h3>🧭 Ground wind</h3>
 
+          <div className="groundWindMain">
+            <div className="groundWindSpeed">{wind} kt</div>
+            <div className="groundWindDir">{Math.round(windDirection)}°</div>
+          </div>
+
+          <div className="groundWindSub">
+            Surface wind direction and speed
+          </div>
+        </div>
+
+        <div className="card runwayCard">
+          <h3>🛬 RWY / surface wind</h3>
+
+          <div className="runwayVisualWrap">
+            <svg viewBox="0 0 320 220" className="runwaySvg">
+              <g id="runwayGroup" transform="rotate(84 160 110)">
+                <rect
+                  x="90"
+                  y="95"
+                  width="140"
+                  height="30"
+                  rx="6"
+                  className="runwayStrip"
+                />
+                <text x="82" y="114" className="runwayLabel">
+                  08
+                </text>
+                <text x="238" y="114" className="runwayLabel">
+                  26
+                </text>
+                <line
+                  x1="160"
+                  y1="98"
+                  x2="160"
+                  y2="122"
+                  className="runwayCenterMark"
+                />
+              </g>
+
+              <g
+                id="windArrowGroup"
+                transform={`rotate(${Math.round(windDirection)} 160 110)`}
+              >
+                <line
+                  x1="160"
+                  y1="40"
+                  x2="160"
+                  y2="170"
+                  className="windArrowLine"
+                />
+                <polygon
+                  points="160,32 153,46 167,46"
+                  className="windArrowHead"
+                />
+              </g>
+
+              <circle cx="160" cy="110" r="4" className="runwayCenterDot" />
+            </svg>
+          </div>
+
+          <div className="runwayReadout">
+            <div>
+              <strong>RWY:</strong> 08 / 26
+            </div>
+            <div>
+              <strong>Wind:</strong> {Math.round(windDirection)}° / {wind} kt
+            </div>
+            <div>
+              <strong>Component:</strong> preview only
+            </div>
+          </div>
+        </div>
+        
         <div className="card condition">
           <h3>
             <Plane size={18} /> Flying conditions
