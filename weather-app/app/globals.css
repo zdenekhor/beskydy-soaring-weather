@@ -420,3 +420,46 @@ h2 {
     min-height: 180px;
   }
 }
+/* Ground wind card */
+.groundWindMain {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.groundWindSpeed {
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--foreground);
+}
+
+.groundWindDir {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #9ec7ff;
+}
+
+.groundWindSub {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* Runway visual card */
+.runwayCard {
+  min-height: 280px;
+  grid-column: span 2;
+}
+
+.runwayVisualWrap {
+  margin-top: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0
