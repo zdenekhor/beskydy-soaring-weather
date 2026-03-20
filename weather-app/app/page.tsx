@@ -132,14 +132,16 @@ async function getMetarWind(icao: string) {
 }
 
 function getWindArrow(deg: number) {
-  if (deg >= 337 || deg < 22) return "⬆";
-  if (deg < 67) return "↗";
-  if (deg < 112) return "➡";
-  if (deg < 157) return "↘";
-  if (deg < 202) return "⬇";
-  if (deg < 247) return "↙";
-  if (deg < 292) return "⬅";
-  if (deg < 337) return "↖";
+  const corrected = (deg + 180) % 360;
+
+  if (corrected >= 337 || corrected < 22) return "⬆";
+  if (corrected < 67) return "↗";
+  if (corrected < 112) return "➡";
+  if (corrected < 157) return "↘";
+  if (corrected < 202) return "⬇";
+  if (corrected < 247) return "↙";
+  if (corrected < 292) return "⬅";
+  if (corrected < 337) return "↖";
   return "•";
 }
 
