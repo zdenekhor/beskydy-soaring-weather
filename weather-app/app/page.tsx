@@ -666,19 +666,19 @@ export default async function Home() {
                 </text>
               </g>
 
-              <g transform={`rotate(${Math.round(windDirection)} 160 110)`}>
-                <line
-                  x1="160"
-                  y1="30"
-                  x2="160"
-                  y2="78"
-                  className="windArrowLine"
-                />
-                <polygon
-                  points="160,18 152,34 168,34"
-                  className="windArrowHead"
-                />
-              </g>
+             <g transform={`rotate(${(Math.round(windDirection) + 180) % 360} 160 110)`}>
+  <line
+    x1="160"
+    y1="30"
+    x2="160"
+    y2="78"
+    className="windArrowLine"
+  />
+  <polygon
+    points="160,18 152,34 168,34"
+    className="windArrowHead"
+  />
+</g>
 
               <circle cx="160" cy="110" r="4" className="runwayCenterDot" />
             </svg>
