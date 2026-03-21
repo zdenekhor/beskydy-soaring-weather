@@ -22,7 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={GeistSans.className}>
-      <body>{children}</body>
+      <body>
+  {children}
+  <Analytics />
+</body>
     </html>
   );
 }
