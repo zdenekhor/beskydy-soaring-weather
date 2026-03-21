@@ -1,0 +1,61 @@
+# Vercel Web Analytics Installation Report
+
+## Summary
+Successfully installed and configured Vercel Web Analytics for the beskydy-soaring-weather Next.js project following the latest official documentation.
+
+## Changes Made
+
+### 1. Package Installation
+- **Installed:** `@vercel/analytics` version `^2.0.1`
+- **Package Manager:** npm (as detected from existing `package-lock.json`)
+- **Installation Command:** `npm install @vercel/analytics`
+
+### 2. Code Changes
+**Modified:** `app/layout.tsx`
+
+Added the Analytics component following Next.js App Router best practices:
+- Imported `Analytics` from `@vercel/analytics/next`
+- Added `<Analytics />` component at the end of the `<body>` tag in the RootLayout component
+
+This implementation follows the official Vercel documentation retrieved from:
+https://vercel.com/docs/analytics/quickstart
+
+### 3. Files Updated
+- `app/layout.tsx` - Added Analytics import and component
+- `package.json` - Added @vercel/analytics dependency
+- `package-lock.json` - Updated with new dependency and its sub-dependencies
+
+## Implementation Details
+
+The Analytics component was added to the root layout following the framework-specific instructions for Next.js App Router:
+1. Imported the Analytics component from `@vercel/analytics/next`
+2. Placed the component inside the body tag, after the children content
+3. Preserved all existing code structure and formatting
+
+## Verification Steps Completed
+
+✅ **Build Test:** Successfully ran `npm run build` - project builds without errors
+✅ **Linting:** Ran `npm run lint` on modified file - no new linting errors introduced
+✅ **Dependencies:** Lock file (`package-lock.json`) properly updated with 371 new packages
+
+## Notes
+
+- The Analytics component will only collect data when the app is deployed to Vercel
+- Web Analytics must be enabled in the Vercel dashboard (Analytics section) for data collection
+- In development mode, the component is present but won't send tracking data
+- Pre-existing linting errors in `components/WeatherChart.tsx` were not addressed as they are unrelated to this change
+
+## Next Steps for Deployment
+
+1. Deploy the application to Vercel using `vercel deploy`
+2. Enable Web Analytics in the Vercel dashboard
+3. Verify tracking is working by checking the browser Network tab for requests to `/<unique-path>/view`
+4. Monitor analytics data in the Vercel dashboard
+
+## Package Details
+
+The `@vercel/analytics` package provides:
+- Zero-config analytics for Vercel deployments
+- Privacy-friendly tracking (no cookies)
+- Real-time visitor insights
+- Lightweight client-side tracking script
