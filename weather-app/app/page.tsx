@@ -8,6 +8,7 @@ import {
   Thermometer,
   ArrowUp,
   MapPinned,
+  AlertTriangle,
 } from "lucide-react";
 
 type ForecastData = {
@@ -199,6 +200,17 @@ function getDateKey(dateString: string) {
   return `${y}-${m}-${day}`;
 }
 
+function getHazardColor(type: string) {
+  if (type === "storm") return "rgba(239,68,68,0.22)";
+  if (type === "wind") return "rgba(249,115,22,0.22)";
+  if (type === "rain") return "rgba(59,130,246,0.22)";
+  if (type === "ice") return "rgba(148,163,184,0.22)";
+  if (type === "snow") return "rgba(226,232,240,0.16)";
+  if (type === "cloud") return "rgba(148,163,184,0.18)";
+  if (type === "overcast") return "rgba(99,102,241,0.18)";
+  return "rgba(255,255,255,0.08)";
+}
+
 export default async function Home() {
   const data = await getWeather();
   const metarWind = await getMetarWind("LKFR");
@@ -243,6 +255,16 @@ export default async function Home() {
   const clouds = safeArrayValue(data.hourly.cloud_cover, currentIndex);
   const radiation = safeArrayValue(
     data.hourly.shortwave_radiation,
+    currentIndex,
+    0
+  );
+  const precipitation = safeArrayValue(
+    data.hourly.precipitation,
+    currentIndex,
+    0
+  );
+  const precipitationProbability = safeArrayValue(
+    data.hourly.precipitation_probability,
     currentIndex,
     0
   );
@@ -432,28 +454,6 @@ export default async function Home() {
     flyingCondition = "🔴 Poor soaring conditions";
   }
 
-  let flightSummary = "Weak morning";
-
-  if (expectedClimb > 2) {
-    flightSummary = "Good thermals expected";
-  }
-
-  if (expectedClimb > 3) {
-    flightSummary = "Very good soaring day";
-  }
-
-  if (wind > 12) {
-    flightSummary += " • Wind getting stronger";
-  }
-
-  if (clouds > 80) {
-    flightSummary += " • Risk of overcast";
-  }
-
-  if (lcl > 1200 && expectedClimb > 3) {
-    flightSummary += " • Good XC potential";
-  }
-
   let xcPotential = "Low";
 
   if (expectedClimb > 2 && lcl > 800) {
@@ -529,6 +529,102 @@ export default async function Home() {
     skyTypeClass = "badgeGreen";
   }
 
+  const hazards: { icon: string; label: string; type: string }[] = [];
+
+  if (precipitation > 0.2 || precipitationProbability > 45) {
+    hazards.push({ icon: "🌧", label: "Rain", type: "rain" });
+  }
+
+  if (radiation > 400 && clouds > 70 && spread > 5 && expectedClimb > 2.5) {
+    hazards.push({ icon: "⛈", label: "Storm risk", type: "storm" });
+  }
+
+  if (wind > 15 || wind850 > 22) {
+    hazards.push({ icon: "💨", label: "Strong wind", type: "wind" });
+  }
+
+  if (lcl < 500) {
+    hazards.push({ icon: "☁", label: "Low cloud base", type: "cloud" });
+  }
+
+  if (clouds > 85) {
+    hazards.push({ icon: "🌫", label: "Overcast risk", type: "overcast" });
+  }
+
+  if (temperature < 0) {
+    hazards.push({ icon: "🧊", label: "Freezing", type: "ice" });
+  }
+
+  if (temperature < 2 && precipitation > 0.2) {
+    hazards.push({ icon: "❄", label: "Snow", type: "snow" });
+  }
+
+  let semaphore = "🟡 CAUTION";
+  let semaphoreClass = "badgeYellow";
+  let semaphoreNote = "Check wind, cloud base and current development.";
+
+  const hasStorm = hazards.some((h) => h.type === "storm");
+  const hasRain = hazards.some((h) => h.type === "rain");
+  const hasStrongWind = hazards.some((h) => h.type === "wind");
+  const hasLowBase = hazards.some((h) => h.type === "cloud");
+  const hasOvercast = hazards.some((h) => h.type === "overcast");
+  const hasIce = hazards.some((h) => h.type === "ice");
+  const hasSnow = hazards.some((h) => h.type === "snow");
+
+  if (
+    hasStorm ||
+    hasIce ||
+    hasSnow ||
+    wind > 22 ||
+    lcl < 350 ||
+    (hasRain && clouds > 85)
+  ) {
+    semaphore = "🔴 NO GO";
+    semaphoreClass = "badgeRed";
+    semaphoreNote = "Unsafe or unsuitable conditions for normal soaring.";
+  } else if (
+    expectedClimb > 2.5 &&
+    lcl > 800 &&
+    wind < 12 &&
+    clouds < 70 &&
+    !hasRain &&
+    !hasStrongWind &&
+    !hasLowBase &&
+    !hasOvercast
+  ) {
+    semaphore = "🟢 GO";
+    semaphoreClass = "badgeGreen";
+    semaphoreNote = "Favourable soaring setup with manageable risk.";
+  }
+
+  const summaryParts: string[] = [];
+
+  if (expectedClimb < 1.5) {
+    summaryParts.push("Weak conditions");
+  } else if (expectedClimb < 3) {
+    summaryParts.push("Moderate thermals");
+  } else {
+    summaryParts.push("Good soaring day");
+  }
+
+  if (wind > 12) {
+    summaryParts.push("Stronger wind");
+  }
+
+  if (clouds > 80) {
+    summaryParts.push("Overcast risk");
+  }
+
+  if (lcl < 600) {
+    summaryParts.push("Low cloud base");
+  }
+
+  if (expectedClimb > 3 && lcl > 1200) {
+    summaryParts.push("XC potential");
+  }
+
+  const flightSummary = summaryParts.join(" • ");
+
   return (
     <main className="container">
       <h1>SPL Weather LKFR – Beskydy</h1>
@@ -542,6 +638,14 @@ export default async function Home() {
       <div className="summaryBox">{flightSummary}</div>
 
       <div className="grid">
+        <div className="card">
+          <h3>
+            <AlertTriangle size={18} /> Flight semaphore
+          </h3>
+          <p className={`big ${semaphoreClass}`}>{semaphore}</p>
+          <p className="small">{semaphoreNote}</p>
+        </div>
+
         <div className="card">
           <h3>
             <Wind size={18} /> Thermal drift
@@ -566,6 +670,7 @@ export default async function Home() {
           <p>Wind: {wind} kt {metarWind ? "(METAR)" : "(model)"}</p>
           <p>Clouds: {clouds} %</p>
           <p>Sun heating: {Math.round(radiation)} W/m²</p>
+          <p>Precipitation: {precipitation.toFixed(1)} mm</p>
         </div>
 
         <div className="card">
@@ -579,6 +684,32 @@ export default async function Home() {
           >
             Open METAR / TAF
           </a>
+        </div>
+
+        <div className="card">
+          <h3>⚠️ Weather risks</h3>
+
+          {hazards.length === 0 ? (
+            <p className="badgeGreen">No significant hazards</p>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {hazards.map((h, i) => (
+                <span
+                  key={`${h.type}-${i}`}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: "10px",
+                    background: getHazardColor(h.type),
+                    fontSize: "0.85rem",
+                    color: "#e5eefc",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  {h.icon} {h.label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="card">
@@ -668,19 +799,23 @@ export default async function Home() {
                 </text>
               </g>
 
-             <g transform={`rotate(${(Math.round(windDirection) + 180) % 360} 160 110)`}>
-  <line
-    x1="160"
-    y1="30"
-    x2="160"
-    y2="78"
-    className="windArrowLine"
-  />
-  <polygon
-    points="160,18 152,34 168,34"
-    className="windArrowHead"
-  />
-</g>
+              <g
+                transform={`rotate(${
+                  (Math.round(windDirection) + 180) % 360
+                } 160 110)`}
+              >
+                <line
+                  x1="160"
+                  y1="30"
+                  x2="160"
+                  y2="78"
+                  className="windArrowLine"
+                />
+                <polygon
+                  points="160,18 152,34 168,34"
+                  className="windArrowHead"
+                />
+              </g>
 
               <circle cx="160" cy="110" r="4" className="runwayCenterDot" />
             </svg>
@@ -757,8 +892,6 @@ export default async function Home() {
           <p className={`big ${xcClass}`}>{xcPotential}</p>
         </div>
       </div>
-
-
 
       <section className="chartSection">
         <div className="chartCard">
