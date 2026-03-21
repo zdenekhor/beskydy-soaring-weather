@@ -683,8 +683,7 @@ export default async function Home() {
           <p>Sun heating: {Math.round(radiation)} W/m²</p>
           <p>Precipitation: {precipitation.toFixed(1)} mm</p>
         </div>
-
-       <div className="card">
+<div className="card">
   <h3>METAR / Info</h3>
   <p>Check current LKFR weather information</p>
 
@@ -711,10 +710,11 @@ export default async function Home() {
       rel="noopener noreferrer"
       className="briefingLink"
     >
-    
+      Open LKFR website
     </a>
   </div>
 </div>
+   
 
         <div className="card">
           <h3>⚠️ Weather risks</h3>
