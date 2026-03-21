@@ -706,12 +706,12 @@ export default async function Home() {
     </a>
 
     <a
-      href="https://www.lkfr.cz/"
+      href="https://www.akfrydlant.cz/"
       target="_blank"
       rel="noopener noreferrer"
       className="briefingLink"
     >
-      Open LKFR website
+    
     </a>
   </div>
 </div>
