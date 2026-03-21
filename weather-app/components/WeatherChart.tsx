@@ -132,6 +132,7 @@ const currentHourPlugin = {
     const x = xScale.getPixelForValue(currentIndex);
 
     ctx.save();
+
     ctx.beginPath();
     ctx.moveTo(x, chartArea.top);
     ctx.lineTo(x, chartArea.bottom);
@@ -180,6 +181,8 @@ const windDirectionRowsPlugin = {
       label: string,
       color: string
     ) => {
+      if (!dirs.length) return;
+
       ctx.save();
       ctx.font = "10px sans-serif";
       ctx.fillStyle = color;
@@ -429,7 +432,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
     maintainAspectRatio: false,
     layout: {
       padding: {
-        top: isMobile ? 44 : 56,
+        top: isMobile ? 46 : 58,
         right: isMobile ? 10 : 18,
         left: isMobile ? 10 : 14,
         bottom: isMobile ? 2 : 4,
@@ -495,10 +498,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
             "Wind 700 hPa": 5,
           };
 
-          const aOrder = order[a.dataset.label ?? ""] ?? 99;
-          const bOrder = order[b.dataset.label ?? ""] ?? 99;
-
-          return aOrder - bOrder;
+          return (order[a.dataset.label ?? ""] ?? 99) - (order[b.dataset.label ?? ""] ?? 99);
         },
       },
       vfrWindow: {
@@ -542,17 +542,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         type: "linear",
         position: "left",
         title: {
-          display: true,
-          text: "m",
-          color: "#ffffff",
-          font: {
-            size: isMobile ? 11 : 13,
-            weight: "bold",
-          },
-          padding: {
-            top: 8,
-            bottom: 8,
-          },
+          display: false,
         },
         ticks: {
           color: cloudColor,
@@ -571,17 +561,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         type: "linear",
         position: "right",
         title: {
-          display: true,
-          text: "m/s",
-          color: "#ffffff",
-          font: {
-            size: isMobile ? 11 : 13,
-            weight: "bold",
-          },
-          padding: {
-            top: 8,
-            bottom: 8,
-          },
+          display: false,
         },
         ticks: {
           color: thermalColor,
@@ -619,17 +599,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         position: "right",
         offset: true,
         title: {
-          display: true,
-          text: "kt",
-          color: "#ffffff",
-          font: {
-            size: isMobile ? 11 : 13,
-            weight: "bold",
-          },
-          padding: {
-            top: 8,
-            bottom: 8,
-          },
+          display: false,
         },
         ticks: {
           color: windSurfaceColor,
@@ -697,8 +667,24 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         style={{
           display: "flex",
           flexWrap: "wrap",
+          justifyContent: "space-between",
+          gap: "10px",
+          marginBottom: "10px",
+          color: "#cbd5e1",
+          fontSize: isMobile ? "0.72rem" : "0.82rem",
+        }}
+      >
+        <span style={{ color: cloudColor }}>Cloud base (m)</span>
+        <span style={{ color: thermalColor }}>Thermal (m/s)</span>
+        <span style={{ color: windSurfaceColor }}>Wind (kt)</span>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
           gap: isMobile ? "10px" : "14px",
-          marginBottom: "14px",
+          marginBottom: "16px",
           fontSize: isMobile ? "0.75rem" : "0.86rem",
           color: "#e5eefc",
           lineHeight: 1.35,
@@ -755,7 +741,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         style={{
           display: "flex",
           gap: isMobile ? "10px" : "16px",
-          marginBottom: isMobile ? "20px" : "26px",
+          marginBottom: isMobile ? "20px" : "24px",
           flexWrap: "wrap",
           color: "#cbd5e1",
           fontSize: isMobile ? "0.76rem" : "0.9rem",
@@ -772,7 +758,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       <div
         style={{
           width: "100%",
-          height: isMobile ? "270px" : "390px",
+          height: isMobile ? "280px" : "400px",
         }}
       >
         <Line data={chartData} options={options} />

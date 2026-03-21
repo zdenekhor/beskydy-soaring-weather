@@ -38,8 +38,8 @@ type ForecastData = {
 };
 
 const FIELD_ELEVATION_MSL = 439;
-const APP_VERSION = "v0.4.1";
-const APP_UPDATED = "19 Mar 2026";
+const APP_VERSION = "v1.0.0";
+const APP_UPDATED = "21 Mar 2026";
 
 async function getWeather(): Promise<ForecastData> {
   const latitude = 49.592;
@@ -220,7 +220,7 @@ export default async function Home() {
   const formattedDate = now.toLocaleDateString("en-GB", {
     weekday: "long",
     day: "2-digit",
-    month: "long",
+    month: "2-digit",
     year: "numeric",
   });
 
@@ -445,25 +445,20 @@ export default async function Home() {
   const thermalEnd = thermalEndIndex >= 0 ? hours[thermalEndIndex] : "-";
 
   let flyingCondition = "🟡 Weak soaring conditions";
-
   if (wind < 8 && lcl > 800 && clouds < 60) {
     flyingCondition = "🟢 Good soaring conditions";
   }
-
   if (wind > 15 || clouds > 90 || lcl < 400) {
     flyingCondition = "🔴 Poor soaring conditions";
   }
 
   let xcPotential = "Low";
-
   if (expectedClimb > 2 && lcl > 800) {
     xcPotential = "Moderate";
   }
-
   if (expectedClimb > 3 && lcl > 1200) {
     xcPotential = "Good";
   }
-
   if (expectedClimb > 4 && lcl > 1500 && wind < 10) {
     xcPotential = "XC day";
   }
@@ -529,35 +524,31 @@ export default async function Home() {
     skyTypeClass = "badgeGreen";
   }
 
-  const hazards: { icon: string; label: string; type: string }[] = [];
-
-  if (precipitation > 0.2 || precipitationProbability > 45) {
-    hazards.push({ icon: "🌧", label: "Rain", type: "rain" });
-  }
+  const hazards: { icon: string; label: string; type: string; severity: number }[] = [];
 
   if (radiation > 400 && clouds > 70 && spread > 5 && expectedClimb > 2.5) {
-    hazards.push({ icon: "⛈", label: "Storm risk", type: "storm" });
+    hazards.push({ icon: "⛈", label: "Storm risk", type: "storm", severity: 6 });
   }
-
-  if (wind > 15 || wind850 > 22) {
-    hazards.push({ icon: "💨", label: "Strong wind", type: "wind" });
-  }
-
-  if (lcl < 500) {
-    hazards.push({ icon: "☁", label: "Low cloud base", type: "cloud" });
-  }
-
-  if (clouds > 85) {
-    hazards.push({ icon: "🌫", label: "Overcast risk", type: "overcast" });
-  }
-
   if (temperature < 0) {
-    hazards.push({ icon: "🧊", label: "Freezing", type: "ice" });
+    hazards.push({ icon: "🧊", label: "Freezing", type: "ice", severity: 5 });
+  }
+  if (temperature < 2 && precipitation > 0.2) {
+    hazards.push({ icon: "❄", label: "Snow", type: "snow", severity: 5 });
+  }
+  if (wind > 15 || wind850 > 22) {
+    hazards.push({ icon: "💨", label: "Strong wind", type: "wind", severity: 4 });
+  }
+  if (precipitation > 0.2 || precipitationProbability > 45) {
+    hazards.push({ icon: "🌧", label: "Rain", type: "rain", severity: 3 });
+  }
+  if (lcl < 500) {
+    hazards.push({ icon: "☁", label: "Low cloud base", type: "cloud", severity: 2 });
+  }
+  if (clouds > 85) {
+    hazards.push({ icon: "🌫", label: "Overcast risk", type: "overcast", severity: 1 });
   }
 
-  if (temperature < 2 && precipitation > 0.2) {
-    hazards.push({ icon: "❄", label: "Snow", type: "snow" });
-  }
+  hazards.sort((a, b) => b.severity - a.severity);
 
   let semaphore = "🟡 CAUTION";
   let semaphoreClass = "badgeYellow";
@@ -600,23 +591,23 @@ export default async function Home() {
   const summaryParts: string[] = [];
 
   if (expectedClimb < 1.5) {
-    summaryParts.push("Weak conditions");
+    summaryParts.push("Weak soaring day");
   } else if (expectedClimb < 3) {
     summaryParts.push("Moderate thermals");
   } else {
     summaryParts.push("Good soaring day");
   }
 
-  if (wind > 12) {
-    summaryParts.push("Stronger wind");
+  if (lcl < 600) {
+    summaryParts.push("Low base");
   }
 
   if (clouds > 80) {
     summaryParts.push("Overcast risk");
   }
 
-  if (lcl < 600) {
-    summaryParts.push("Low cloud base");
+  if (wind > 12) {
+    summaryParts.push("Stronger wind");
   }
 
   if (expectedClimb > 3 && lcl > 1200) {
@@ -638,11 +629,31 @@ export default async function Home() {
       <div className="summaryBox">{flightSummary}</div>
 
       <div className="grid">
-        <div className="card">
+        <div
+          className="card"
+          style={{
+            border:
+              semaphore.includes("GO")
+                ? "1px solid rgba(34,197,94,0.35)"
+                : semaphore.includes("NO GO")
+                ? "1px solid rgba(239,68,68,0.35)"
+                : "1px solid rgba(250,204,21,0.35)",
+            boxShadow: semaphore.includes("GO")
+              ? "0 0 0 1px rgba(34,197,94,0.08) inset"
+              : semaphore.includes("NO GO")
+              ? "0 0 0 1px rgba(239,68,68,0.08) inset"
+              : "0 0 0 1px rgba(250,204,21,0.08) inset",
+          }}
+        >
           <h3>
             <AlertTriangle size={18} /> Flight semaphore
           </h3>
-          <p className={`big ${semaphoreClass}`}>{semaphore}</p>
+          <p
+            className={`big ${semaphoreClass}`}
+            style={{ fontSize: "1.35rem", fontWeight: 700 }}
+          >
+            {semaphore}
+          </p>
           <p className="small">{semaphoreNote}</p>
         </div>
 
@@ -688,7 +699,6 @@ export default async function Home() {
 
         <div className="card">
           <h3>⚠️ Weather risks</h3>
-
           {hazards.length === 0 ? (
             <p className="badgeGreen">No significant hazards</p>
           ) : (
@@ -744,12 +754,10 @@ export default async function Home() {
 
         <div className="card">
           <h3>🧭 Ground wind</h3>
-
           <div className="groundWindMain">
             <div className="groundWindSpeed">{wind} kt</div>
             <div className="groundWindDir">{Math.round(windDirection)}°</div>
           </div>
-
           <div className="groundWindSub">
             {metarWind ? "Live METAR wind from LKFR" : "Model surface wind"}
           </div>
@@ -825,16 +833,13 @@ export default async function Home() {
             <div>
               <strong>RWY:</strong> 08 / 26
             </div>
-
             <div>
               <strong>Wind:</strong> {Math.round(windDirection)}° / {wind} kt
             </div>
-
             <div>
               <strong>{headwind >= 0 ? "Headwind" : "Tailwind"}:</strong>{" "}
               {Math.abs(headwind)} kt
             </div>
-
             <div>
               <strong>Crosswind:</strong> {crosswindAbs} kt
             </div>
