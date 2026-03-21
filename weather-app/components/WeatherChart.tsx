@@ -67,14 +67,13 @@ const sunMarkersPlugin = {
   afterDraw: (chart: any, _args: any, pluginOptions: any) => {
     const { ctx, chartArea, scales } = chart;
     const xScale = scales.x;
-
     if (!xScale) return;
 
     const drawMarker = (
       index: number,
       color: string,
       label?: string,
-      yOffset = -8
+      yOffset = -10
     ) => {
       if (index < 0) return;
 
@@ -108,7 +107,7 @@ const sunMarkersPlugin = {
 
     drawMarker(
       pluginOptions?.sunriseIndex ?? -1,
-      "rgba(251,191,36,0.9)",
+      "rgba(251,191,36,0.95)",
       "Sunrise"
     );
 
@@ -133,7 +132,6 @@ const currentHourPlugin = {
     const x = xScale.getPixelForValue(currentIndex);
 
     ctx.save();
-
     ctx.beginPath();
     ctx.moveTo(x, chartArea.top);
     ctx.lineTo(x, chartArea.bottom);
@@ -279,10 +277,22 @@ function findNearestLabelIndex(labels: string[], timeHHMM: string) {
 export default function WeatherChart({ data }: WeatherChartProps) {
   const totalDays = Math.max(1, Math.ceil(data.labels.length / 24));
   const currentDayFromIndex = Math.floor(data.currentIndex / 24);
-  const safeInitialDay = Math.max(0, Math.min(totalDays - 1, currentDayFromIndex));
+  const safeInitialDay = Math.max(
+    0,
+    Math.min(totalDays - 1, currentDayFromIndex)
+  );
 
   const [selectedDay, setSelectedDay] = useState(safeInitialDay);
   const [isMobile, setIsMobile] = useState(false);
+
+  const [visible, setVisible] = useState({
+    lcl: true,
+    thermal: true,
+    temperature: true,
+    windSurface: true,
+    wind850: true,
+    wind700: true,
+  });
 
   useEffect(() => {
     setSelectedDay(safeInitialDay);
@@ -301,6 +311,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
   const windSurfaceColor = "#ef4444";
   const wind850Color = "#a78bfa";
   const wind700Color = "#f472b6";
+  const inactiveColor = "#64748b";
 
   const start = selectedDay * 24;
   const end = start + 24;
@@ -339,6 +350,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       {
         label: "Cloud base",
         data: sliced.lcl,
+        hidden: !visible.lcl,
         borderColor: cloudColor,
         backgroundColor: "rgba(96,165,250,0.18)",
         borderWidth: 2,
@@ -350,6 +362,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       {
         label: "Thermal strength",
         data: sliced.thermal,
+        hidden: !visible.thermal,
         borderColor: thermalColor,
         backgroundColor: "rgba(34,197,94,0.18)",
         borderWidth: 2,
@@ -361,6 +374,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       {
         label: "Temperature",
         data: sliced.temperature,
+        hidden: !visible.temperature,
         borderColor: temperatureColor,
         backgroundColor: "rgba(251,191,36,0.18)",
         borderWidth: 2,
@@ -372,6 +386,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       {
         label: "Surface wind",
         data: sliced.windSurface,
+        hidden: !visible.windSurface,
         borderColor: windSurfaceColor,
         backgroundColor: "rgba(239,68,68,0.20)",
         borderWidth: 2.5,
@@ -383,6 +398,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       {
         label: "Wind 850 hPa",
         data: sliced.wind850,
+        hidden: !visible.wind850,
         borderColor: wind850Color,
         backgroundColor: "rgba(167,139,250,0.18)",
         borderDash: [6, 4],
@@ -395,6 +411,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       {
         label: "Wind 700 hPa",
         data: sliced.wind700,
+        hidden: !visible.wind700,
         borderColor: wind700Color,
         backgroundColor: "rgba(244,114,182,0.18)",
         borderDash: [6, 4],
@@ -412,7 +429,10 @@ export default function WeatherChart({ data }: WeatherChartProps) {
     maintainAspectRatio: false,
     layout: {
       padding: {
-        top: isMobile ? 34 : 50,
+        top: isMobile ? 44 : 56,
+        right: isMobile ? 10 : 18,
+        left: isMobile ? 10 : 14,
+        bottom: isMobile ? 2 : 4,
       },
     },
     interaction: {
@@ -421,19 +441,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
     },
     plugins: {
       legend: {
-        position: "top",
-        labels: {
-          color: "#e5eefc",
-          usePointStyle: true,
-          pointStyle: "circle",
-          padding: isMobile ? 10 : 16,
-          boxWidth: 8,
-          boxHeight: 8,
-          font: {
-            size: isMobile ? 10 : 12,
-            weight: 500,
-          },
-        },
+        display: false,
       },
       tooltip: {
         enabled: true,
@@ -461,18 +469,11 @@ export default function WeatherChart({ data }: WeatherChartProps) {
             const label = context.dataset.label ?? "";
             const value = context.parsed.y;
 
-            if (label === "Cloud base") {
-              return `${label}: ${value} m`;
-            }
-
+            if (label === "Cloud base") return `${label}: ${value} m`;
             if (label === "Thermal strength") {
               return `${label}: ${(value ?? 0).toFixed(1)} m/s`;
             }
-
-            if (label === "Temperature") {
-              return `${label}: ${value} °C`;
-            }
-
+            if (label === "Temperature") return `${label}: ${value} °C`;
             if (
               label === "Surface wind" ||
               label === "Wind 850 hPa" ||
@@ -512,9 +513,9 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         currentIndexInDay,
       },
       windDirectionRows: {
-        windSurfaceDir: sliced.windSurfaceDir,
-        wind850Dir: sliced.wind850Dir,
-        wind700Dir: sliced.wind700Dir,
+        windSurfaceDir: visible.windSurface ? sliced.windSurfaceDir : [],
+        wind850Dir: visible.wind850 ? sliced.wind850Dir : [],
+        wind700Dir: visible.wind700 ? sliced.wind700Dir : [],
         showEvery: isMobile ? 3 : 2,
       },
     },
@@ -533,10 +534,26 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         grid: {
           color: "rgba(255,255,255,0.06)",
         },
+        border: {
+          color: "rgba(255,255,255,0.12)",
+        },
       },
       y: {
         type: "linear",
         position: "left",
+        title: {
+          display: true,
+          text: "m",
+          color: "#ffffff",
+          font: {
+            size: isMobile ? 11 : 13,
+            weight: "bold",
+          },
+          padding: {
+            top: 8,
+            bottom: 8,
+          },
+        },
         ticks: {
           color: cloudColor,
           font: {
@@ -553,6 +570,19 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       y1: {
         type: "linear",
         position: "right",
+        title: {
+          display: true,
+          text: "m/s",
+          color: "#ffffff",
+          font: {
+            size: isMobile ? 11 : 13,
+            weight: "bold",
+          },
+          padding: {
+            top: 8,
+            bottom: 8,
+          },
+        },
         ticks: {
           color: thermalColor,
           font: {
@@ -573,6 +603,9 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         ticks: {
           display: false,
         },
+        title: {
+          display: false,
+        },
         border: {
           display: false,
         },
@@ -585,8 +618,21 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         type: "linear",
         position: "right",
         offset: true,
+        title: {
+          display: true,
+          text: "kt",
+          color: "#ffffff",
+          font: {
+            size: isMobile ? 11 : 13,
+            weight: "bold",
+          },
+          padding: {
+            top: 8,
+            bottom: 8,
+          },
+        },
         ticks: {
-          color: "#ef4444",
+          color: windSurfaceColor,
           font: {
             size: isMobile ? 9 : 11,
           },
@@ -595,11 +641,22 @@ export default function WeatherChart({ data }: WeatherChartProps) {
           drawOnChartArea: false,
         },
         border: {
-          color: "#ef4444",
+          color: windSurfaceColor,
         },
       },
     },
   };
+
+  const legendItemStyle = (
+    active: boolean,
+    color: string
+  ): React.CSSProperties => ({
+    color: active ? color : inactiveColor,
+    cursor: "pointer",
+    userSelect: "none",
+    textDecoration: active ? "none" : "line-through",
+    opacity: active ? 1 : 0.6,
+  });
 
   return (
     <div>
@@ -607,7 +664,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         style={{
           display: "flex",
           gap: "8px",
-          marginBottom: "12px",
+          marginBottom: "14px",
           flexWrap: "wrap",
         }}
       >
@@ -639,12 +696,70 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       <div
         style={{
           display: "flex",
+          flexWrap: "wrap",
+          gap: isMobile ? "10px" : "14px",
+          marginBottom: "14px",
+          fontSize: isMobile ? "0.75rem" : "0.86rem",
+          color: "#e5eefc",
+          lineHeight: 1.35,
+        }}
+      >
+        <span
+          onClick={() => setVisible((v) => ({ ...v, lcl: !v.lcl }))}
+          style={legendItemStyle(visible.lcl, cloudColor)}
+        >
+          ● Cloud base
+        </span>
+
+        <span
+          onClick={() => setVisible((v) => ({ ...v, thermal: !v.thermal }))}
+          style={legendItemStyle(visible.thermal, thermalColor)}
+        >
+          ● Thermal
+        </span>
+
+        <span
+          onClick={() =>
+            setVisible((v) => ({ ...v, temperature: !v.temperature }))
+          }
+          style={legendItemStyle(visible.temperature, temperatureColor)}
+        >
+          ● Temperature
+        </span>
+
+        <span
+          onClick={() =>
+            setVisible((v) => ({ ...v, windSurface: !v.windSurface }))
+          }
+          style={legendItemStyle(visible.windSurface, windSurfaceColor)}
+        >
+          ● Surface wind
+        </span>
+
+        <span
+          onClick={() => setVisible((v) => ({ ...v, wind850: !v.wind850 }))}
+          style={legendItemStyle(visible.wind850, wind850Color)}
+        >
+          ● Wind 850
+        </span>
+
+        <span
+          onClick={() => setVisible((v) => ({ ...v, wind700: !v.wind700 }))}
+          style={legendItemStyle(visible.wind700, wind700Color)}
+        >
+          ● Wind 700
+        </span>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
           gap: isMobile ? "10px" : "16px",
-          marginBottom: "10px",
+          marginBottom: isMobile ? "20px" : "26px",
           flexWrap: "wrap",
           color: "#cbd5e1",
           fontSize: isMobile ? "0.76rem" : "0.9rem",
-          lineHeight: 1.3,
+          lineHeight: 1.35,
         }}
       >
         <span>☀ Sunrise: {sunriseTime || "-"}</span>
@@ -657,7 +772,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       <div
         style={{
           width: "100%",
-          height: isMobile ? "240px" : "340px",
+          height: isMobile ? "270px" : "390px",
         }}
       >
         <Line data={chartData} options={options} />
