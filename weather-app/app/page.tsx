@@ -694,7 +694,8 @@ export default async function Home() {
       gap: "8px",
       marginTop: "10px",
     }}
-  >
+    >
+
     <a
       href="https://metar-taf.com/metar/LKFR"
       target="_blank"
