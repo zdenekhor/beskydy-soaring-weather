@@ -684,18 +684,37 @@ export default async function Home() {
           <p>Precipitation: {precipitation.toFixed(1)} mm</p>
         </div>
 
-        <div className="card">
-          <h3>METAR / Info</h3>
-          <p>Check current LKFR weather information</p>
-          <a
-            href="https://metar-taf.com/metar/LKFR"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="briefingLink"
-          >
-            Open METAR / TAF
-          </a>
-        </div>
+       <div className="card">
+  <h3>METAR / Info</h3>
+  <p>Check current LKFR weather information</p>
+
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: "8px",
+      marginTop: "10px",
+    }}
+  >
+    <a
+      href="https://metar-taf.com/metar/LKFR"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="briefingLink"
+    >
+      Open METAR / TAF
+    </a>
+
+    <a
+      href="https://www.lkfr.cz/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="briefingLink"
+    >
+      Open LKFR website
+    </a>
+  </div>
+</div>
 
         <div className="card">
           <h3>⚠️ Weather risks</h3>
