@@ -38,7 +38,7 @@ type ForecastData = {
 };
 
 const FIELD_ELEVATION_MSL = 439;
-const APP_VERSION = "v1.1.0";
+const APP_VERSION = "v1.2.0";
 const APP_UPDATED = "22 Mar 2026";
 
 async function getWeather(): Promise<ForecastData> {
@@ -112,15 +112,15 @@ async function getMetarWind(icao: string) {
       typeof dirRaw === "number"
         ? dirRaw
         : typeof dirRaw === "string" && dirRaw !== "VRB"
-        ? Number(dirRaw)
-        : 0;
+          ? Number(dirRaw)
+          : 0;
 
     const speedKt =
       typeof spdRaw === "number"
         ? spdRaw
         : typeof spdRaw === "string"
-        ? Number(spdRaw)
-        : 0;
+          ? Number(spdRaw)
+          : 0;
 
     return {
       speedKt: Number.isFinite(speedKt) ? speedKt : 0,
@@ -225,8 +225,32 @@ function rawThermalPotential(
   return clamp(score, 0, 100);
 }
 
-function cloudSuppressionFactor(low: number, mid: number, high: number) {
-  const penalty = low * 0.0065 + mid * 0.0025 + high * 0.0015;
+function cloudSuppressionFactor(
+  low: number,
+  mid: number,
+  high: number,
+  radiation: number,
+  spread: number
+) {
+  const isConvectiveCloudField =
+    low >= 20 &&
+    low <= 85 &&
+    radiation >= 250 &&
+    spread >= 3;
+
+  let penalty =
+    low * 0.0065 +
+    mid * 0.0025 +
+    high * 0.0015;
+
+  if (isConvectiveCloudField) {
+    penalty -= 0.12;
+  }
+
+  if (low > 85 && radiation < 180) {
+    penalty += 0.2;
+  }
+
   return clamp(1 - penalty, 0.12, 1);
 }
 
@@ -268,6 +292,216 @@ function estimateClimbFromScore(score: number) {
   if (score < 65) return 2.1;
   if (score < 80) return 2.8;
   return 3.4;
+}
+
+function detectSkyType(params: {
+  cloudLow: number;
+  cloudMid: number;
+  cloudHigh: number;
+  clouds: number;
+  radiation: number;
+  spread: number;
+  lcl: number;
+}) {
+  const { cloudLow, cloudMid, cloudHigh, clouds, radiation, spread, lcl } =
+    params;
+
+  const isOvercast =
+    cloudLow > 80 &&
+    radiation < 180 &&
+    spread < 7;
+
+  const isLowOvercast =
+    cloudLow > 75 &&
+    radiation < 160;
+
+  const isBlueDay =
+    radiation >= 430 &&
+    spread >= 6 &&
+    cloudLow < 20 &&
+    cloudMid < 25;
+
+  const isCuDay =
+    cloudLow >= 20 &&
+    cloudLow <= 85 &&
+    radiation >= 260 &&
+    spread >= 3.5 &&
+    lcl >= 700 &&
+    !(cloudLow > 80 && radiation < 180);
+
+  const isUsableThermalSky =
+    radiation >= 220 &&
+    spread >= 3 &&
+    lcl >= 600 &&
+    !isOvercast;
+
+  if (isLowOvercast) {
+    return {
+      label: "Low overcast",
+      className: "badgeRed",
+      convective: false,
+      overcast: true,
+    };
+  }
+
+  if (isOvercast || (clouds > 90 && radiation < 150)) {
+    return {
+      label: "Overcast",
+      className: "badgeRed",
+      convective: false,
+      overcast: true,
+    };
+  }
+
+  if (isCuDay) {
+    return {
+      label: "Cu day",
+      className: "badgeGreen",
+      convective: true,
+      overcast: false,
+    };
+  }
+
+  if (isBlueDay) {
+    return {
+      label: "Blue day",
+      className: "badgeBlue",
+      convective: false,
+      overcast: false,
+    };
+  }
+
+  if (isUsableThermalSky) {
+    return {
+      label: "Usable thermal sky",
+      className: "badgeGreen",
+      convective: false,
+      overcast: false,
+    };
+  }
+
+  return {
+    label: "Mixed thermal sky",
+    className: "badgeYellow",
+    convective: false,
+    overcast: false,
+  };
+}
+
+function buildPilotComment(params: {
+  semaphore: string;
+  expectedClimb: number;
+  lcl: number;
+  cloudBaseMSL: number;
+  thermalStart: string;
+  thermalMax: string;
+  thermalEnd: string;
+  wind: number;
+  crosswindAbs: number;
+  skyType: string;
+  xcPotential: string;
+  operationalRisk: number;
+  hasRain: boolean;
+  hasStorm: boolean;
+  hasOvercast: boolean;
+  hasStrongWind: boolean;
+}) {
+  const {
+    semaphore,
+    expectedClimb,
+    lcl,
+    cloudBaseMSL,
+    thermalStart,
+    thermalMax,
+    thermalEnd,
+    wind,
+    crosswindAbs,
+    skyType,
+    xcPotential,
+    operationalRisk,
+    hasRain,
+    hasStorm,
+    hasOvercast,
+    hasStrongWind,
+  } = params;
+
+  const parts: string[] = [];
+
+  if (semaphore.includes("NO GO")) {
+    parts.push("No-go for normal soaring");
+  } else if (semaphore.includes("GO")) {
+    parts.push("Flyable soaring day");
+  } else {
+    parts.push("Marginal day, needs pilot judgement");
+  }
+
+  if (skyType === "Cu day") {
+    parts.push("convective cloud field should support usable thermals");
+  } else if (skyType === "Blue day") {
+    parts.push("blue thermal conditions with little cloud marking");
+  } else if (skyType === "Overcast" || skyType === "Low overcast") {
+    parts.push("cloud cover suppresses heating and climb");
+  } else {
+    parts.push("mixed sky with uneven thermal development");
+  }
+
+  if (expectedClimb >= 2.8) {
+    parts.push(`stronger climbs around ${expectedClimb.toFixed(1)} m/s`);
+  } else if (expectedClimb >= 1.5) {
+    parts.push(`usable climbs around ${expectedClimb.toFixed(1)} m/s`);
+  } else {
+    parts.push(`weak climbs around ${expectedClimb.toFixed(1)} m/s`);
+  }
+
+  if (lcl >= 1400) {
+    parts.push(`bases look good near ${lcl} m AGL`);
+  } else if (lcl >= 900) {
+    parts.push(`moderate base near ${lcl} m AGL`);
+  } else {
+    parts.push(`rather low base near ${lcl} m AGL`);
+  }
+
+  if (thermalStart !== "-" && thermalEnd !== "-") {
+    parts.push(`best window roughly ${thermalStart}–${thermalEnd}, peak near ${thermalMax}`);
+  }
+
+  if (wind <= 8 && crosswindAbs <= 5) {
+    parts.push("surface wind is light");
+  } else if (wind <= 14 && crosswindAbs <= 10) {
+    parts.push("surface wind is manageable");
+  } else {
+    parts.push("surface wind deserves caution");
+  }
+
+  if (xcPotential === "XC day") {
+    parts.push("very good XC potential");
+  } else if (xcPotential === "Good") {
+    parts.push("good XC potential");
+  } else if (xcPotential === "Moderate") {
+    parts.push("possible local XC");
+  } else {
+    parts.push("better suited to local flying than XC");
+  }
+
+  if (hasStorm) {
+    parts.push("storm risk is the main limiting factor");
+  } else if (hasRain) {
+    parts.push("showers may interrupt the day");
+  } else if (hasOvercast) {
+    parts.push("watch for cloud spreading and loss of sun");
+  } else if (hasStrongWind) {
+    parts.push("watch the wind profile and drift");
+  }
+
+  if (operationalRisk >= 60) {
+    parts.push("overall operational risk is high");
+  } else if (operationalRisk >= 35) {
+    parts.push("overall risk is moderate");
+  } else {
+    parts.push("overall risk is manageable");
+  }
+
+  return parts.join(". ") + ".";
 }
 
 export default async function Home() {
@@ -391,7 +625,13 @@ export default async function Home() {
   const cloudBaseMSL = lcl + FIELD_ELEVATION_MSL;
 
   const rawPotential = rawThermalPotential(spread, radiation, thermalTop);
-  const cloudFactor = cloudSuppressionFactor(cloudLow, cloudMid, cloudHigh);
+  const cloudFactor = cloudSuppressionFactor(
+    cloudLow,
+    cloudMid,
+    cloudHigh,
+    radiation,
+    spread
+  );
   const rainFactor = precipitationSuppressionFactor(
     precipitation,
     precipitationProbability
@@ -439,7 +679,7 @@ export default async function Home() {
     const localTop = localLcl + 300;
 
     const raw = rawThermalPotential(localSpread, radNow, localTop);
-    const cf = cloudSuppressionFactor(low, mid, high);
+    const cf = cloudSuppressionFactor(low, mid, high, radNow, localSpread);
     const rf = precipitationSuppressionFactor(rain, rainProb);
     const wf = windSuppressionFactor(sfcWind, w850Now, w700Now);
 
@@ -480,8 +720,6 @@ export default async function Home() {
   const wind700DirAll =
     data.hourly.wind_direction_700hPa?.map((v: number) => Math.round(v)) ??
     Array(hours.length).fill(0);
-
-  const thermalNow = safeArrayValue(thermalArray, currentIndex, 0);
 
   const soaringIndex = Math.round(
     clamp(
@@ -544,31 +782,18 @@ export default async function Home() {
   const thermalMax = thermalMaxIndex >= 0 ? hours[thermalMaxIndex] : "-";
   const thermalEnd = thermalEndIndex >= 0 ? hours[thermalEndIndex] : "-";
 
-  let skyType = "Mixed sky";
-  let skyTypeClass = "badgeYellow";
+  const sky = detectSkyType({
+    cloudLow,
+    cloudMid,
+    cloudHigh,
+    clouds,
+    radiation,
+    spread,
+    lcl,
+  });
 
-  if (cloudLow > 75 && radiation < 180) {
-    skyType = "Low overcast";
-    skyTypeClass = "badgeRed";
-  } else if (clouds > 90 && radiation < 150) {
-    skyType = "Overcast";
-    skyTypeClass = "badgeRed";
-  } else if (
-    radiation >= 350 &&
-    spread >= 4 &&
-    cloudLow >= 15 &&
-    cloudLow <= 60 &&
-    lcl >= 700
-  ) {
-    skyType = "Cu day";
-    skyTypeClass = "badgeGreen";
-  } else if (radiation >= 450 && spread >= 6 && cloudLow < 20 && cloudMid < 20) {
-    skyType = "Blue day";
-    skyTypeClass = "badgeBlue";
-  } else if (radiation >= 220 && lcl >= 600) {
-    skyType = "Usable thermal sky";
-    skyTypeClass = "badgeGreen";
-  }
+  const skyType = sky.label;
+  const skyTypeClass = sky.className;
 
   const hazards: { icon: string; label: string; type: string; severity: number }[] = [];
 
@@ -592,22 +817,29 @@ export default async function Home() {
   if (precipitation > 0.2 || precipitationProbability > 45) {
     hazards.push({ icon: "🌧", label: "Rain", type: "rain", severity: 3 });
   }
-  if (lcl < 500 || cloudLow > 70) {
+  if (lcl < 500 || (cloudLow > 75 && radiation < 180)) {
     hazards.push({ icon: "☁", label: "Low cloud base", type: "cloud", severity: 2 });
   }
-  if (cloudLow > 80 || clouds > 85) {
+  if (sky.overcast) {
     hazards.push({ icon: "🌫", label: "Overcast risk", type: "overcast", severity: 1 });
   }
 
   hazards.sort((a, b) => b.severity - a.severity);
 
+  const hasStorm = hazards.some((h) => h.type === "storm");
+  const hasRain = hazards.some((h) => h.type === "rain");
+  const hasStrongWind = hazards.some((h) => h.type === "wind");
+  const hasOvercast = hazards.some((h) => h.type === "overcast");
+  const hasIce = hazards.some((h) => h.type === "ice");
+  const hasSnow = hazards.some((h) => h.type === "snow");
+
   const operationalRisk = Math.round(
     clamp(
-      (hazards.some((h) => h.type === "storm") ? 35 : 0) +
-        (hazards.some((h) => h.type === "rain") ? 18 : 0) +
+      (hasStorm ? 35 : 0) +
+        (hasRain ? 18 : 0) +
         clamp(crosswindAbs * 2, 0, 20) +
         clamp(wind > 0 ? wind * 1.2 : 0, 0, 20) +
-        clamp(cloudLow * 0.18, 0, 18),
+        clamp((sky.overcast ? 18 : 0) + (cloudLow > 70 ? 8 : 0), 0, 18),
       0,
       100
     )
@@ -672,9 +904,9 @@ export default async function Home() {
     operationalRisk >= 70 ||
     lcl < 350 ||
     crosswindAbs > 18 ||
-    hazards.some((h) => h.type === "storm") ||
-    hazards.some((h) => h.type === "ice") ||
-    hazards.some((h) => h.type === "snow")
+    hasStorm ||
+    hasIce ||
+    hasSnow
   ) {
     semaphore = "🔴 NO GO";
     semaphoreClass = "badgeRed";
@@ -700,13 +932,33 @@ export default async function Home() {
   }
 
   if (lcl < 600) summaryParts.push("Low base");
-  if (cloudLow > 70 || clouds > 85) summaryParts.push("Overcast risk");
+  if (sky.overcast) summaryParts.push("Overcast risk");
   if (wind > 12 || crosswindAbs > 10) summaryParts.push("Windy");
+  if (sky.convective) summaryParts.push("Cu development");
   if (xcPotential === "Good" || xcPotential === "XC day") {
     summaryParts.push("XC potential");
   }
 
   const flightSummary = summaryParts.join(" • ");
+
+  const pilotComment = buildPilotComment({
+    semaphore,
+    expectedClimb,
+    lcl,
+    cloudBaseMSL,
+    thermalStart,
+    thermalMax,
+    thermalEnd,
+    wind,
+    crosswindAbs,
+    skyType,
+    xcPotential,
+    operationalRisk,
+    hasRain,
+    hasStorm,
+    hasOvercast,
+    hasStrongWind,
+  });
 
   return (
     <main className="container">
@@ -720,6 +972,16 @@ export default async function Home() {
 
       <div className="summaryBox">{flightSummary}</div>
 
+      <div
+        className="card"
+        style={{
+          marginBottom: "16px",
+        }}
+      >
+        <h3>📝 Pilot comment</h3>
+        <p style={{ lineHeight: 1.6, color: "#dbe7fb" }}>{pilotComment}</p>
+      </div>
+
       <div className="grid">
         <div
           className="card"
@@ -728,14 +990,14 @@ export default async function Home() {
               semaphore.includes("GO") && !semaphore.includes("NO GO")
                 ? "1px solid rgba(34,197,94,0.35)"
                 : semaphore.includes("NO GO")
-                ? "1px solid rgba(239,68,68,0.35)"
-                : "1px solid rgba(250,204,21,0.35)",
+                  ? "1px solid rgba(239,68,68,0.35)"
+                  : "1px solid rgba(250,204,21,0.35)",
             boxShadow:
               semaphore.includes("GO") && !semaphore.includes("NO GO")
                 ? "0 0 0 1px rgba(34,197,94,0.08) inset"
                 : semaphore.includes("NO GO")
-                ? "0 0 0 1px rgba(239,68,68,0.08) inset"
-                : "0 0 0 1px rgba(250,204,21,0.08) inset",
+                  ? "0 0 0 1px rgba(239,68,68,0.08) inset"
+                  : "0 0 0 1px rgba(250,204,21,0.08) inset",
           }}
         >
           <h3>
@@ -921,9 +1183,7 @@ export default async function Home() {
               </g>
 
               <g
-                transform={`rotate(${
-                  (Math.round(windDirection) + 180) % 360
-                } 160 110)`}
+                transform={`rotate(${(Math.round(windDirection) + 180) % 360} 160 110)`}
               >
                 <line
                   x1="160"
