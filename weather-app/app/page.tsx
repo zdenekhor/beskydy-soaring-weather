@@ -207,6 +207,14 @@ type Translation = {
   sunset: string;
 
   surface: string;
+
+  outsideVfrDay: string;
+  outsideVfrNote: string;
+  metarSource: string;
+  modelSource: string;
+  windSource: string;
+  metarUnavailable: string;
+  metarAvailable: string;
 };
 
 const FIELD_ELEVATION_MSL = 439;
@@ -383,6 +391,15 @@ const translations: Record<Lang, Translation> = {
     sunset: "Západ slunce",
 
     surface: "Přízemí",
+
+    outsideVfrDay: "🔴 Mimo VFR den",
+    outsideVfrNote:
+      "Mimo VFR den — po západu slunce nebo před východem slunce nelze běžné VFR plachtění provádět.",
+    metarSource: "METAR LKFR",
+    modelSource: "MODEL",
+    windSource: "Zdroj větru",
+    metarUnavailable: "METAR LKFR je nedostupný, použit model.",
+    metarAvailable: "METAR LKFR je dostupný.",
   },
 
   en: {
@@ -554,6 +571,15 @@ const translations: Record<Lang, Translation> = {
     sunset: "Sunset",
 
     surface: "Surface",
+
+    outsideVfrDay: "🔴 Outside VFR day",
+    outsideVfrNote:
+      "Outside VFR day — normal VFR soaring is not possible after sunset or before sunrise.",
+    metarSource: "METAR LKFR",
+    modelSource: "MODEL",
+    windSource: "Wind source",
+    metarUnavailable: "METAR LKFR unavailable, using model.",
+    metarAvailable: "METAR LKFR available.",
   },
 };
 
@@ -647,17 +673,16 @@ async function getMetarWind(icao: string) {
 }
 
 function getWindArrow(deg: number) {
-  const corrected = (deg + 180) % 360;
+  const normalized = ((deg % 360) + 360) % 360;
 
-  if (corrected >= 337 || corrected < 22) return "⬆";
-  if (corrected < 67) return "↗";
-  if (corrected < 112) return "➡";
-  if (corrected < 157) return "↘";
-  if (corrected < 202) return "⬇";
-  if (corrected < 247) return "↙";
-  if (corrected < 292) return "⬅";
-  if (corrected < 337) return "↖";
-  return "•";
+  if (normalized >= 337 || normalized < 22) return "⬆";
+  if (normalized < 67) return "↗";
+  if (normalized < 112) return "➡";
+  if (normalized < 157) return "↘";
+  if (normalized < 202) return "⬇";
+  if (normalized < 247) return "↙";
+  if (normalized < 292) return "⬅";
+  return "↖";
 }
 
 function kmhToKt(value: number | undefined) {
@@ -893,6 +918,7 @@ function buildPilotComment(params: {
   hasOvercast: boolean;
   hasStrongWind: boolean;
   t: Translation;
+  isWithinVfrDay: boolean;
 }) {
   const {
     semaphore,
@@ -911,7 +937,12 @@ function buildPilotComment(params: {
     hasOvercast,
     hasStrongWind,
     t,
+    isWithinVfrDay,
   } = params;
+
+  if (!isWithinVfrDay) {
+    return t.outsideVfrNote;
+  }
 
   const parts: string[] = [];
 
@@ -1005,6 +1036,7 @@ export default async function Home({
 
   const data = await getWeather();
   const metarWind = await getMetarWind("LKFR");
+  const hasMetar = !!metarWind;
 
   const now = new Date();
 
@@ -1079,6 +1111,7 @@ export default async function Home({
   const wind = metarWind?.speedKt ?? modelWind;
   const windDirection = metarWind?.directionDeg ?? modelWindDirection;
   const windArrow = getWindArrow(windDirection);
+  const windSourceLabel = hasMetar ? t.metarSource : t.modelSource;
 
   const runwayHeading = 84;
   const runwayRotation = runwayHeading - 90;
@@ -1213,7 +1246,14 @@ export default async function Home({
     data.hourly.wind_direction_700hPa?.map((v: number) => Math.round(v)) ??
     Array(hours.length).fill(0);
 
-  const soaringIndex = Math.round(
+  const forecastTs = new Date(data.hourly.time[currentIndex]).getTime();
+  const isWithinVfrDay =
+    sunriseTime !== null &&
+    sunsetTime !== null &&
+    forecastTs >= sunriseTime.getTime() &&
+    forecastTs <= sunsetTime.getTime();
+
+  const soaringIndexRaw = Math.round(
     clamp(
       effectiveThermalScore * 0.75 +
         clamp(lcl / 20, 0, 20) -
@@ -1223,10 +1263,13 @@ export default async function Home({
     )
   );
 
+  const displayedSoaringIndex = isWithinVfrDay ? soaringIndexRaw : 0;
+
   let soaringRating = t.poor;
-  if (soaringIndex > 30) soaringRating = t.weakDay;
-  if (soaringIndex > 50) soaringRating = t.goodDay;
-  if (soaringIndex > 70) soaringRating = t.xcDay;
+  if (soaringIndexRaw > 30) soaringRating = t.weakDay;
+  if (soaringIndexRaw > 50) soaringRating = t.goodDay;
+  if (soaringIndexRaw > 70) soaringRating = t.xcDay;
+  if (!isWithinVfrDay) soaringRating = t.outsideVfrDay;
 
   let climbRating = t.weak;
   if (expectedClimb > 1.2) climbRating = t.usable;
@@ -1382,6 +1425,9 @@ export default async function Home({
   } else if (effectiveThermalScore < 30 || operationalRisk >= 60) {
     flyingCondition = t.flyingPoor;
   }
+  if (!isWithinVfrDay) {
+    flyingCondition = t.outsideVfrDay;
+  }
 
   let xcPotential = t.low;
   if (effectiveThermalScore >= 40 && lcl > 900) xcPotential = t.moderate;
@@ -1396,12 +1442,19 @@ export default async function Home({
   ) {
     xcPotential = t.xcPotentialDay;
   }
+  if (!isWithinVfrDay) {
+    xcPotential = t.low;
+  }
 
   let semaphore = t.caution;
   let semaphoreClass = "badgeYellow";
   let semaphoreNote = t.semaphoreCautionNote;
 
-  if (
+  if (!isWithinVfrDay) {
+    semaphore = t.noGo;
+    semaphoreClass = "badgeRed";
+    semaphoreNote = t.outsideVfrNote;
+  } else if (
     operationalRisk >= 70 ||
     lcl < 350 ||
     crosswindAbs > 18 ||
@@ -1437,9 +1490,9 @@ export default async function Home({
   if (expectedClimb > 3.0) climbClass = "badgeBlue";
 
   let soaringClass = "badgeRed";
-  if (soaringIndex > 30) soaringClass = "badgeYellow";
-  if (soaringIndex > 50) soaringClass = "badgeGreen";
-  if (soaringIndex > 70) soaringClass = "badgeBlue";
+  if (displayedSoaringIndex > 30) soaringClass = "badgeYellow";
+  if (displayedSoaringIndex > 50) soaringClass = "badgeGreen";
+  if (displayedSoaringIndex > 70) soaringClass = "badgeBlue";
 
   let flyingClass = "badgeYellow";
   if (flyingCondition.includes("🟢")) flyingClass = "badgeGreen";
@@ -1463,7 +1516,9 @@ export default async function Home({
     summaryParts.push(t.summaryXc);
   }
 
-  const flightSummary = summaryParts.join(" • ");
+  const flightSummary = !isWithinVfrDay
+    ? t.outsideVfrNote
+    : summaryParts.join(" • ");
 
   const pilotComment = buildPilotComment({
     semaphore,
@@ -1482,6 +1537,7 @@ export default async function Home({
     hasOvercast,
     hasStrongWind,
     t,
+    isWithinVfrDay,
   });
 
   const topStatusBg = semaphore.includes("NO GO")
@@ -1552,6 +1608,46 @@ export default async function Home({
         {forecastTimeLabel} • {t.version} {APP_VERSION} • {t.appUpdate}{" "}
         {APP_UPDATED}
       </p>
+
+      <div
+        style={{
+          marginBottom: "14px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "8px",
+        }}
+      >
+        <span
+          style={{
+            padding: "7px 11px",
+            borderRadius: "999px",
+            background: hasMetar
+              ? "rgba(34,197,94,0.16)"
+              : "rgba(239,68,68,0.16)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "#e5eefc",
+            fontWeight: 600,
+            fontSize: "0.85rem",
+          }}
+        >
+          {t.windSource}: {windSourceLabel}
+        </span>
+
+        <span
+          style={{
+            padding: "7px 11px",
+            borderRadius: "999px",
+            background: hasMetar
+              ? "rgba(34,197,94,0.10)"
+              : "rgba(249,115,22,0.14)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "#e5eefc",
+            fontSize: "0.85rem",
+          }}
+        >
+          {hasMetar ? t.metarAvailable : t.metarUnavailable}
+        </span>
+      </div>
 
       <div
         className="card"
@@ -1647,6 +1743,9 @@ export default async function Home({
               <div style={{ color: "#dbe7fb" }}>
                 {Math.round(windDirection)}° {windArrow}
               </div>
+              <div style={{ marginTop: "4px", fontSize: "0.8rem", color: "#cbd5e1" }}>
+                {windSourceLabel}
+              </div>
             </div>
 
             <div
@@ -1731,7 +1830,7 @@ export default async function Home({
           <h3>
             <Gauge size={18} /> {t.soaringIndex}
           </h3>
-          <p className="big">{soaringIndex}</p>
+          <p className="big">{displayedSoaringIndex}</p>
           <p className={soaringClass}>{soaringRating}</p>
         </div>
 
@@ -1842,7 +1941,8 @@ export default async function Home({
             <Wind size={18} /> {t.windProfile}
           </h3>
           <p>
-            {t.surface}: {wind} kt {windArrow} ({Math.round(windDirection)}°)
+            {t.surface}: {wind} kt {windArrow} ({Math.round(windDirection)}°) •{" "}
+            {windSourceLabel}
           </p>
           <p>
             850 hPa: {wind850} kt {wind850Arrow} ({Math.round(wind850Dir)}°)
@@ -1893,9 +1993,7 @@ export default async function Home({
                 </text>
               </g>
 
-              <g
-                transform={`rotate(${(Math.round(windDirection) + 180) % 360} 160 110)`}
-              >
+              <g transform={`rotate(${Math.round(windDirection)} 160 110)`}>
                 <line
                   x1="160"
                   y1="30"
@@ -1921,6 +2019,14 @@ export default async function Home({
               <strong>{t.wind}:</strong> {Math.round(windDirection)}° / {wind} kt
             </div>
             <div>
+              <strong>{t.windSource}:</strong> {windSourceLabel}
+            </div>
+            {!hasMetar && (
+              <div>
+                <strong>Info:</strong> {t.metarUnavailable}
+              </div>
+            )}
+            <div>
               <strong>{headwind >= 0 ? t.headwind : t.tailwind}:</strong>{" "}
               {Math.abs(headwind)} kt
             </div>
@@ -1941,7 +2047,7 @@ export default async function Home({
             {t.dewPoint}: {dewpoint.toFixed(1)} °C
           </p>
           <p>
-            {t.wind}: {wind} kt {metarWind ? "(METAR)" : "(model)"}
+            {t.wind}: {wind} kt ({windSourceLabel})
           </p>
           <p>
             {t.clouds}: {clouds} %
@@ -1960,6 +2066,14 @@ export default async function Home({
         <div className="card">
           <h3>{t.metarInfo}</h3>
           <p>{t.checkCurrentWeather}</p>
+          <p style={{ color: "#cbd5e1", marginTop: "8px" }}>
+            {hasMetar ? t.metarAvailable : t.metarUnavailable}
+          </p>
+          {hasMetar && metarWind?.rawText ? (
+            <p style={{ color: "#dbe7fb", fontSize: "0.85rem" }}>
+              <strong>RAW:</strong> {metarWind.rawText}
+            </p>
+          ) : null}
           <div
             style={{
               display: "flex",
