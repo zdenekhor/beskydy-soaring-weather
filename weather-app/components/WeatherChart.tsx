@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,24 +16,24 @@ import { Line } from "react-chartjs-2";
 const hoverVerticalLinePlugin = {
   id: "hoverVerticalLine",
   afterDraw: (chart: any) => {
-    if (chart.tooltip?._active?.length) {
-      const ctx = chart.ctx;
-      const activePoint = chart.tooltip._active[0];
-      const x = activePoint.element.x;
+    if (!chart?.tooltip?._active?.length) return;
 
-      const topY = chart.chartArea.top;
-      const bottomY = chart.chartArea.bottom;
+    const ctx = chart.ctx;
+    const activePoint = chart.tooltip._active[0];
+    const x = activePoint.element.x;
 
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(x, topY);
-      ctx.lineTo(x, bottomY);
-      ctx.lineWidth = 1.2;
-      ctx.strokeStyle = "rgba(255,255,255,0.35)";
-      ctx.setLineDash([5, 4]);
-      ctx.stroke();
-      ctx.restore();
-    }
+    const topY = chart.chartArea.top;
+    const bottomY = chart.chartArea.bottom;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, topY);
+    ctx.lineTo(x, bottomY);
+    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    ctx.setLineDash([5, 4]);
+    ctx.stroke();
+    ctx.restore();
   },
 };
 
@@ -46,8 +46,8 @@ const vfrWindowPlugin = {
     if (sunriseIndex < 0 || sunsetIndex < 0) return;
 
     const { ctx, chartArea, scales } = chart;
-    const xScale = scales.x;
-    if (!xScale) return;
+    const xScale = scales?.x;
+    if (!xScale || !chartArea) return;
 
     const left = xScale.getPixelForValue(sunriseIndex);
     const right = xScale.getPixelForValue(sunsetIndex);
@@ -66,8 +66,8 @@ const sunMarkersPlugin = {
   id: "sunMarkers",
   afterDraw: (chart: any, _args: any, pluginOptions: any) => {
     const { ctx, chartArea, scales } = chart;
-    const xScale = scales.x;
-    if (!xScale) return;
+    const xScale = scales?.x;
+    if (!xScale || !chartArea) return;
 
     const drawMarker = (
       index: number,
@@ -126,8 +126,8 @@ const currentHourPlugin = {
     if (currentIndex < 0) return;
 
     const { ctx, chartArea, scales } = chart;
-    const xScale = scales.x;
-    if (!xScale) return;
+    const xScale = scales?.x;
+    if (!xScale || !chartArea) return;
 
     const x = xScale.getPixelForValue(currentIndex);
 
@@ -167,8 +167,8 @@ const windDirectionRowsPlugin = {
   id: "windDirectionRows",
   afterDraw: (chart: any, _args: any, pluginOptions: any) => {
     const { ctx, chartArea, scales } = chart;
-    const xScale = scales.x;
-    if (!xScale) return;
+    const xScale = scales?.x;
+    if (!xScale || !chartArea) return;
 
     const windSurfaceDir: number[] = pluginOptions?.windSurfaceDir ?? [];
     const wind850Dir: number[] = pluginOptions?.wind850Dir ?? [];
@@ -277,6 +277,12 @@ function findNearestLabelIndex(labels: string[], timeHHMM: string) {
   return bestIndex;
 }
 
+function maxOf(values: number[], fallback: number) {
+  const valid = values.filter((v) => Number.isFinite(v));
+  if (!valid.length) return fallback;
+  return Math.max(...valid);
+}
+
 export default function WeatherChart({ data }: WeatherChartProps) {
   const totalDays = Math.max(1, Math.ceil(data.labels.length / 24));
   const currentDayFromIndex = Math.floor(data.currentIndex / 24);
@@ -346,6 +352,23 @@ export default function WeatherChart({ data }: WeatherChartProps) {
 
   const currentIndexInDay =
     selectedDay === currentDayFromIndex ? data.currentIndex % 24 : -1;
+
+  const lclMax = Math.max(1200, Math.ceil(maxOf(sliced.lcl, 1200) / 200) * 200);
+  const thermalMax = Math.max(
+    2.5,
+    Math.ceil(maxOf(sliced.thermal, 2.5) / 0.5) * 0.5
+  );
+  const tempMin = Math.floor(Math.min(...sliced.temperature, 0) - 2);
+  const tempMax = Math.ceil(Math.max(...sliced.temperature, 20) + 2);
+  const windMax = Math.max(
+    15,
+    Math.ceil(
+      maxOf(
+        [...sliced.windSurface, ...sliced.wind850, ...sliced.wind700],
+        15
+      ) / 5
+    ) * 5
+  );
 
   const chartData = {
     labels: sliced.labels,
@@ -430,6 +453,8 @@ export default function WeatherChart({ data }: WeatherChartProps) {
   const options: any = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: false,
+    normalized: true,
     layout: {
       padding: {
         top: isMobile ? 46 : 58,
@@ -498,7 +523,10 @@ export default function WeatherChart({ data }: WeatherChartProps) {
             "Wind 700 hPa": 5,
           };
 
-          return (order[a.dataset.label ?? ""] ?? 99) - (order[b.dataset.label ?? ""] ?? 99);
+          return (
+            (order[a.dataset.label ?? ""] ?? 99) -
+            (order[b.dataset.label ?? ""] ?? 99)
+          );
         },
       },
       vfrWindow: {
@@ -541,11 +569,11 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       y: {
         type: "linear",
         position: "left",
-        title: {
-          display: false,
-        },
+        min: 0,
+        max: lclMax,
         ticks: {
           color: cloudColor,
+          stepSize: lclMax <= 1600 ? 200 : 400,
           font: {
             size: isMobile ? 9 : 11,
           },
@@ -560,11 +588,11 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       y1: {
         type: "linear",
         position: "right",
-        title: {
-          display: false,
-        },
+        min: 0,
+        max: thermalMax,
         ticks: {
           color: thermalColor,
+          stepSize: 0.5,
           font: {
             size: isMobile ? 9 : 11,
           },
@@ -580,10 +608,9 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         type: "linear",
         position: "right",
         display: false,
+        min: tempMin,
+        max: tempMax,
         ticks: {
-          display: false,
-        },
-        title: {
           display: false,
         },
         border: {
@@ -598,11 +625,11 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         type: "linear",
         position: "right",
         offset: true,
-        title: {
-          display: false,
-        },
+        min: 0,
+        max: windMax,
         ticks: {
           color: windSurfaceColor,
+          stepSize: 5,
           font: {
             size: isMobile ? 9 : 11,
           },
@@ -620,7 +647,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
   const legendItemStyle = (
     active: boolean,
     color: string
-  ): React.CSSProperties => ({
+  ): CSSProperties => ({
     color: active ? color : inactiveColor,
     cursor: "pointer",
     userSelect: "none",
