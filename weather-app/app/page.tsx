@@ -8,7 +8,6 @@ import {
   Thermometer,
   ArrowUp,
   MapPinned,
-  AlertTriangle,
 } from "lucide-react";
 
 type ForecastData = {
@@ -998,9 +997,10 @@ function buildPilotComment(params: {
 export default async function Home({
   searchParams,
 }: {
-  searchParams?: { lang?: string };
+  searchParams: Promise<{ lang?: string }>;
 }) {
-  const lang: Lang = searchParams?.lang === "en" ? "en" : "cs";
+  const params = await searchParams;
+  const lang: Lang = params?.lang === "en" ? "en" : "cs";
   const t = translations[lang];
 
   const data = await getWeather();
@@ -1515,7 +1515,7 @@ export default async function Home({
           </span>
 
           <Link
-            href="?lang=cs"
+            href={{ pathname: "/", query: { lang: "cs" } }}
             style={{
               padding: "4px 8px",
               borderRadius: "8px",
@@ -1529,7 +1529,7 @@ export default async function Home({
           </Link>
 
           <Link
-            href="?lang=en"
+            href={{ pathname: "/", query: { lang: "en" } }}
             style={{
               padding: "4px 8px",
               borderRadius: "8px",
