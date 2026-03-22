@@ -75,9 +75,7 @@ async function getWeather(): Promise<ForecastData> {
     `&forecast_days=3` +
     `&timezone=auto`;
 
-  const res = await fetch(url, {
-    cache: "no-store",
-  });
+  const res = await fetch(url, { cache: "no-store" });
 
   if (!res.ok) {
     const text = await res.text();
@@ -112,15 +110,15 @@ async function getMetarWind(icao: string) {
       typeof dirRaw === "number"
         ? dirRaw
         : typeof dirRaw === "string" && dirRaw !== "VRB"
-          ? Number(dirRaw)
-          : 0;
+        ? Number(dirRaw)
+        : 0;
 
     const speedKt =
       typeof spdRaw === "number"
         ? spdRaw
         : typeof spdRaw === "string"
-          ? Number(spdRaw)
-          : 0;
+        ? Number(spdRaw)
+        : 0;
 
     return {
       speedKt: Number.isFinite(speedKt) ? speedKt : 0,
@@ -217,11 +215,9 @@ function rawThermalPotential(
   thermalTop: number
 ) {
   let score = 0;
-
   score += clamp(spread * 5, 0, 30);
   score += clamp((radiation - 120) / 10, 0, 35);
   score += clamp((thermalTop - 1100) / 30, 0, 35);
-
   return clamp(score, 0, 100);
 }
 
@@ -233,23 +229,12 @@ function cloudSuppressionFactor(
   spread: number
 ) {
   const isConvectiveCloudField =
-    low >= 20 &&
-    low <= 85 &&
-    radiation >= 250 &&
-    spread >= 3;
+    low >= 20 && low <= 85 && radiation >= 250 && spread >= 3;
 
-  let penalty =
-    low * 0.0065 +
-    mid * 0.0025 +
-    high * 0.0015;
+  let penalty = low * 0.0065 + mid * 0.0025 + high * 0.0015;
 
-  if (isConvectiveCloudField) {
-    penalty -= 0.12;
-  }
-
-  if (low > 85 && radiation < 180) {
-    penalty += 0.2;
-  }
+  if (isConvectiveCloudField) penalty -= 0.12;
+  if (low > 85 && radiation < 180) penalty += 0.2;
 
   return clamp(1 - penalty, 0.12, 1);
 }
@@ -303,24 +288,12 @@ function detectSkyType(params: {
   spread: number;
   lcl: number;
 }) {
-  const { cloudLow, cloudMid, cloudHigh, clouds, radiation, spread, lcl } =
-    params;
+  const { cloudLow, cloudMid, clouds, radiation, spread, lcl } = params;
 
-  const isOvercast =
-    cloudLow > 80 &&
-    radiation < 180 &&
-    spread < 7;
-
-  const isLowOvercast =
-    cloudLow > 75 &&
-    radiation < 160;
-
+  const isOvercast = cloudLow > 80 && radiation < 180 && spread < 7;
+  const isLowOvercast = cloudLow > 75 && radiation < 160;
   const isBlueDay =
-    radiation >= 430 &&
-    spread >= 6 &&
-    cloudLow < 20 &&
-    cloudMid < 25;
-
+    radiation >= 430 && spread >= 6 && cloudLow < 20 && cloudMid < 25;
   const isCuDay =
     cloudLow >= 20 &&
     cloudLow <= 85 &&
@@ -328,12 +301,8 @@ function detectSkyType(params: {
     spread >= 3.5 &&
     lcl >= 700 &&
     !(cloudLow > 80 && radiation < 180);
-
   const isUsableThermalSky =
-    radiation >= 220 &&
-    spread >= 3 &&
-    lcl >= 600 &&
-    !isOvercast;
+    radiation >= 220 && spread >= 3 && lcl >= 600 && !isOvercast;
 
   if (isLowOvercast) {
     return {
@@ -392,7 +361,6 @@ function buildPilotComment(params: {
   semaphore: string;
   expectedClimb: number;
   lcl: number;
-  cloudBaseMSL: number;
   thermalStart: string;
   thermalMax: string;
   thermalEnd: string;
@@ -410,7 +378,6 @@ function buildPilotComment(params: {
     semaphore,
     expectedClimb,
     lcl,
-    cloudBaseMSL,
     thermalStart,
     thermalMax,
     thermalEnd,
@@ -531,7 +498,6 @@ export default async function Home() {
 
   const sunriseRaw =
     dailyIndex >= 0 ? data.daily.sunrise[dailyIndex] : data.daily.sunrise[0];
-
   const sunsetRaw =
     dailyIndex >= 0 ? data.daily.sunset[dailyIndex] : data.daily.sunset[0];
 
@@ -646,11 +612,6 @@ export default async function Home() {
     estimateClimbFromScore(effectiveThermalScore).toFixed(1)
   );
 
-  let climbRating = "🔴 Weak";
-  if (expectedClimb > 1.2) climbRating = "🟡 Usable";
-  if (expectedClimb > 2.0) climbRating = "🟢 Good";
-  if (expectedClimb > 3.0) climbRating = "🔵 Strong";
-
   const thermalDrift = Math.round(wind * 0.4 + wind850 * 0.6);
 
   const lclArray = data.hourly.temperature_2m.map((temp: number, i: number) => {
@@ -736,6 +697,11 @@ export default async function Home() {
   if (soaringIndex > 50) soaringRating = "🟢 Good";
   if (soaringIndex > 70) soaringRating = "🔵 XC day";
 
+  let climbRating = "🔴 Weak";
+  if (expectedClimb > 1.2) climbRating = "🟡 Usable";
+  if (expectedClimb > 2.0) climbRating = "🟢 Good";
+  if (expectedClimb > 3.0) climbRating = "🔵 Strong";
+
   const THERMAL_THRESHOLD = 1.2;
 
   const sunriseTs = sunriseTime ? sunriseTime.getTime() : null;
@@ -761,7 +727,6 @@ export default async function Home() {
 
   let thermalMaxIndex = -1;
   let bestThermalValue = -1;
-
   for (const i of vfrIndices) {
     if (thermalArray[i] > bestThermalValue) {
       bestThermalValue = thermalArray[i];
@@ -791,9 +756,6 @@ export default async function Home() {
     spread,
     lcl,
   });
-
-  const skyType = sky.label;
-  const skyTypeClass = sky.className;
 
   const hazards: { icon: string; label: string; type: string; severity: number }[] = [];
 
@@ -853,12 +815,9 @@ export default async function Home() {
   }
 
   let xcPotential = "Low";
-  if (effectiveThermalScore >= 40 && lcl > 900) {
-    xcPotential = "Moderate";
-  }
-  if (effectiveThermalScore >= 60 && lcl > 1200 && operationalRisk < 40) {
+  if (effectiveThermalScore >= 40 && lcl > 900) xcPotential = "Moderate";
+  if (effectiveThermalScore >= 60 && lcl > 1200 && operationalRisk < 40)
     xcPotential = "Good";
-  }
   if (
     effectiveThermalScore >= 75 &&
     lcl > 1500 &&
@@ -866,6 +825,31 @@ export default async function Home() {
     operationalRisk < 30
   ) {
     xcPotential = "XC day";
+  }
+
+  let semaphore = "🟡 CAUTION";
+  let semaphoreClass = "badgeYellow";
+  let semaphoreNote = "Check wind, cloud base and current development.";
+
+  if (
+    operationalRisk >= 70 ||
+    lcl < 350 ||
+    crosswindAbs > 18 ||
+    hasStorm ||
+    hasIce ||
+    hasSnow
+  ) {
+    semaphore = "🔴 NO GO";
+    semaphoreClass = "badgeRed";
+    semaphoreNote = "Unsafe or unsuitable conditions for normal soaring.";
+  } else if (
+    effectiveThermalScore >= 60 &&
+    operationalRisk < 35 &&
+    lcl > 800
+  ) {
+    semaphore = "🟢 GO";
+    semaphoreClass = "badgeGreen";
+    semaphoreNote = "Favourable soaring setup with manageable risk.";
   }
 
   const forecastTimeLabel = data.hourly.time[currentIndex]
@@ -896,40 +880,10 @@ export default async function Home() {
   if (xcPotential === "Good") xcClass = "badgeGreen";
   if (xcPotential === "XC day") xcClass = "badgeBlue";
 
-  let semaphore = "🟡 CAUTION";
-  let semaphoreClass = "badgeYellow";
-  let semaphoreNote = "Check wind, cloud base and current development.";
-
-  if (
-    operationalRisk >= 70 ||
-    lcl < 350 ||
-    crosswindAbs > 18 ||
-    hasStorm ||
-    hasIce ||
-    hasSnow
-  ) {
-    semaphore = "🔴 NO GO";
-    semaphoreClass = "badgeRed";
-    semaphoreNote = "Unsafe or unsuitable conditions for normal soaring.";
-  } else if (
-    effectiveThermalScore >= 60 &&
-    operationalRisk < 35 &&
-    lcl > 800
-  ) {
-    semaphore = "🟢 GO";
-    semaphoreClass = "badgeGreen";
-    semaphoreNote = "Favourable soaring setup with manageable risk.";
-  }
-
   const summaryParts: string[] = [];
-
-  if (effectiveThermalScore < 30) {
-    summaryParts.push("Weak soaring day");
-  } else if (effectiveThermalScore < 60) {
-    summaryParts.push("Moderate thermals");
-  } else {
-    summaryParts.push("Good soaring day");
-  }
+  if (effectiveThermalScore < 30) summaryParts.push("Weak soaring day");
+  else if (effectiveThermalScore < 60) summaryParts.push("Moderate thermals");
+  else summaryParts.push("Good soaring day");
 
   if (lcl < 600) summaryParts.push("Low base");
   if (sky.overcast) summaryParts.push("Overcast risk");
@@ -945,13 +899,12 @@ export default async function Home() {
     semaphore,
     expectedClimb,
     lcl,
-    cloudBaseMSL,
     thermalStart,
     thermalMax,
     thermalEnd,
     wind,
     crosswindAbs,
-    skyType,
+    skyType: sky.label,
     xcPotential,
     operationalRisk,
     hasRain,
@@ -959,6 +912,12 @@ export default async function Home() {
     hasOvercast,
     hasStrongWind,
   });
+
+  const topStatusBg = semaphore.includes("NO GO")
+    ? "linear-gradient(135deg, rgba(127,29,29,0.92), rgba(69,10,10,0.96))"
+    : semaphore.includes("GO")
+    ? "linear-gradient(135deg, rgba(20,83,45,0.92), rgba(5,46,22,0.96))"
+    : "linear-gradient(135deg, rgba(120,53,15,0.92), rgba(68,35,6,0.96))";
 
   return (
     <main className="container">
@@ -970,108 +929,138 @@ export default async function Home() {
         {forecastTimeLabel} • Version {APP_VERSION} • App update {APP_UPDATED}
       </p>
 
-      <div className="summaryBox">{flightSummary}</div>
+      <div
+        className="card"
+        style={{
+          background: topStatusBg,
+          border: "1px solid rgba(255,255,255,0.12)",
+          marginBottom: "18px",
+          padding: "18px",
+          borderRadius: "18px",
+          boxShadow: "0 14px 34px rgba(0,0,0,0.24)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: "16px",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "0.82rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                opacity: 0.78,
+                marginBottom: "6px",
+              }}
+            >
+              Flight semaphore
+            </div>
+            <div
+              className={semaphoreClass}
+              style={{
+                fontSize: "2rem",
+                fontWeight: 800,
+                lineHeight: 1.1,
+              }}
+            >
+              {semaphore}
+            </div>
+            <div style={{ marginTop: "8px", color: "#dbe7fb" }}>
+              {semaphoreNote}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+              gap: "12px",
+              flex: 1,
+              minWidth: "280px",
+            }}
+          >
+            <div
+              style={{
+                background: "rgba(255,255,255,0.09)",
+                borderRadius: "14px",
+                padding: "12px",
+              }}
+            >
+              <div style={{ fontSize: "0.78rem", opacity: 0.8 }}>Climb</div>
+              <div style={{ fontSize: "1.7rem", fontWeight: 800 }}>
+                {expectedClimb} m/s
+              </div>
+              <div className={climbClass}>{climbRating}</div>
+            </div>
+
+            <div
+              style={{
+                background: "rgba(255,255,255,0.09)",
+                borderRadius: "14px",
+                padding: "12px",
+              }}
+            >
+              <div style={{ fontSize: "0.78rem", opacity: 0.8 }}>Base AGL</div>
+              <div style={{ fontSize: "1.7rem", fontWeight: 800 }}>{lcl} m</div>
+              <div className={sky.className}>{sky.label}</div>
+            </div>
+
+            <div
+              style={{
+                background: "rgba(255,255,255,0.09)",
+                borderRadius: "14px",
+                padding: "12px",
+              }}
+            >
+              <div style={{ fontSize: "0.78rem", opacity: 0.8 }}>Wind</div>
+              <div style={{ fontSize: "1.7rem", fontWeight: 800 }}>{wind} kt</div>
+              <div style={{ color: "#dbe7fb" }}>
+                {Math.round(windDirection)}° {windArrow}
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "rgba(255,255,255,0.09)",
+                borderRadius: "14px",
+                padding: "12px",
+              }}
+            >
+              <div style={{ fontSize: "0.78rem", opacity: 0.8 }}>XC</div>
+              <div style={{ fontSize: "1.3rem", fontWeight: 800 }}>
+                {xcPotential}
+              </div>
+              <div className={xcClass}>Potential</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="summaryBox" style={{ marginBottom: "16px" }}>
+        {flightSummary}
+      </div>
 
       <div
         className="card"
         style={{
-          marginBottom: "16px",
+          marginBottom: "18px",
+          borderLeft: "4px solid rgba(96,165,250,0.9)",
+          background: "rgba(15,23,42,0.88)",
         }}
       >
-        <h3>📝 Pilot comment</h3>
-        <p style={{ lineHeight: 1.6, color: "#dbe7fb" }}>{pilotComment}</p>
+        <h3 style={{ marginBottom: "10px" }}>📝 Pilot comment</h3>
+        <p style={{ lineHeight: 1.7, color: "#dbe7fb", margin: 0 }}>
+          {pilotComment}
+        </p>
       </div>
 
-      <div className="grid">
-        <div
-          className="card"
-          style={{
-            border:
-              semaphore.includes("GO") && !semaphore.includes("NO GO")
-                ? "1px solid rgba(34,197,94,0.35)"
-                : semaphore.includes("NO GO")
-                  ? "1px solid rgba(239,68,68,0.35)"
-                  : "1px solid rgba(250,204,21,0.35)",
-            boxShadow:
-              semaphore.includes("GO") && !semaphore.includes("NO GO")
-                ? "0 0 0 1px rgba(34,197,94,0.08) inset"
-                : semaphore.includes("NO GO")
-                  ? "0 0 0 1px rgba(239,68,68,0.08) inset"
-                  : "0 0 0 1px rgba(250,204,21,0.08) inset",
-          }}
-        >
-          <h3>
-            <AlertTriangle size={18} /> Flight semaphore
-          </h3>
-          <p
-            className={`big ${semaphoreClass}`}
-            style={{ fontSize: "1.35rem", fontWeight: 700 }}
-          >
-            {semaphore}
-          </p>
-          <p className="small">{semaphoreNote}</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Wind size={18} /> Thermal drift
-          </h3>
-          <p className="big">{thermalDrift} kt</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Cloud size={18} /> Sky type
-          </h3>
-          <p className={`big ${skyTypeClass}`}>{skyType}</p>
-          <p className="small">thermal sky estimate</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Thermometer size={18} /> Weather
-          </h3>
-          <p>Temperature: {temperature.toFixed(1)} °C</p>
-          <p>Dew point: {dewpoint.toFixed(1)} °C</p>
-          <p>Wind: {wind} kt {metarWind ? "(METAR)" : "(model)"}</p>
-          <p>Clouds: {clouds} %</p>
-          <p>Low / Mid / High: {cloudLow} / {cloudMid} / {cloudHigh} %</p>
-          <p>Sun heating: {Math.round(radiation)} W/m²</p>
-          <p>Precipitation: {precipitation.toFixed(1)} mm</p>
-        </div>
-
-        <div className="card">
-          <h3>METAR / Info</h3>
-          <p>Check current LKFR weather information</p>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              marginTop: "10px",
-            }}
-          >
-            <a
-              href="https://metar-taf.com/metar/LKFR"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="briefingLink"
-            >
-              Open METAR / TAF
-            </a>
-
-            <a
-              href="https://www.akfrydlant.cz/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="briefingLink"
-            >
-              Open LKFR website
-            </a>
-          </div>
-        </div>
-
+      <div className="grid" style={{ marginBottom: "18px" }}>
         <div className="card">
           <h3>⚠️ Weather risks</h3>
           {hazards.length === 0 ? (
@@ -1082,12 +1071,13 @@ export default async function Home() {
                 <span
                   key={`${h.type}-${i}`}
                   style={{
-                    padding: "6px 10px",
-                    borderRadius: "10px",
+                    padding: "7px 11px",
+                    borderRadius: "999px",
                     background: getHazardColor(h.type),
-                    fontSize: "0.85rem",
+                    fontSize: "0.86rem",
                     color: "#e5eefc",
                     border: "1px solid rgba(255,255,255,0.08)",
+                    fontWeight: 600,
                   }}
                 >
                   {h.icon} {h.label}
@@ -1095,6 +1085,70 @@ export default async function Home() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="card">
+          <h3>Best soaring window</h3>
+          <p>VFR day: {sunriseLabel} – {sunsetLabel}</p>
+          <p>Start: {thermalStart}</p>
+          <p>Peak: {thermalMax}</p>
+          <p>End: {thermalEnd}</p>
+        </div>
+
+        <div className="card">
+          <h3>
+            <Gauge size={18} /> Soaring index
+          </h3>
+          <p className="big">{soaringIndex}</p>
+          <p className={soaringClass}>{soaringRating}</p>
+        </div>
+
+        <div className="card">
+          <h3>
+            <Plane size={18} /> Flying conditions
+          </h3>
+          <p className={flyingClass}>{flyingCondition}</p>
+        </div>
+      </div>
+
+      <section className="chartSection" style={{ marginBottom: "18px" }}>
+        <div
+          className="chartCard"
+          style={{
+            borderRadius: "20px",
+            boxShadow: "0 16px 36px rgba(0,0,0,0.18)",
+          }}
+        >
+          <h3 style={{ marginBottom: "14px" }}>📈 Development during the day</h3>
+          <div className="chartWrap">
+            <WeatherChart
+              data={{
+                labels: hours,
+                lcl: lclArray,
+                thermal: thermalArray,
+                temperature: temperatureAll,
+                windSurface: windSurfaceAll,
+                wind850: wind850All,
+                wind700: wind700All,
+                windSurfaceDir: windSurfaceDirAll,
+                wind850Dir: wind850DirAll,
+                wind700Dir: wind700DirAll,
+                sunrise: data.daily.sunrise,
+                sunset: data.daily.sunset,
+                currentIndex,
+              }}
+            />
+          </div>
+        </div>
+      </section>
+
+      <div className="grid">
+        <div className="card">
+          <h3>
+            <Cloud size={18} /> Sky type
+          </h3>
+          <p className={`big ${sky.className}`}>{sky.label}</p>
+          <p className="small">thermal sky estimate</p>
         </div>
 
         <div className="card">
@@ -1114,6 +1168,28 @@ export default async function Home() {
 
         <div className="card">
           <h3>
+            <ArrowUp size={18} /> Thermal top
+          </h3>
+          <p className="big">{thermalTop} m</p>
+          <p className="small">heuristic</p>
+        </div>
+
+        <div className="card">
+          <h3>
+            <Wind size={18} /> Thermal drift
+          </h3>
+          <p className="big">{thermalDrift} kt</p>
+        </div>
+
+        <div className="card">
+          <h3>
+            <Thermometer size={18} /> Spread (T − Td)
+          </h3>
+          <p className="big">{spread.toFixed(1)} °C</p>
+        </div>
+
+        <div className="card">
+          <h3>
             <Wind size={18} /> Wind profile
           </h3>
           <p>
@@ -1125,17 +1201,6 @@ export default async function Home() {
           <p>
             700 hPa: {wind700} kt {wind700Arrow} ({Math.round(wind700Dir)}°)
           </p>
-        </div>
-
-        <div className="card">
-          <h3>🧭 Ground wind</h3>
-          <div className="groundWindMain">
-            <div className="groundWindSpeed">{wind} kt</div>
-            <div className="groundWindDir">{Math.round(windDirection)}°</div>
-          </div>
-          <div className="groundWindSub">
-            {metarWind ? "Live METAR wind from LKFR" : "Model surface wind"}
-          </div>
         </div>
 
         <div className="card runwayCard">
@@ -1164,7 +1229,6 @@ export default async function Home() {
                   rx="6"
                   className="runwayStrip"
                 />
-
                 <line
                   x1="75"
                   y1="110"
@@ -1172,11 +1236,9 @@ export default async function Home() {
                   y2="110"
                   className="runwayCenterMark"
                 />
-
                 <text x="82" y="85" className="runwayLabel">
                   08
                 </text>
-
                 <text x="238" y="85" className="runwayLabel">
                   26
                 </text>
@@ -1219,82 +1281,54 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className="card condition">
-          <h3>
-            <Plane size={18} /> Flying conditions
-          </h3>
-          <p className={flyingClass}>{flyingCondition}</p>
-        </div>
-
         <div className="card">
           <h3>
-            <Gauge size={18} /> Soaring index
+            <Thermometer size={18} /> Weather
           </h3>
-          <p className="big">{soaringIndex}</p>
-          <p className={soaringClass}>{soaringRating}</p>
+          <p>Temperature: {temperature.toFixed(1)} °C</p>
+          <p>Dew point: {dewpoint.toFixed(1)} °C</p>
+          <p>
+            Wind: {wind} kt {metarWind ? "(METAR)" : "(model)"}
+          </p>
+          <p>Clouds: {clouds} %</p>
+          <p>
+            Low / Mid / High: {cloudLow} / {cloudMid} / {cloudHigh} %
+          </p>
+          <p>Sun heating: {Math.round(radiation)} W/m²</p>
+          <p>Precipitation: {precipitation.toFixed(1)} mm</p>
         </div>
 
         <div className="card">
-          <h3>
-            <TrendingUp size={18} /> Expected climb
-          </h3>
-          <p className="big">{expectedClimb} m/s</p>
-          <p className={climbClass}>{climbRating}</p>
-        </div>
+          <h3>METAR / Info</h3>
+          <p>Check current LKFR weather information</p>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              marginTop: "10px",
+            }}
+          >
+            <a
+              href="https://metar-taf.com/metar/LKFR"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              Open METAR / TAF
+            </a>
 
-        <div className="card">
-          <h3>
-            <Thermometer size={18} /> Spread (T − Td)
-          </h3>
-          <p className="big">{spread.toFixed(1)} °C</p>
-        </div>
-
-        <div className="card">
-          <h3>Best soaring window</h3>
-          <p>VFR day: {sunriseLabel} – {sunsetLabel}</p>
-          <p>Start: {thermalStart}</p>
-          <p>Peak: {thermalMax}</p>
-          <p>End: {thermalEnd}</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <ArrowUp size={18} /> Thermal top
-          </h3>
-          <p className="big">{thermalTop} m</p>
-          <p className="small">heuristic</p>
-        </div>
-
-        <div className="card">
-          <h3>XC potential</h3>
-          <p className={`big ${xcClass}`}>{xcPotential}</p>
-        </div>
-      </div>
-
-      <section className="chartSection">
-        <div className="chartCard">
-          <h3>📈 Development during the day</h3>
-          <div className="chartWrap">
-            <WeatherChart
-              data={{
-                labels: hours,
-                lcl: lclArray,
-                thermal: thermalArray,
-                temperature: temperatureAll,
-                windSurface: windSurfaceAll,
-                wind850: wind850All,
-                wind700: wind700All,
-                windSurfaceDir: windSurfaceDirAll,
-                wind850Dir: wind850DirAll,
-                wind700Dir: wind700DirAll,
-                sunrise: data.daily.sunrise,
-                sunset: data.daily.sunset,
-                currentIndex,
-              }}
-            />
+            <a
+              href="https://www.akfrydlant.cz/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              Open LKFR website
+            </a>
           </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
