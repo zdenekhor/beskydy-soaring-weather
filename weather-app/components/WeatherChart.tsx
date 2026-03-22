@@ -21,7 +21,6 @@ const hoverVerticalLinePlugin = {
     const ctx = chart.ctx;
     const activePoint = chart.tooltip._active[0];
     const x = activePoint.element.x;
-
     const topY = chart.chartArea.top;
     const bottomY = chart.chartArea.bottom;
 
@@ -108,13 +107,13 @@ const sunMarkersPlugin = {
     drawMarker(
       pluginOptions?.sunriseIndex ?? -1,
       "rgba(251,191,36,0.95)",
-      "Sunrise"
+      pluginOptions?.sunriseLabel ?? "Sunrise"
     );
 
     drawMarker(
       pluginOptions?.sunsetIndex ?? -1,
       "rgba(148,163,184,0.95)",
-      "Sunset"
+      pluginOptions?.sunsetLabel ?? "Sunset"
     );
   },
 };
@@ -174,6 +173,7 @@ const windDirectionRowsPlugin = {
     const wind850Dir: number[] = pluginOptions?.wind850Dir ?? [];
     const wind700Dir: number[] = pluginOptions?.wind700Dir ?? [];
     const showEvery = pluginOptions?.showEvery ?? 2;
+    const sfcLabel = pluginOptions?.sfcLabel ?? "SFC";
 
     const drawRow = (
       dirs: number[],
@@ -202,7 +202,7 @@ const windDirectionRowsPlugin = {
     drawRow(
       windSurfaceDir,
       chartArea.top + 14,
-      "SFC",
+      sfcLabel,
       "rgba(239,68,68,0.95)"
     );
 
@@ -252,6 +252,21 @@ type WeatherChartProps = {
     sunset: string[];
     currentIndex: number;
   };
+  lang?: "cs" | "en";
+  labelsText?: {
+    today: string;
+    tomorrow: string;
+    dayPlus2: string;
+    sunrise: string;
+    sunset: string;
+    currentForecastHour: string;
+    cloudBase: string;
+    thermal: string;
+    temperature: string;
+    surfaceWind: string;
+    wind850: string;
+    wind700: string;
+  };
 };
 
 function findNearestLabelIndex(labels: string[], timeHHMM: string) {
@@ -283,7 +298,27 @@ function maxOf(values: number[], fallback: number) {
   return Math.max(...valid);
 }
 
-export default function WeatherChart({ data }: WeatherChartProps) {
+export default function WeatherChart({
+  data,
+  lang = "en",
+  labelsText,
+}: WeatherChartProps) {
+  const ui = labelsText ?? {
+    today: lang === "cs" ? "Dnes" : "Today",
+    tomorrow: lang === "cs" ? "Zítra" : "Tomorrow",
+    dayPlus2: lang === "cs" ? "Pozítří" : "Day +2",
+    sunrise: lang === "cs" ? "Východ slunce" : "Sunrise",
+    sunset: lang === "cs" ? "Západ slunce" : "Sunset",
+    currentForecastHour:
+      lang === "cs" ? "Aktuální hodina předpovědi" : "Current forecast hour",
+    cloudBase: lang === "cs" ? "Základna" : "Cloud base",
+    thermal: lang === "cs" ? "Termika" : "Thermal strength",
+    temperature: lang === "cs" ? "Teplota" : "Temperature",
+    surfaceWind: lang === "cs" ? "Přízemní vítr" : "Surface wind",
+    wind850: lang === "cs" ? "Vítr 850 hPa" : "Wind 850 hPa",
+    wind700: lang === "cs" ? "Vítr 700 hPa" : "Wind 700 hPa",
+  };
+
   const totalDays = Math.max(1, Math.ceil(data.labels.length / 24));
   const currentDayFromIndex = Math.floor(data.currentIndex / 24);
   const safeInitialDay = Math.max(
@@ -325,7 +360,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
   const start = selectedDay * 24;
   const end = start + 24;
 
-  const dayLabels = ["Today", "Tomorrow", "Day +2"];
+  const dayLabels = [ui.today, ui.tomorrow, ui.dayPlus2];
 
   const sliced = useMemo(() => {
     return {
@@ -374,7 +409,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
     labels: sliced.labels,
     datasets: [
       {
-        label: "Cloud base",
+        label: ui.cloudBase,
         data: sliced.lcl,
         hidden: !visible.lcl,
         borderColor: cloudColor,
@@ -386,7 +421,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         yAxisID: "y",
       },
       {
-        label: "Thermal strength",
+        label: ui.thermal,
         data: sliced.thermal,
         hidden: !visible.thermal,
         borderColor: thermalColor,
@@ -398,7 +433,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         yAxisID: "y1",
       },
       {
-        label: "Temperature",
+        label: ui.temperature,
         data: sliced.temperature,
         hidden: !visible.temperature,
         borderColor: temperatureColor,
@@ -410,7 +445,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         yAxisID: "y2",
       },
       {
-        label: "Surface wind",
+        label: ui.surfaceWind,
         data: sliced.windSurface,
         hidden: !visible.windSurface,
         borderColor: windSurfaceColor,
@@ -422,7 +457,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         yAxisID: "y3",
       },
       {
-        label: "Wind 850 hPa",
+        label: ui.wind850,
         data: sliced.wind850,
         hidden: !visible.wind850,
         borderColor: wind850Color,
@@ -435,7 +470,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         yAxisID: "y3",
       },
       {
-        label: "Wind 700 hPa",
+        label: ui.wind700,
         data: sliced.wind700,
         hidden: !visible.wind700,
         borderColor: wind700Color,
@@ -488,24 +523,22 @@ export default function WeatherChart({ data }: WeatherChartProps) {
             const d700 = sliced.wind700Dir[index] ?? 0;
 
             return [
-              `SFC dir: ${degToArrow(dsfc)} ${Math.round(dsfc)}°`,
-              `850 dir: ${degToArrow(d850)} ${Math.round(d850)}°`,
-              `700 dir: ${degToArrow(d700)} ${Math.round(d700)}°`,
+              `${ui.surfaceWind}: ${degToArrow(dsfc)} ${Math.round(dsfc)}°`,
+              `850: ${degToArrow(d850)} ${Math.round(d850)}°`,
+              `700: ${degToArrow(d700)} ${Math.round(d700)}°`,
             ];
           },
           label: function (context: TooltipItem<"line">) {
             const label = context.dataset.label ?? "";
             const value = context.parsed.y;
 
-            if (label === "Cloud base") return `${label}: ${value} m`;
-            if (label === "Thermal strength") {
-              return `${label}: ${(value ?? 0).toFixed(1)} m/s`;
-            }
-            if (label === "Temperature") return `${label}: ${value} °C`;
+            if (label === ui.cloudBase) return `${label}: ${value} m`;
+            if (label === ui.thermal) return `${label}: ${(value ?? 0).toFixed(1)} m/s`;
+            if (label === ui.temperature) return `${label}: ${value} °C`;
             if (
-              label === "Surface wind" ||
-              label === "Wind 850 hPa" ||
-              label === "Wind 700 hPa"
+              label === ui.surfaceWind ||
+              label === ui.wind850 ||
+              label === ui.wind700
             ) {
               return `${label}: ${value} kt`;
             }
@@ -515,12 +548,12 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         },
         itemSort: function (a: TooltipItem<"line">, b: TooltipItem<"line">) {
           const order: Record<string, number> = {
-            Temperature: 0,
-            "Cloud base": 1,
-            "Thermal strength": 2,
-            "Surface wind": 3,
-            "Wind 850 hPa": 4,
-            "Wind 700 hPa": 5,
+            [ui.temperature]: 0,
+            [ui.cloudBase]: 1,
+            [ui.thermal]: 2,
+            [ui.surfaceWind]: 3,
+            [ui.wind850]: 4,
+            [ui.wind700]: 5,
           };
 
           return (
@@ -536,6 +569,8 @@ export default function WeatherChart({ data }: WeatherChartProps) {
       sunMarkers: {
         sunriseIndex,
         sunsetIndex,
+        sunriseLabel: ui.sunrise,
+        sunsetLabel: ui.sunset,
       },
       currentHourLine: {
         currentIndexInDay,
@@ -545,6 +580,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
         wind850Dir: visible.wind850 ? sliced.wind850Dir : [],
         wind700Dir: visible.wind700 ? sliced.wind700Dir : [],
         showEvery: isMobile ? 3 : 2,
+        sfcLabel: lang === "cs" ? "PŘÍZ" : "SFC",
       },
     },
     scales: {
@@ -701,9 +737,9 @@ export default function WeatherChart({ data }: WeatherChartProps) {
           fontSize: isMobile ? "0.72rem" : "0.82rem",
         }}
       >
-        <span style={{ color: cloudColor }}>Cloud base (m)</span>
-        <span style={{ color: thermalColor }}>Thermal (m/s)</span>
-        <span style={{ color: windSurfaceColor }}>Wind (kt)</span>
+        <span style={{ color: cloudColor }}>{ui.cloudBase} (m)</span>
+        <span style={{ color: thermalColor }}>{ui.thermal} (m/s)</span>
+        <span style={{ color: windSurfaceColor }}>{ui.surfaceWind} (kt)</span>
       </div>
 
       <div
@@ -721,14 +757,14 @@ export default function WeatherChart({ data }: WeatherChartProps) {
           onClick={() => setVisible((v) => ({ ...v, lcl: !v.lcl }))}
           style={legendItemStyle(visible.lcl, cloudColor)}
         >
-          ● Cloud base
+          ● {ui.cloudBase}
         </span>
 
         <span
           onClick={() => setVisible((v) => ({ ...v, thermal: !v.thermal }))}
           style={legendItemStyle(visible.thermal, thermalColor)}
         >
-          ● Thermal
+          ● {ui.thermal}
         </span>
 
         <span
@@ -737,7 +773,7 @@ export default function WeatherChart({ data }: WeatherChartProps) {
           }
           style={legendItemStyle(visible.temperature, temperatureColor)}
         >
-          ● Temperature
+          ● {ui.temperature}
         </span>
 
         <span
@@ -746,21 +782,21 @@ export default function WeatherChart({ data }: WeatherChartProps) {
           }
           style={legendItemStyle(visible.windSurface, windSurfaceColor)}
         >
-          ● Surface wind
+          ● {ui.surfaceWind}
         </span>
 
         <span
           onClick={() => setVisible((v) => ({ ...v, wind850: !v.wind850 }))}
           style={legendItemStyle(visible.wind850, wind850Color)}
         >
-          ● Wind 850
+          ● {ui.wind850}
         </span>
 
         <span
           onClick={() => setVisible((v) => ({ ...v, wind700: !v.wind700 }))}
           style={legendItemStyle(visible.wind700, wind700Color)}
         >
-          ● Wind 700
+          ● {ui.wind700}
         </span>
       </div>
 
@@ -775,10 +811,10 @@ export default function WeatherChart({ data }: WeatherChartProps) {
           lineHeight: 1.35,
         }}
       >
-        <span>☀ Sunrise: {sunriseTime || "-"}</span>
-        <span>🌙 Sunset: {sunsetTime || "-"}</span>
+        <span>☀ {ui.sunrise}: {sunriseTime || "-"}</span>
+        <span>🌙 {ui.sunset}: {sunsetTime || "-"}</span>
         {currentIndexInDay >= 0 && (
-          <span>📍 Current forecast hour: {sliced.labels[currentIndexInDay]}</span>
+          <span>📍 {ui.currentForecastHour}: {sliced.labels[currentIndexInDay]}</span>
         )}
       </div>
 
