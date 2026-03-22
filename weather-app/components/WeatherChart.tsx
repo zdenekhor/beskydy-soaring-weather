@@ -131,7 +131,6 @@ const currentHourPlugin = {
     const x = xScale.getPixelForValue(currentIndex);
 
     ctx.save();
-
     ctx.beginPath();
     ctx.moveTo(x, chartArea.top);
     ctx.lineTo(x, chartArea.bottom);
@@ -158,8 +157,7 @@ function degToArrow(deg: number) {
   if (deg < 202) return "↓";
   if (deg < 247) return "↙";
   if (deg < 292) return "←";
-  if (deg < 337) return "↖";
-  return "·";
+  return "↖";
 }
 
 const windDirectionRowsPlugin = {
@@ -199,26 +197,9 @@ const windDirectionRowsPlugin = {
       ctx.restore();
     };
 
-    drawRow(
-      windSurfaceDir,
-      chartArea.top + 14,
-      sfcLabel,
-      "rgba(239,68,68,0.95)"
-    );
-
-    drawRow(
-      wind850Dir,
-      chartArea.top + 28,
-      "850",
-      "rgba(167,139,250,0.95)"
-    );
-
-    drawRow(
-      wind700Dir,
-      chartArea.top + 42,
-      "700",
-      "rgba(244,114,182,0.95)"
-    );
+    drawRow(windSurfaceDir, chartArea.top + 14, sfcLabel, "rgba(239,68,68,0.95)");
+    drawRow(wind850Dir, chartArea.top + 28, "850", "rgba(167,139,250,0.95)");
+    drawRow(wind700Dir, chartArea.top + 42, "700", "rgba(244,114,182,0.95)");
   },
 };
 
@@ -321,10 +302,7 @@ export default function WeatherChart({
 
   const totalDays = Math.max(1, Math.ceil(data.labels.length / 24));
   const currentDayFromIndex = Math.floor(data.currentIndex / 24);
-  const safeInitialDay = Math.max(
-    0,
-    Math.min(totalDays - 1, currentDayFromIndex)
-  );
+  const safeInitialDay = Math.max(0, Math.min(totalDays - 1, currentDayFromIndex));
 
   const [selectedDay, setSelectedDay] = useState(safeInitialDay);
   const [isMobile, setIsMobile] = useState(false);
@@ -359,7 +337,6 @@ export default function WeatherChart({
 
   const start = selectedDay * 24;
   const end = start + 24;
-
   const dayLabels = [ui.today, ui.tomorrow, ui.dayPlus2];
 
   const sliced = useMemo(() => {
@@ -384,7 +361,6 @@ export default function WeatherChart({
 
   const sunriseIndex = findNearestLabelIndex(sliced.labels, sunriseTime);
   const sunsetIndex = findNearestLabelIndex(sliced.labels, sunsetTime);
-
   const currentIndexInDay =
     selectedDay === currentDayFromIndex ? data.currentIndex % 24 : -1;
 
@@ -398,10 +374,7 @@ export default function WeatherChart({
   const windMax = Math.max(
     15,
     Math.ceil(
-      maxOf(
-        [...sliced.windSurface, ...sliced.wind850, ...sliced.wind700],
-        15
-      ) / 5
+      maxOf([...sliced.windSurface, ...sliced.wind850, ...sliced.wind700], 15) / 5
     ) * 5
   );
 
@@ -545,21 +518,6 @@ export default function WeatherChart({
 
             return `${label}: ${value}`;
           },
-        },
-        itemSort: function (a: TooltipItem<"line">, b: TooltipItem<"line">) {
-          const order: Record<string, number> = {
-            [ui.temperature]: 0,
-            [ui.cloudBase]: 1,
-            [ui.thermal]: 2,
-            [ui.surfaceWind]: 3,
-            [ui.wind850]: 4,
-            [ui.wind700]: 5,
-          };
-
-          return (
-            (order[a.dataset.label ?? ""] ?? 99) -
-            (order[b.dataset.label ?? ""] ?? 99)
-          );
         },
       },
       vfrWindow: {
