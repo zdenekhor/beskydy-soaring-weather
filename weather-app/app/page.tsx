@@ -224,7 +224,7 @@ const APP_UPDATED = "22 Mar 2026";
 const translations: Record<Lang, Translation> = {
   cs: {
     locale: "cs-CZ",
-    title: "SPL Počasí LKFR – Beskydy",
+    title: "SPL Počasí LKFR – Beskydy_testovací_porvoz",
     subtitle: "Frýdlant nad Ostravicí",
     updated: "Aktualizováno",
     forecastHour: "Hodina předpovědi",
