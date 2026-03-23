@@ -404,7 +404,7 @@ const translations: Record<Lang, Translation> = {
 
   en: {
     locale: "en-GB",
-    title: "SPL Weather LKFR – Beskydy",
+    title: "SPL Weather LKFR – Beskydy_Test_mode",
     subtitle: "Frýdlant nad Ostravicí",
     updated: "Updated",
     forecastHour: "Forecast hour",
