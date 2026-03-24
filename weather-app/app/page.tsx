@@ -1935,32 +1935,31 @@ export default async function Home({
             <Cloud size={18} /> {t.cloudLayers}
           </h3>
 
-          <div style={{ display: "grid", gap: "12px" }}>
-            {[
-              { label: t.lowLayer, value: cloudLow },
-              { label: t.middleLayer, value: cloudMid },
-              { label: t.highLayer, value: cloudHigh },
-            ].map((layer) => (
-              <div key={layer.label} className="cloudLayerItem">
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: "8px",
-                    alignItems: "center",
-                    marginBottom: "6px",
-                  }}
-                >
-                  <strong>{layer.label}</strong>
-                  <span>{layer.value} %</span>
-                </div>
-                <div className="cloudLayerBar">{getCloudLayerBar(layer.value)}</div>
-                <div style={{ fontSize: "0.82rem", color: "#cbd5e1" }}>
-                  {getCoverageLabel(layer.value, lang)}
-                </div>
-              </div>
-            ))}
-          </div>
+         <div className="cloudLayersGrid">
+  {[
+    { label: t.lowLayer, value: cloudLow },
+    { label: t.middleLayer, value: cloudMid },
+    { label: t.highLayer, value: cloudHigh },
+  ].map((layer) => (
+    <div key={layer.label} className="cloudLayerItem">
+      <div className="cloudLayerTop">
+        <strong>{layer.label}</strong>
+        <span>{layer.value} %</span>
+      </div>
+
+      <div className="cloudLayerBarWrap">
+        <div
+          className="cloudLayerBarFill"
+          style={{ width: `${Math.max(4, layer.value)}%` }}
+        />
+      </div>
+
+      <div className="cloudLayerCaption">
+        {getCoverageLabel(layer.value, lang)}
+      </div>
+    </div>
+  ))}
+</div>
         </div>
 
         <div className="card">
