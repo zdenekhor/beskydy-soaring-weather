@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -68,117 +69,166 @@ type Props = {
   data: ChartInputData;
 };
 
-function formatShortDay(dateString: string, lang: Lang) {
-  return new Date(dateString).toLocaleDateString(lang === "cs" ? "cs-CZ" : "en-GB", {
-    weekday: "short",
-    day: "2-digit",
-    month: "2-digit",
-  });
+function getDateKey(dateString: string) {
+  const d = new Date(dateString);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
-function getDayIndexLabel(index: number, labelsText: LabelsText) {
-  if (index === 0) return labelsText.today;
-  if (index === 1) return labelsText.tomorrow;
-  return labelsText.dayPlus2;
+function formatShortDay(dateString: string, lang: Lang) {
+  return new Date(dateString).toLocaleDateString(
+    lang === "cs" ? "cs-CZ" : "en-GB",
+    {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+    }
+  );
 }
 
 export default function WeatherChart({ lang, labelsText, data }: Props) {
-  const sunriseMarkers = data.sunrise.map((s, i) => ({
-    time: new Date(s).toLocaleTimeString(lang === "cs" ? "cs-CZ" : "en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    label: `${getDayIndexLabel(i, labelsText)} ${labelsText.sunrise}`,
-    day: formatShortDay(s, lang),
-  }));
+  const [selectedDay, setSelectedDay] = useState(0);
 
-  const sunsetMarkers = data.sunset.map((s, i) => ({
-    time: new Date(s).toLocaleTimeString(lang === "cs" ? "cs-CZ" : "en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-    label: `${getDayIndexLabel(i, labelsText)} ${labelsText.sunset}`,
-    day: formatShortDay(s, lang),
-  }));
+  const dayKeys = useMemo(() => {
+    return data.sunrise.map((s) => getDateKey(s));
+  }, [data.sunrise]);
+
+  const selectedDayKey = dayKeys[selectedDay] ?? dayKeys[0];
+
+  const filteredIndices = useMemo(() => {
+    return data.labels
+      .map((_, i) => i)
+      .filter((i) => {
+        const src = data.sunrise[0]
+          ? data.sunrise.find((_, idx) => {
+              const dayStart = dayKeys[idx];
+              const currentHourDate = data.sunrise[idx]
+                ? getDateKey(data.sunrise[idx])
+                : "";
+              return dayStart === currentHourDate;
+            })
+          : null;
+
+        return true;
+      });
+  }, [data.labels, data.sunrise, dayKeys]);
+
+  const hourlyDateKeys = useMemo(() => {
+    const expanded: string[] = [];
+    let sunriseIndex = 0;
+
+    for (let i = 0; i < data.labels.length; i++) {
+      const sunriseRef = data.sunrise[Math.min(sunriseIndex, data.sunrise.length - 1)];
+      expanded.push(getDateKey(sunriseRef));
+
+      const currentHour = Number(data.labels[i].slice(0, 2));
+      const nextHour = i < data.labels.length - 1 ? Number(data.labels[i + 1].slice(0, 2)) : null;
+
+      if (nextHour !== null && nextHour < currentHour) {
+        sunriseIndex += 1;
+      }
+    }
+
+    return expanded;
+  }, [data.labels, data.sunrise]);
+
+  const visibleIndices = hourlyDateKeys
+    .map((key, i) => ({ key, i }))
+    .filter((item) => item.key === selectedDayKey)
+    .map((item) => item.i);
+
+  const pick = (arr: number[]) => visibleIndices.map((i) => arr[i]);
+  const pickLabels = visibleIndices.map((i) => data.labels[i]);
+
+  const currentVisibleIndex = visibleIndices.indexOf(data.currentIndex);
+
+  const sunriseLabel = data.sunrise[selectedDay]
+    ? new Date(data.sunrise[selectedDay]).toLocaleTimeString(
+        lang === "cs" ? "cs-CZ" : "en-GB",
+        { hour: "2-digit", minute: "2-digit" }
+      )
+    : "-";
+
+  const sunsetLabel = data.sunset[selectedDay]
+    ? new Date(data.sunset[selectedDay]).toLocaleTimeString(
+        lang === "cs" ? "cs-CZ" : "en-GB",
+        { hour: "2-digit", minute: "2-digit" }
+      )
+    : "-";
 
   const chartData = {
-    labels: data.labels,
+    labels: pickLabels,
     datasets: [
       {
         label: labelsText.temperature,
-        data: data.temperature,
+        data: pick(data.temperature),
         yAxisID: "yTemp",
-        borderColor: "rgba(251,191,36,0.95)",
-        backgroundColor: "rgba(251,191,36,0.18)",
+        borderColor: "rgba(251,191,36,1)",
         tension: 0.3,
         pointRadius: 0,
-        borderWidth: 2,
+        borderWidth: 2.5,
       },
       {
         label: labelsText.dewPoint,
-        data: data.dewPoint,
+        data: pick(data.dewPoint),
         yAxisID: "yTemp",
-        borderColor: "rgba(96,165,250,0.95)",
-        backgroundColor: "rgba(96,165,250,0.18)",
+        borderColor: "rgba(56,189,248,1)",
         tension: 0.3,
         pointRadius: 0,
-        borderWidth: 2,
+        borderWidth: 2.2,
       },
       {
         label: labelsText.cloudBase,
-        data: data.lcl,
+        data: pick(data.lcl),
         yAxisID: "yHeight",
-        borderColor: "rgba(148,163,184,0.95)",
-        backgroundColor: "rgba(148,163,184,0.15)",
+        borderColor: "rgba(226,232,240,1)",
         tension: 0.25,
         pointRadius: 0,
-        borderWidth: 2,
+        borderWidth: 2.2,
       },
       {
         label: labelsText.thermal,
-        data: data.thermal,
+        data: pick(data.thermal),
         yAxisID: "yThermal",
-        borderColor: "rgba(34,197,94,0.95)",
-        backgroundColor: "rgba(34,197,94,0.15)",
+        borderColor: "rgba(34,197,94,1)",
         tension: 0.3,
         pointRadius: 0,
-        borderWidth: 2,
+        borderWidth: 2.4,
       },
       {
         label: labelsText.surfaceWind,
-        data: data.windSurface,
+        data: pick(data.windSurface),
         yAxisID: "yWind",
-        borderColor: "rgba(244,114,182,0.95)",
-        backgroundColor: "rgba(244,114,182,0.15)",
+        borderColor: "rgba(244,114,182,1)",
         tension: 0.25,
         pointRadius: 0,
         borderWidth: 2,
       },
       {
         label: labelsText.wind850,
-        data: data.wind850,
+        data: pick(data.wind850),
         yAxisID: "yWind",
-        borderColor: "rgba(167,139,250,0.95)",
-        backgroundColor: "rgba(167,139,250,0.15)",
+        borderColor: "rgba(168,85,247,1)",
         tension: 0.25,
         pointRadius: 0,
         borderWidth: 2,
       },
       {
         label: labelsText.wind700,
-        data: data.wind700,
+        data: pick(data.wind700),
         yAxisID: "yWind",
-        borderColor: "rgba(236,72,153,0.95)",
-        backgroundColor: "rgba(236,72,153,0.15)",
+        borderColor: "rgba(239,68,68,1)",
         tension: 0.25,
         pointRadius: 0,
         borderWidth: 2,
       },
       {
         label: labelsText.cloudLow,
-        data: data.cloudLow,
+        data: pick(data.cloudLow),
         yAxisID: "yCloud",
-        borderColor: "rgba(200,200,255,0.4)",
+        borderColor: "rgba(255,255,255,0.65)",
         borderDash: [2, 2],
         tension: 0.25,
         pointRadius: 0,
@@ -186,20 +236,20 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
       },
       {
         label: labelsText.cloudMid,
-        data: data.cloudMid,
+        data: pick(data.cloudMid),
         yAxisID: "yCloud",
-        borderColor: "rgba(170,170,220,0.35)",
-        borderDash: [4, 3],
+        borderColor: "rgba(148,163,184,0.95)",
+        borderDash: [6, 3],
         tension: 0.25,
         pointRadius: 0,
         borderWidth: 1.5,
       },
       {
         label: labelsText.cloudHigh,
-        data: data.cloudHigh,
+        data: pick(data.cloudHigh),
         yAxisID: "yCloud",
-        borderColor: "rgba(140,140,200,0.3)",
-        borderDash: [6, 4],
+        borderColor: "rgba(99,102,241,0.95)",
+        borderDash: [10, 4],
         tension: 0.25,
         pointRadius: 0,
         borderWidth: 1.5,
@@ -219,7 +269,6 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         labels: {
           color: "#e2e8f0",
           boxWidth: 14,
-          usePointStyle: false,
         },
       },
       tooltip: {
@@ -242,7 +291,7 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           color: "#cbd5e1",
           maxRotation: 0,
           autoSkip: true,
-          maxTicksLimit: 18,
+          maxTicksLimit: 12,
         },
         grid: {
           color: "rgba(148,163,184,0.08)",
@@ -251,13 +300,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
       yTemp: {
         type: "linear" as const,
         position: "left" as const,
-        title: {
-          display: true,
-          text: "°C",
-          color: "#cbd5e1",
-        },
         ticks: {
-          color: "#cbd5e1",
+          color: "#fcd34d",
+        },
+        title: {
+          display: false,
         },
         grid: {
           color: "rgba(148,163,184,0.08)",
@@ -266,13 +313,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
       yHeight: {
         type: "linear" as const,
         position: "right" as const,
-        title: {
-          display: true,
-          text: "m AGL",
-          color: "#cbd5e1",
-        },
         ticks: {
-          color: "#cbd5e1",
+          color: "#e2e8f0",
+        },
+        title: {
+          display: false,
         },
         grid: {
           drawOnChartArea: false,
@@ -283,13 +328,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         position: "right" as const,
         min: 0,
         suggestedMax: 4,
-        title: {
-          display: true,
-          text: "m/s",
-          color: "#cbd5e1",
-        },
         ticks: {
-          color: "#cbd5e1",
+          color: "#86efac",
+        },
+        title: {
+          display: false,
         },
         grid: {
           drawOnChartArea: false,
@@ -299,13 +342,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         type: "linear" as const,
         position: "right" as const,
         min: 0,
-        title: {
-          display: true,
-          text: "kt",
-          color: "#cbd5e1",
-        },
         ticks: {
-          color: "#cbd5e1",
+          color: "#f9a8d4",
+        },
+        title: {
+          display: false,
         },
         grid: {
           drawOnChartArea: false,
@@ -316,13 +357,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         position: "right" as const,
         min: 0,
         max: 100,
-        title: {
-          display: true,
-          text: "%",
-          color: "#cbd5e1",
-        },
         ticks: {
           color: "#cbd5e1",
+        },
+        title: {
+          display: false,
         },
         grid: {
           drawOnChartArea: false,
@@ -331,29 +370,51 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
     },
   };
 
+  const dayButtons = [
+    labelsText.today,
+    labelsText.tomorrow,
+    labelsText.dayPlus2,
+  ];
+
   return (
     <div className="weatherChartRoot">
-      <div className="chartMarkers">
-        <div className="chartMarkerGroup">
-          {sunriseMarkers.map((m, idx) => (
-            <span key={`sunrise-${idx}`} className="chartMarker sunrise">
-              ☀ {m.day} {m.time}
-            </span>
+      <div className="chartToolbar">
+        <div className="chartDayTabs">
+          {dayButtons.map((label, i) => (
+            <button
+              key={label}
+              type="button"
+              className={`chartDayButton ${selectedDay === i ? "active" : ""}`}
+              onClick={() => setSelectedDay(i)}
+            >
+              {label}
+            </button>
           ))}
         </div>
 
-        <div className="chartMarkerGroup">
-          {sunsetMarkers.map((m, idx) => (
-            <span key={`sunset-${idx}`} className="chartMarker sunset">
-              🌙 {m.day} {m.time}
-            </span>
-          ))}
+        <div className="chartMeta">
+          <span className="chartMarker sunrise">☀ {labelsText.sunrise}: {sunriseLabel}</span>
+          <span className="chartMarker sunset">🌙 {labelsText.sunset}: {sunsetLabel}</span>
         </div>
+      </div>
+
+      <div className="chartAxisLegendTop">
+        <span className="axisLegend axisTemp">°C</span>
+        <span className="axisLegend axisThermal">m/s</span>
+        <span className="axisLegend axisWind">kt</span>
+        <span className="axisLegend axisHeight">m AGL</span>
+        <span className="axisLegend axisCloud">%</span>
       </div>
 
       <div className="chartCanvasWrap">
         <Line data={chartData} options={options} />
       </div>
+
+      {currentVisibleIndex >= 0 ? (
+        <div className="chartCurrentHint">
+          {labelsText.currentForecastHour}: {pickLabels[currentVisibleIndex]}
+        </div>
+      ) : null}
     </div>
   );
 }
