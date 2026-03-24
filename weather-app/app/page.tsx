@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AppRating from "../components/AppRating";
 import WeatherChart from "../components/WeatherChart";
 import {
   Cloud,
@@ -2093,51 +2094,39 @@ export default async function Home({
       </div>
 
       <div className="grid" style={{ marginBottom: "18px" }}>
-        <div className="card">
-          <h3>
-            <Camera size={18} /> {t.quickLinks}
-          </h3>
-          <div className="quickLinksColumn">
-            <a
-              href={METAR_PAGE}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="briefingLink"
-            >
-              {t.openMetar}
-            </a>
+       <div className="card">
+  <h3>
+    <Camera size={18} /> {t.quickLinks}
+  </h3>
 
-            <a
-              href={AIRPORT_WEBSITE}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="briefingLink"
-            >
-              {t.openWebsite}
-            </a>
+  <div className="quickLinksColumn">
+    <a
+      href={METAR_PAGE}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="briefingLink"
+    >
+      {t.openMetar}
+    </a>
 
-            <a
-              href={AIRPORT_WEBCAM}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="briefingLink"
-            >
-              {t.openWebcam}
-            </a>
-          </div>
-        </div>
+    <a
+      href={AIRPORT_WEBSITE}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="briefingLink"
+    >
+      {t.openWebsite}
+    </a>
+  </div>
+</div>
 
-        <div className="card">
-          <h3>
-            <Star size={18} /> {t.appRating}
-          </h3>
+       <div className="card">
+  <h3>
+    <Star size={18} /> {t.appRating}
+  </h3>
 
-          <div className="ratingWrap" style={{ marginTop: "10px" }}>
-            ⭐ ⭐ ⭐ ⭐ ⭐
-          </div>
-
-          <p className="rateNoteText">{t.rateNote}</p>
-        </div>
+  <AppRating note={t.rateNote} />
+</div>
       </div>
 
       <footer className="card disclaimerCard">
