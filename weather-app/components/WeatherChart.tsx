@@ -9,13 +9,16 @@ import {
   LineElement,
   Tooltip,
   Legend,
+  Filler,
   type TooltipItem,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
+type PluginChart = any;
+
 const hoverVerticalLinePlugin = {
   id: "hoverVerticalLine",
-  afterDraw: (chart: any) => {
+  afterDraw: (chart: PluginChart) => {
     if (!chart?.tooltip?._active?.length) return;
 
     const ctx = chart.ctx;
@@ -28,9 +31,9 @@ const hoverVerticalLinePlugin = {
     ctx.beginPath();
     ctx.moveTo(x, topY);
     ctx.lineTo(x, bottomY);
-    ctx.lineWidth = 1.2;
-    ctx.strokeStyle = "rgba(255,255,255,0.35)";
-    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 1.1;
+    ctx.strokeStyle = "rgba(255,255,255,0.28)";
+    ctx.setLineDash([4, 4]);
     ctx.stroke();
     ctx.restore();
   },
@@ -38,7 +41,7 @@ const hoverVerticalLinePlugin = {
 
 const vfrWindowPlugin = {
   id: "vfrWindow",
-  beforeDatasetsDraw: (chart: any, _args: any, pluginOptions: any) => {
+  beforeDatasetsDraw: (chart: PluginChart, _args: any, pluginOptions: any) => {
     const sunriseIndex = pluginOptions?.sunriseIndex ?? -1;
     const sunsetIndex = pluginOptions?.sunsetIndex ?? -1;
 
@@ -55,7 +58,7 @@ const vfrWindowPlugin = {
     const x2 = Math.max(left, right);
 
     ctx.save();
-    ctx.fillStyle = "rgba(250, 204, 21, 0.08)";
+    ctx.fillStyle = "rgba(250, 204, 21, 0.06)";
     ctx.fillRect(x1, chartArea.top, x2 - x1, chartArea.bottom - chartArea.top);
     ctx.restore();
   },
@@ -63,7 +66,7 @@ const vfrWindowPlugin = {
 
 const sunMarkersPlugin = {
   id: "sunMarkers",
-  afterDraw: (chart: any, _args: any, pluginOptions: any) => {
+  afterDraw: (chart: PluginChart, _args: any, pluginOptions: any) => {
     const { ctx, chartArea, scales } = chart;
     const xScale = scales?.x;
     if (!xScale || !chartArea) return;
@@ -91,7 +94,7 @@ const sunMarkersPlugin = {
       ctx.setLineDash([]);
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(x, chartArea.top + 8, 3.5, 0, Math.PI * 2);
+      ctx.arc(x, chartArea.top + 8, 3.2, 0, Math.PI * 2);
       ctx.fill();
 
       if (label) {
@@ -120,7 +123,7 @@ const sunMarkersPlugin = {
 
 const currentHourPlugin = {
   id: "currentHourLine",
-  afterDraw: (chart: any, _args: any, pluginOptions: any) => {
+  afterDraw: (chart: PluginChart, _args: any, pluginOptions: any) => {
     const currentIndex = pluginOptions?.currentIndexInDay ?? -1;
     if (currentIndex < 0) return;
 
@@ -134,9 +137,9 @@ const currentHourPlugin = {
     ctx.beginPath();
     ctx.moveTo(x, chartArea.top);
     ctx.lineTo(x, chartArea.bottom);
-    ctx.lineWidth = 1.6;
-    ctx.strokeStyle = "rgba(255,99,132,0.9)";
-    ctx.setLineDash([7, 5]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(255,99,132,0.88)";
+    ctx.setLineDash([6, 5]);
     ctx.stroke();
 
     ctx.setLineDash([]);
@@ -149,20 +152,29 @@ const currentHourPlugin = {
   },
 };
 
-function degToArrow(deg: number) {
-  if (deg >= 337 || deg < 22) return "↑";
-  if (deg < 67) return "↗";
-  if (deg < 112) return "→";
-  if (deg < 157) return "↘";
-  if (deg < 202) return "↓";
-  if (deg < 247) return "↙";
-  if (deg < 292) return "←";
-  return "↖";
+/**
+ * Vrací šipku pro směr, ODKUD vítr vane.
+ * 360/000 = severní vítr => šipka dolů
+ * 090 = východní => šipka doleva
+ * 180 = jižní => šipka nahoru
+ * 270 = západní => šipka doprava
+ */
+function degToFromArrow(deg: number) {
+  const d = ((deg % 360) + 360) % 360;
+
+  if (d >= 337 || d < 22) return "↓";
+  if (d < 67) return "↙";
+  if (d < 112) return "←";
+  if (d < 157) return "↖";
+  if (d < 202) return "↑";
+  if (d < 247) return "↗";
+  if (d < 292) return "→";
+  return "↘";
 }
 
 const windDirectionRowsPlugin = {
   id: "windDirectionRows",
-  afterDraw: (chart: any, _args: any, pluginOptions: any) => {
+  afterDraw: (chart: PluginChart, _args: any, pluginOptions: any) => {
     const { ctx, chartArea, scales } = chart;
     const xScale = scales?.x;
     if (!xScale || !chartArea) return;
@@ -191,15 +203,15 @@ const windDirectionRowsPlugin = {
       for (let i = 0; i < dirs.length; i++) {
         if (i % showEvery !== 0) continue;
         const x = xScale.getPixelForValue(i);
-        const arrow = degToArrow(dirs[i] ?? 0);
+        const arrow = degToFromArrow(dirs[i] ?? 0);
         ctx.fillText(arrow, x, y);
       }
       ctx.restore();
     };
 
-    drawRow(windSurfaceDir, chartArea.top + 14, sfcLabel, "rgba(239,68,68,0.95)");
-    drawRow(wind850Dir, chartArea.top + 28, "850", "rgba(167,139,250,0.95)");
-    drawRow(wind700Dir, chartArea.top + 42, "700", "rgba(244,114,182,0.95)");
+    drawRow(windSurfaceDir, chartArea.top + 14, sfcLabel, "rgba(239,68,68,0.92)");
+    drawRow(wind850Dir, chartArea.top + 28, "850", "rgba(167,139,250,0.92)");
+    drawRow(wind700Dir, chartArea.top + 42, "700", "rgba(244,114,182,0.92)");
   },
 };
 
@@ -210,6 +222,7 @@ ChartJS.register(
   LineElement,
   Tooltip,
   Legend,
+  Filler,
   hoverVerticalLinePlugin,
   vfrWindowPlugin,
   sunMarkersPlugin,
@@ -279,6 +292,12 @@ function maxOf(values: number[], fallback: number) {
   return Math.max(...valid);
 }
 
+function minOf(values: number[], fallback: number) {
+  const valid = values.filter((v) => Number.isFinite(v));
+  if (!valid.length) return fallback;
+  return Math.min(...valid);
+}
+
 export default function WeatherChart({
   data,
   lang = "en",
@@ -310,10 +329,10 @@ export default function WeatherChart({
   const [visible, setVisible] = useState({
     lcl: true,
     thermal: true,
-    temperature: true,
+    temperature: false,
     windSurface: true,
     wind850: true,
-    wind700: true,
+    wind700: false,
   });
 
   useEffect(() => {
@@ -369,8 +388,8 @@ export default function WeatherChart({
     2.5,
     Math.ceil(maxOf(sliced.thermal, 2.5) / 0.5) * 0.5
   );
-  const tempMin = Math.floor(Math.min(...sliced.temperature, 0) - 2);
-  const tempMax = Math.ceil(Math.max(...sliced.temperature, 20) + 2);
+  const tempMin = Math.floor(minOf(sliced.temperature, 0) - 2);
+  const tempMax = Math.ceil(maxOf(sliced.temperature, 20) + 2);
   const windMax = Math.max(
     15,
     Math.ceil(
@@ -386,8 +405,9 @@ export default function WeatherChart({
         data: sliced.lcl,
         hidden: !visible.lcl,
         borderColor: cloudColor,
-        backgroundColor: "rgba(96,165,250,0.18)",
-        borderWidth: 2,
+        backgroundColor: "rgba(96,165,250,0.12)",
+        fill: false,
+        borderWidth: 2.2,
         tension: 0.3,
         pointRadius: isMobile ? 1 : 2,
         pointHoverRadius: 4,
@@ -398,8 +418,9 @@ export default function WeatherChart({
         data: sliced.thermal,
         hidden: !visible.thermal,
         borderColor: thermalColor,
-        backgroundColor: "rgba(34,197,94,0.18)",
-        borderWidth: 2,
+        backgroundColor: "rgba(34,197,94,0.10)",
+        fill: false,
+        borderWidth: 2.2,
         tension: 0.3,
         pointRadius: isMobile ? 1 : 2,
         pointHoverRadius: 4,
@@ -410,8 +431,9 @@ export default function WeatherChart({
         data: sliced.temperature,
         hidden: !visible.temperature,
         borderColor: temperatureColor,
-        backgroundColor: "rgba(251,191,36,0.18)",
-        borderWidth: 2,
+        backgroundColor: "rgba(251,191,36,0.12)",
+        fill: false,
+        borderWidth: 1.9,
         tension: 0.3,
         pointRadius: isMobile ? 1 : 2,
         pointHoverRadius: 4,
@@ -422,8 +444,9 @@ export default function WeatherChart({
         data: sliced.windSurface,
         hidden: !visible.windSurface,
         borderColor: windSurfaceColor,
-        backgroundColor: "rgba(239,68,68,0.20)",
-        borderWidth: 2.5,
+        backgroundColor: "rgba(239,68,68,0.12)",
+        fill: false,
+        borderWidth: 2.4,
         tension: 0.3,
         pointRadius: isMobile ? 1 : 2,
         pointHoverRadius: 4,
@@ -434,7 +457,8 @@ export default function WeatherChart({
         data: sliced.wind850,
         hidden: !visible.wind850,
         borderColor: wind850Color,
-        backgroundColor: "rgba(167,139,250,0.18)",
+        backgroundColor: "rgba(167,139,250,0.10)",
+        fill: false,
         borderDash: [6, 4],
         borderWidth: 2,
         tension: 0.3,
@@ -447,7 +471,8 @@ export default function WeatherChart({
         data: sliced.wind700,
         hidden: !visible.wind700,
         borderColor: wind700Color,
-        backgroundColor: "rgba(244,114,182,0.18)",
+        backgroundColor: "rgba(244,114,182,0.10)",
+        fill: false,
         borderDash: [6, 4],
         borderWidth: 2,
         tension: 0.3,
@@ -468,7 +493,7 @@ export default function WeatherChart({
         top: isMobile ? 46 : 58,
         right: isMobile ? 10 : 18,
         left: isMobile ? 10 : 14,
-        bottom: isMobile ? 2 : 4,
+        bottom: isMobile ? 4 : 8,
       },
     },
     interaction: {
@@ -484,7 +509,7 @@ export default function WeatherChart({
         backgroundColor: "rgba(7,18,38,0.96)",
         titleColor: "#ffffff",
         bodyColor: "#e5eefc",
-        borderColor: "rgba(255,255,255,0.12)",
+        borderColor: "rgba(255,255,255,0.10)",
         borderWidth: 1,
         padding: 12,
         displayColors: true,
@@ -496,16 +521,16 @@ export default function WeatherChart({
             const d700 = sliced.wind700Dir[index] ?? 0;
 
             return [
-              `${ui.surfaceWind}: ${degToArrow(dsfc)} ${Math.round(dsfc)}°`,
-              `850: ${degToArrow(d850)} ${Math.round(d850)}°`,
-              `700: ${degToArrow(d700)} ${Math.round(d700)}°`,
+              `${ui.surfaceWind}: ${degToFromArrow(dsfc)} ${Math.round(dsfc)}°`,
+              `850 hPa: ${degToFromArrow(d850)} ${Math.round(d850)}°`,
+              `700 hPa: ${degToFromArrow(d700)} ${Math.round(d700)}°`,
             ];
           },
           label: function (context: TooltipItem<"line">) {
             const label = context.dataset.label ?? "";
             const value = context.parsed.y;
 
-            if (label === ui.cloudBase) return `${label}: ${value} m`;
+            if (label === ui.cloudBase) return `${label}: ${value} m AGL`;
             if (label === ui.thermal) return `${label}: ${(value ?? 0).toFixed(1)} m/s`;
             if (label === ui.temperature) return `${label}: ${value} °C`;
             if (
@@ -554,10 +579,10 @@ export default function WeatherChart({
           },
         },
         grid: {
-          color: "rgba(255,255,255,0.06)",
+          color: "rgba(255,255,255,0.05)",
         },
         border: {
-          color: "rgba(255,255,255,0.12)",
+          color: "rgba(255,255,255,0.10)",
         },
       },
       y: {
@@ -571,9 +596,10 @@ export default function WeatherChart({
           font: {
             size: isMobile ? 9 : 11,
           },
+          callback: (value: number) => `${value}`,
         },
         grid: {
-          color: "rgba(255,255,255,0.08)",
+          color: "rgba(255,255,255,0.07)",
         },
         border: {
           color: cloudColor,
@@ -646,7 +672,11 @@ export default function WeatherChart({
     cursor: "pointer",
     userSelect: "none",
     textDecoration: active ? "none" : "line-through",
-    opacity: active ? 1 : 0.6,
+    opacity: active ? 1 : 0.58,
+    padding: "4px 8px",
+    borderRadius: "999px",
+    background: active ? "rgba(255,255,255,0.04)" : "transparent",
+    border: "1px solid rgba(255,255,255,0.06)",
   });
 
   return (
@@ -668,8 +698,8 @@ export default function WeatherChart({
               borderRadius: "10px",
               border:
                 selectedDay === index
-                  ? "1px solid rgba(255,255,255,0.28)"
-                  : "1px solid rgba(255,255,255,0.12)",
+                  ? "1px solid rgba(255,255,255,0.24)"
+                  : "1px solid rgba(255,255,255,0.10)",
               background:
                 selectedDay === index
                   ? "rgba(255,255,255,0.10)"
@@ -695,7 +725,7 @@ export default function WeatherChart({
           fontSize: isMobile ? "0.72rem" : "0.82rem",
         }}
       >
-        <span style={{ color: cloudColor }}>{ui.cloudBase} (m)</span>
+        <span style={{ color: cloudColor }}>{ui.cloudBase} (m AGL)</span>
         <span style={{ color: thermalColor }}>{ui.thermal} (m/s)</span>
         <span style={{ color: windSurfaceColor }}>{ui.surfaceWind} (kt)</span>
       </div>
@@ -704,9 +734,9 @@ export default function WeatherChart({
         style={{
           display: "flex",
           flexWrap: "wrap",
-          gap: isMobile ? "10px" : "14px",
+          gap: isMobile ? "8px" : "12px",
           marginBottom: "16px",
-          fontSize: isMobile ? "0.75rem" : "0.86rem",
+          fontSize: isMobile ? "0.75rem" : "0.84rem",
           color: "#e5eefc",
           lineHeight: 1.35,
         }}
@@ -726,18 +756,14 @@ export default function WeatherChart({
         </span>
 
         <span
-          onClick={() =>
-            setVisible((v) => ({ ...v, temperature: !v.temperature }))
-          }
+          onClick={() => setVisible((v) => ({ ...v, temperature: !v.temperature }))}
           style={legendItemStyle(visible.temperature, temperatureColor)}
         >
           ● {ui.temperature}
         </span>
 
         <span
-          onClick={() =>
-            setVisible((v) => ({ ...v, windSurface: !v.windSurface }))
-          }
+          onClick={() => setVisible((v) => ({ ...v, windSurface: !v.windSurface }))}
           style={legendItemStyle(visible.windSurface, windSurfaceColor)}
         >
           ● {ui.surfaceWind}
@@ -762,24 +788,30 @@ export default function WeatherChart({
         style={{
           display: "flex",
           gap: isMobile ? "10px" : "16px",
-          marginBottom: isMobile ? "20px" : "24px",
+          marginBottom: isMobile ? "18px" : "22px",
           flexWrap: "wrap",
           color: "#cbd5e1",
-          fontSize: isMobile ? "0.76rem" : "0.9rem",
+          fontSize: isMobile ? "0.76rem" : "0.88rem",
           lineHeight: 1.35,
         }}
       >
-        <span>☀ {ui.sunrise}: {sunriseTime || "-"}</span>
-        <span>🌙 {ui.sunset}: {sunsetTime || "-"}</span>
+        <span>
+          ☀ {ui.sunrise}: {sunriseTime || "-"}
+        </span>
+        <span>
+          🌙 {ui.sunset}: {sunsetTime || "-"}
+        </span>
         {currentIndexInDay >= 0 && (
-          <span>📍 {ui.currentForecastHour}: {sliced.labels[currentIndexInDay]}</span>
+          <span>
+            📍 {ui.currentForecastHour}: {sliced.labels[currentIndexInDay]}
+          </span>
         )}
       </div>
 
       <div
         style={{
           width: "100%",
-          height: isMobile ? "280px" : "400px",
+          height: isMobile ? "290px" : "410px",
         }}
       >
         <Line data={chartData} options={options} />
