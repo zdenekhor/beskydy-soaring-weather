@@ -230,6 +230,8 @@ type Translation = {
   modelSurfaceWind: string;
   airportObservedWind: string;
   rateNote: string;
+  metarFallbackLabel: string;
+  liveLabel: string;
 };
 
 const FIELD_ELEVATION_MSL = 439;
@@ -278,7 +280,7 @@ const translations: Record<Lang, Translation> = {
     appRating: "Ohodnoť aplikaci",
     disclaimerTitle: "Upozornění",
     disclaimerText:
-      "Tato aplikace není oficiálním leteckým informačním systémem. Zobrazené údaje slouží pouze pro informativní účely a nenahrazují oficiální meteorologické, provozní ani letecké informace. Před letem vždy ověřte aktuální stav z oficiálních zdrojů.",
+      "Tato aplikace není oficiálním leteckým meteorologickým systémem. Slouží pouze jako orientační pomůcka pro plánování letu. Pilot je vždy odpovědný za ověření aktuálních informací (METAR, TAF, briefing).",
 
     climb: "Stoupání",
     baseAgl: "Základna AGL",
@@ -318,7 +320,8 @@ const translations: Record<Lang, Translation> = {
     noGo: "🔴 NO GO",
 
     semaphoreGoNote: "Podmínky jsou pro běžné plachtění převážně příznivé.",
-    semaphoreCautionNote: "Podmínky vyžadují zvýšenou pozornost a úsudek pilota.",
+    semaphoreCautionNote:
+      "Podmínky vyžadují zvýšenou pozornost a úsudek pilota.",
     semaphoreNoGoNote: "Podmínky jsou nevhodné nebo provozně rizikové.",
 
     weak: "🔴 Slabé",
@@ -366,12 +369,17 @@ const translations: Record<Lang, Translation> = {
 
     pilotNoGo: "Den není vhodný pro běžné plachtění",
     pilotFlyable: "Den je létatelný pro plachtařský provoz",
-    pilotMarginal: "Den je hraniční a vyžaduje pečlivý úsudek pilota",
+    pilotMarginal:
+      "Den je hraniční a vyžaduje pečlivý úsudek pilota",
 
-    pilotConvective: "kupovitá oblačnost by měla podporovat použitelnou termiku",
-    pilotBlue: "převládá modrá termika s omezeným značkováním",
-    pilotOvercast: "oblačnost omezuje ohřev povrchu a tlumí termiku",
-    pilotMixed: "vývoj oblohy je smíšený a prostorově nerovnoměrný",
+    pilotConvective:
+      "kupovitá oblačnost by měla podporovat použitelnou termiku",
+    pilotBlue:
+      "převládá modrá termika s omezeným značkováním",
+    pilotOvercast:
+      "oblačnost omezuje ohřev povrchu a tlumí termiku",
+    pilotMixed:
+      "vývoj oblohy je smíšený a prostorově nerovnoměrný",
 
     pilotStrongerClimbs: "očekávaná stoupání kolem",
     pilotUsableClimbs: "použitelná stoupání kolem",
@@ -391,11 +399,13 @@ const translations: Record<Lang, Translation> = {
     pilotXcVeryGood: "velmi dobrý potenciál pro přelet",
     pilotXcGood: "dobrý potenciál pro přelet",
     pilotXcLocal: "možný kratší místní přelet",
-    pilotXcLocalOnly: "vhodnější spíše pro místní létání než pro přelet",
+    pilotXcLocalOnly:
+      "vhodnější spíše pro místní létání než pro přelet",
 
     pilotStormMain: "hlavním omezením je riziko bouřkové činnosti",
     pilotShowers: "srážky mohou narušovat průběh dne",
-    pilotWatchCloud: "sledujte rozšiřování oblačnosti a úbytek slunečního ohřevu",
+    pilotWatchCloud:
+      "sledujte rozšiřování oblačnosti a úbytek slunečního ohřevu",
     pilotWatchWind: "sledujte profil větru a drift",
 
     pilotRiskHigh: "celkové provozní riziko je vysoké",
@@ -419,11 +429,11 @@ const translations: Record<Lang, Translation> = {
     outsideVfrDay: "🔴 Mimo VFR den",
     outsideVfrNote:
       "Mimo VFR den — po západu slunce nebo před východem slunce nelze běžné VFR plachtění provádět.",
-    metarSource: "METAR LKFR",
-    modelSource: "MODEL",
+    metarSource: "METAR LKFR (LIVE)",
+    modelSource: "MODEL (fallback)",
     windSource: "Zdroj větru",
-    metarUnavailable: "METAR LKFR je nedostupný, použit model.",
-    metarAvailable: "METAR LKFR je dostupný.",
+    metarUnavailable: "MODEL (METAR NEDOSTUPNÝ)",
+    metarAvailable: "METAR LKFR (LIVE)",
 
     lowLayer: "Nízká vrstva",
     middleLayer: "Střední vrstva",
@@ -431,7 +441,10 @@ const translations: Record<Lang, Translation> = {
     sourceLabel: "Zdroj",
     modelSurfaceWind: "Modelový přízemní vítr",
     airportObservedWind: "Letištní přízemní vítr",
-    rateNote: "Jednoduché hodnocení. Později můžete napojit na formulář nebo backend.",
+    rateNote:
+      "Jednoduché hodnocení. Později můžete napojit na formulář nebo backend.",
+    metarFallbackLabel: "MODEL (fallback)",
+    liveLabel: "LIVE",
   },
 
   en: {
@@ -471,7 +484,7 @@ const translations: Record<Lang, Translation> = {
     appRating: "Rate the app",
     disclaimerTitle: "Disclaimer",
     disclaimerText:
-      "This application is not an official aviation information system. The displayed data are for information only and do not replace official meteorological, operational, or aviation information. Always verify current conditions from official sources before flight.",
+      "This application is not an official aviation meteorological system. It is intended only as a planning aid. The pilot is always responsible for verifying current information (METAR, TAF, briefing).",
 
     climb: "Climb",
     baseAgl: "Base AGL",
@@ -510,9 +523,12 @@ const translations: Record<Lang, Translation> = {
     caution: "🟡 CAUTION",
     noGo: "🔴 NO GO",
 
-    semaphoreGoNote: "Conditions are generally favourable for normal soaring.",
-    semaphoreCautionNote: "Conditions require increased attention and pilot judgement.",
-    semaphoreNoGoNote: "Conditions are unsuitable or operationally risky.",
+    semaphoreGoNote:
+      "Conditions are generally favourable for normal soaring.",
+    semaphoreCautionNote:
+      "Conditions require increased attention and pilot judgement.",
+    semaphoreNoGoNote:
+      "Conditions are unsuitable or operationally risky.",
 
     weak: "🔴 Weak",
     usable: "🟡 Usable",
@@ -559,11 +575,15 @@ const translations: Record<Lang, Translation> = {
 
     pilotNoGo: "The day is not suitable for normal soaring",
     pilotFlyable: "The day is flyable for gliding operations",
-    pilotMarginal: "The day is marginal and requires careful pilot judgement",
+    pilotMarginal:
+      "The day is marginal and requires careful pilot judgement",
 
-    pilotConvective: "convective cloud field should support usable thermals",
-    pilotBlue: "blue thermal conditions with limited cloud marking",
-    pilotOvercast: "cloud cover suppresses surface heating and thermals",
+    pilotConvective:
+      "convective cloud field should support usable thermals",
+    pilotBlue:
+      "blue thermal conditions with limited cloud marking",
+    pilotOvercast:
+      "cloud cover suppresses surface heating and thermals",
     pilotMixed: "sky development is mixed and uneven",
 
     pilotStrongerClimbs: "expected climbs around",
@@ -584,11 +604,13 @@ const translations: Record<Lang, Translation> = {
     pilotXcVeryGood: "very good XC potential",
     pilotXcGood: "good XC potential",
     pilotXcLocal: "possible short local XC",
-    pilotXcLocalOnly: "better suited to local flying than XC",
+    pilotXcLocalOnly:
+      "better suited to local flying than XC",
 
     pilotStormMain: "the main limitation is thunderstorm risk",
     pilotShowers: "precipitation may interrupt the day",
-    pilotWatchCloud: "watch for cloud spreading and loss of heating",
+    pilotWatchCloud:
+      "watch for cloud spreading and loss of heating",
     pilotWatchWind: "watch the wind profile and drift",
 
     pilotRiskHigh: "overall operational risk is high",
@@ -612,11 +634,11 @@ const translations: Record<Lang, Translation> = {
     outsideVfrDay: "🔴 Outside VFR day",
     outsideVfrNote:
       "Outside VFR day — normal VFR soaring is not possible after sunset or before sunrise.",
-    metarSource: "METAR LKFR",
-    modelSource: "MODEL",
+    metarSource: "METAR LKFR (LIVE)",
+    modelSource: "MODEL (fallback)",
     windSource: "Wind source",
-    metarUnavailable: "METAR LKFR unavailable, using model.",
-    metarAvailable: "METAR LKFR available.",
+    metarUnavailable: "MODEL (METAR UNAVAILABLE)",
+    metarAvailable: "METAR LKFR (LIVE)",
 
     lowLayer: "Low layer",
     middleLayer: "Middle layer",
@@ -624,7 +646,10 @@ const translations: Record<Lang, Translation> = {
     sourceLabel: "Source",
     modelSurfaceWind: "Model surface wind",
     airportObservedWind: "Aerodrome surface wind",
-    rateNote: "Simple rating. You can later connect it to a form or backend.",
+    rateNote:
+      "Simple rating. You can later connect it to a form or backend.",
+    metarFallbackLabel: "MODEL (fallback)",
+    liveLabel: "LIVE",
   },
 };
 
@@ -1069,16 +1094,6 @@ function buildPilotComment(params: {
   return parts.join(". ") + ".";
 }
 
-function getCloudLayerBar(coverage: number) {
-  if (coverage >= 85) return "██████████";
-  if (coverage >= 70) return "████████░░";
-  if (coverage >= 55) return "███████░░░";
-  if (coverage >= 40) return "██████░░░░";
-  if (coverage >= 25) return "████░░░░░░";
-  if (coverage >= 10) return "██░░░░░░░░";
-  return "░░░░░░░░░░";
-}
-
 function getCoverageLabel(value: number, lang: Lang) {
   if (lang === "cs") {
     if (value >= 85) return "zataženo";
@@ -1260,30 +1275,40 @@ export default async function Home({
     return Math.round(Math.max(0, 125 * (temp - td)));
   });
 
-  const thermalArray = data.hourly.temperature_2m.map((temp: number, i: number) => {
-    const td = safeArrayValue(data.hourly.dew_point_2m, i);
-    const low = safeArrayValue(data.hourly.cloud_cover_low, i, 0);
-    const mid = safeArrayValue(data.hourly.cloud_cover_mid, i, 0);
-    const high = safeArrayValue(data.hourly.cloud_cover_high, i, 0);
-    const radNow = safeArrayValue(data.hourly.shortwave_radiation, i, 0);
-    const rain = safeArrayValue(data.hourly.precipitation, i, 0);
-    const rainProb = safeArrayValue(data.hourly.precipitation_probability, i, 0);
-    const sfcWind = kmhToKt(safeArrayValue(data.hourly.wind_speed_10m, i, 0));
-    const w850Now = kmhToKt(safeArrayValue(data.hourly.wind_speed_850hPa, i, 0));
-    const w700Now = kmhToKt(safeArrayValue(data.hourly.wind_speed_700hPa, i, 0));
+  const thermalArray = data.hourly.temperature_2m.map(
+    (temp: number, i: number) => {
+      const td = safeArrayValue(data.hourly.dew_point_2m, i);
+      const low = safeArrayValue(data.hourly.cloud_cover_low, i, 0);
+      const mid = safeArrayValue(data.hourly.cloud_cover_mid, i, 0);
+      const high = safeArrayValue(data.hourly.cloud_cover_high, i, 0);
+      const radNow = safeArrayValue(data.hourly.shortwave_radiation, i, 0);
+      const rain = safeArrayValue(data.hourly.precipitation, i, 0);
+      const rainProb = safeArrayValue(
+        data.hourly.precipitation_probability,
+        i,
+        0
+      );
+      const sfcWind = kmhToKt(safeArrayValue(data.hourly.wind_speed_10m, i, 0));
+      const w850Now = kmhToKt(
+        safeArrayValue(data.hourly.wind_speed_850hPa, i, 0)
+      );
+      const w700Now = kmhToKt(
+        safeArrayValue(data.hourly.wind_speed_700hPa, i, 0)
+      );
 
-    const localSpread = temp - td;
-    const localLcl = Math.round(Math.max(0, 125 * localSpread));
-    const localTop = localLcl + 300;
+      const localSpread = temp - td;
+      const localLcl = Math.round(Math.max(0, 125 * localSpread));
+      const localTop = localLcl + 300;
 
-    const raw = rawThermalPotential(localSpread, radNow, localTop);
-    const cf = cloudSuppressionFactor(low, mid, high, radNow, localSpread);
-    const rf = precipitationSuppressionFactor(rain, rainProb);
-    const wf = windSuppressionFactor(sfcWind, w850Now, w700Now);
+      const raw = rawThermalPotential(localSpread, radNow, localTop);
+      const cf = cloudSuppressionFactor(low, mid, high, radNow, localSpread);
+      const rf = precipitationSuppressionFactor(rain, rainProb);
+      const wf = windSuppressionFactor(sfcWind, w850Now, w700Now);
 
-    const score = clamp(raw * cf * rf * wf, 0, 100);
-    return Number(estimateClimbFromScore(score).toFixed(1));
-  });
+      const score = clamp(raw * cf * rf * wf, 0, 100);
+      return Number(estimateClimbFromScore(score).toFixed(1));
+    }
+  );
 
   const hours = data.hourly.time.map((tStr: string) =>
     new Date(tStr).toLocaleTimeString(t.locale, {
@@ -1293,6 +1318,7 @@ export default async function Home({
   );
 
   const temperatureAll = data.hourly.temperature_2m;
+  const dewPointAll = data.hourly.dew_point_2m;
 
   const windSurfaceAll =
     data.hourly.wind_speed_10m?.map((v: number) => kmhToKt(v)) ??
@@ -1316,6 +1342,18 @@ export default async function Home({
 
   const wind700DirAll =
     data.hourly.wind_direction_700hPa?.map((v: number) => Math.round(v)) ??
+    Array(hours.length).fill(0);
+
+  const cloudLowAll =
+    data.hourly.cloud_cover_low?.map((v: number) => Math.round(v)) ??
+    Array(hours.length).fill(0);
+
+  const cloudMidAll =
+    data.hourly.cloud_cover_mid?.map((v: number) => Math.round(v)) ??
+    Array(hours.length).fill(0);
+
+  const cloudHighAll =
+    data.hourly.cloud_cover_high?.map((v: number) => Math.round(v)) ??
     Array(hours.length).fill(0);
 
   const forecastTs = new Date(data.hourly.time[currentIndex]).getTime();
@@ -1406,7 +1444,8 @@ export default async function Home({
     t
   );
 
-  const hazards: { icon: string; label: string; type: string; severity: number }[] = [];
+  const hazards: { icon: string; label: string; type: string; severity: number }[] =
+    [];
 
   if (
     precipitationProbability > 60 &&
@@ -1414,7 +1453,12 @@ export default async function Home({
     cloudMid > 50 &&
     expectedClimb > 2.2
   ) {
-    hazards.push({ icon: "⛈", label: t.stormRisk, type: "storm", severity: 6 });
+    hazards.push({
+      icon: "⛈",
+      label: t.stormRisk,
+      type: "storm",
+      severity: 6,
+    });
   }
   if (temperature < 0) {
     hazards.push({ icon: "🧊", label: t.freezing, type: "ice", severity: 5 });
@@ -1423,16 +1467,31 @@ export default async function Home({
     hazards.push({ icon: "❄", label: t.snow, type: "snow", severity: 5 });
   }
   if (airportSurfaceWindKt > 15 || wind850 > 22 || crosswindAbs > 12) {
-    hazards.push({ icon: "💨", label: t.strongWind, type: "wind", severity: 4 });
+    hazards.push({
+      icon: "💨",
+      label: t.strongWind,
+      type: "wind",
+      severity: 4,
+    });
   }
   if (precipitation > 0.2 || precipitationProbability > 45) {
     hazards.push({ icon: "🌧", label: t.rain, type: "rain", severity: 3 });
   }
   if (lcl < 500 || (cloudLow > 75 && radiation < 180)) {
-    hazards.push({ icon: "☁", label: t.lowCloudBase, type: "cloud", severity: 2 });
+    hazards.push({
+      icon: "☁",
+      label: t.lowCloudBase,
+      type: "cloud",
+      severity: 2,
+    });
   }
   if (sky.overcast) {
-    hazards.push({ icon: "🌫", label: t.overcastRisk, type: "overcast", severity: 1 });
+    hazards.push({
+      icon: "🌫",
+      label: t.overcastRisk,
+      type: "overcast",
+      severity: 1,
+    });
   }
 
   hazards.sort((a, b) => b.severity - a.severity);
@@ -1449,7 +1508,11 @@ export default async function Home({
       (hasStorm ? 35 : 0) +
         (hasRain ? 18 : 0) +
         clamp(crosswindAbs * 2, 0, 20) +
-        clamp(airportSurfaceWindKt > 0 ? airportSurfaceWindKt * 1.2 : 0, 0, 20) +
+        clamp(
+          airportSurfaceWindKt > 0 ? airportSurfaceWindKt * 1.2 : 0,
+          0,
+          20
+        ) +
         clamp((sky.overcast ? 18 : 0) + (cloudLow > 70 ? 8 : 0), 0, 18),
       0,
       100
@@ -1482,13 +1545,11 @@ export default async function Home({
   let semaphore = t.caution;
   let semaphoreClass = "badgeYellow";
   let semaphoreNote = t.semaphoreCautionNote;
-  let semaphorePanelClass = "semaphorePanel semaphorePanel--warn";
 
   if (!isWithinVfrDay) {
     semaphore = t.noGo;
     semaphoreClass = "badgeRed";
     semaphoreNote = t.outsideVfrNote;
-    semaphorePanelClass = "semaphorePanel semaphorePanel--bad";
   } else if (
     operationalRisk >= 70 ||
     lcl < 350 ||
@@ -1500,7 +1561,6 @@ export default async function Home({
     semaphore = t.noGo;
     semaphoreClass = "badgeRed";
     semaphoreNote = t.semaphoreNoGoNote;
-    semaphorePanelClass = "semaphorePanel semaphorePanel--bad";
   } else if (
     effectiveThermalScore >= 60 &&
     operationalRisk < 35 &&
@@ -1509,7 +1569,17 @@ export default async function Home({
     semaphore = t.go;
     semaphoreClass = "badgeGreen";
     semaphoreNote = t.semaphoreGoNote;
-    semaphorePanelClass = "semaphorePanel semaphorePanel--good";
+  }
+
+  let semaphoreCardClass = "semaphoreCard warn";
+  let semaphoreBadgeClass = "semaphoreBadge warn";
+
+  if (semaphoreClass === "badgeRed") {
+    semaphoreCardClass = "semaphoreCard bad";
+    semaphoreBadgeClass = "semaphoreBadge bad";
+  } else if (semaphoreClass === "badgeGreen") {
+    semaphoreCardClass = "semaphoreCard go";
+    semaphoreBadgeClass = "semaphoreBadge go";
   }
 
   const forecastTimeLabel = data.hourly.time[currentIndex]
@@ -1542,7 +1612,8 @@ export default async function Home({
 
   if (lcl < 600) summaryParts.push(t.summaryLowBase);
   if (sky.overcast) summaryParts.push(t.overcastRisk);
-  if (airportSurfaceWindKt > 12 || crosswindAbs > 10) summaryParts.push(t.summaryWindy);
+  if (airportSurfaceWindKt > 12 || crosswindAbs > 10)
+    summaryParts.push(t.summaryWindy);
   if (sky.convective) summaryParts.push(t.summaryCu);
   if (xcPotential === t.xcPotentialGood || xcPotential === t.xcPotentialDay) {
     summaryParts.push(t.summaryXc);
@@ -1572,69 +1643,27 @@ export default async function Home({
     isWithinVfrDay,
   });
 
-  const topStatusBorderColor =
-    semaphoreClass === "badgeGreen"
-      ? "rgba(34,197,94,0.7)"
-      : semaphoreClass === "badgeRed"
-      ? "rgba(239,68,68,0.72)"
-      : "rgba(245,158,11,0.7)";
-
   return (
     <main className="container">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: "12px",
-          flexWrap: "wrap",
-          alignItems: "center",
-          marginBottom: "14px",
-        }}
-      >
+      <div className="topHeaderRow">
         <div>
           <h1>{t.title}</h1>
           <h2>{t.subtitle}</h2>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "8px 10px",
-            borderRadius: "12px",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.10)",
-          }}
-        >
-          <span style={{ fontSize: "0.85rem", color: "#cbd5e1" }}>
-            {t.language}:
-          </span>
+        <div className="langSwitch">
+          <span className="langLabel">{t.language}:</span>
 
           <Link
             href={{ pathname: "/", query: { lang: "cs" } }}
-            style={{
-              padding: "4px 8px",
-              borderRadius: "8px",
-              textDecoration: "none",
-              color: "#fff",
-              background: lang === "cs" ? "rgba(59,130,246,0.35)" : "transparent",
-              border: "1px solid rgba(255,255,255,0.10)",
-            }}
+            className={`langButton ${lang === "cs" ? "active" : ""}`}
           >
             CZ
           </Link>
 
           <Link
             href={{ pathname: "/", query: { lang: "en" } }}
-            style={{
-              padding: "4px 8px",
-              borderRadius: "8px",
-              textDecoration: "none",
-              color: "#fff",
-              background: lang === "en" ? "rgba(59,130,246,0.35)" : "transparent",
-              border: "1px solid rgba(255,255,255,0.10)",
-            }}
+            className={`langButton ${lang === "en" ? "active" : ""}`}
           >
             EN
           </Link>
@@ -1642,117 +1671,52 @@ export default async function Home({
       </div>
 
       <p className="metaLine">
-        {formattedDate} • {t.updated} {formattedTime} {t.local} • {t.forecastHour}{" "}
-        {forecastTimeLabel} • {t.version} {APP_VERSION} • {t.appUpdate} {APP_UPDATED}
+        {formattedDate} • {t.updated} {formattedTime} {t.local} •{" "}
+        {t.forecastHour} {forecastTimeLabel} • {t.version} {APP_VERSION} •{" "}
+        {t.appUpdate} {APP_UPDATED}
       </p>
 
-      <div
-        style={{
-          marginBottom: "16px",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
-        }}
-      >
-        <span
-          style={{
-            padding: "7px 11px",
-            borderRadius: "999px",
-            background: hasMetar
-              ? "rgba(34,197,94,0.14)"
-              : "rgba(249,115,22,0.14)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "#e5eefc",
-            fontWeight: 600,
-            fontSize: "0.85rem",
-          }}
-        >
-          {t.windSource}: {airportWindSourceLabel}
+      <div className="statusPills">
+        <span className={`sourceBadge ${hasMetar ? "live" : "fallback"}`}>
+          {t.sourceLabel}: {airportWindSourceLabel}
         </span>
 
-        <span
-          style={{
-            padding: "7px 11px",
-            borderRadius: "999px",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "#e5eefc",
-            fontSize: "0.85rem",
-          }}
-        >
+        <span className="statusPill">
           {hasMetar ? t.metarAvailable : t.metarUnavailable}
         </span>
 
-        <span
-          style={{
-            padding: "7px 11px",
-            borderRadius: "999px",
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "#e5eefc",
-            fontSize: "0.85rem",
-          }}
-        >
+        <span className="statusPill">
           {t.vfrDay}: {sunriseLabel} – {sunsetLabel}
         </span>
       </div>
 
-      <section
-        className="topStatusCard"
-        style={{
-          marginBottom: "18px",
-          borderColor: topStatusBorderColor,
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(220px, 320px) 1fr",
-            gap: "16px",
-          }}
-        >
-          <div className={semaphorePanelClass}>
-            <div
-              style={{
-                fontSize: "0.8rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                opacity: 0.78,
-                marginBottom: "6px",
-              }}
-            >
-              {t.flightSemaphore}
-            </div>
+      <section className="topStatusCard">
+        <div className="topStatusGrid">
+          <div className={semaphoreCardClass}>
+            <div className="eyebrowLabel">{t.flightSemaphore}</div>
 
-            <div
-              className={semaphoreClass}
-              style={{
-                fontSize: "2rem",
-                fontWeight: 800,
-                lineHeight: 1.05,
-                marginBottom: "8px",
-                background: "transparent",
-              }}
-            >
-              {semaphore}
-            </div>
+            <div className={semaphoreBadgeClass}>{semaphore}</div>
 
-            <p style={{ margin: 0, color: "#dbe7fb", lineHeight: 1.6 }}>
-              {semaphoreNote}
-            </p>
+            <div className="semaphoreTitle">{t.flightSemaphore}</div>
+
+            <p className="semaphoreNote">{semaphoreNote}</p>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-              gap: "12px",
-            }}
-          >
+          <div className="metricGrid">
             <div className="metricCard">
               <div className="metricLabel">{t.climb}</div>
               <div className="metricValue">{expectedClimb.toFixed(1)} m/s</div>
-              <div className={climbRating === t.strong ? "badgeBlue" : climbRating === t.good ? "badgeGreen" : climbRating === t.usable ? "badgeYellow" : "badgeRed"}>
+              <div
+                className={
+                  climbRating === t.strong
+                    ? "badgeBlue"
+                    : climbRating === t.good
+                    ? "badgeGreen"
+                    : climbRating === t.usable
+                    ? "badgeYellow"
+                    : "badgeRed"
+                }
+              >
                 {climbRating}
               </div>
             </div>
@@ -1766,7 +1730,7 @@ export default async function Home({
             <div className="metricCard">
               <div className="metricLabel">{t.airportObservedWind}</div>
               <div className="metricValue">{airportSurfaceWindKt} kt</div>
-              <div style={{ color: "#dbe7fb" }}>
+              <div className="metricDir">
                 {Math.round(airportSurfaceWindDir)}° {airportSurfaceWindArrow}
               </div>
               <div className="metricSub">{airportWindSourceLabel}</div>
@@ -1774,7 +1738,7 @@ export default async function Home({
 
             <div className="metricCard">
               <div className="metricLabel">{t.xc}</div>
-              <div style={{ fontSize: "1.25rem", fontWeight: 800 }}>{xcPotential}</div>
+              <div className="metricValueLarge">{xcPotential}</div>
               <div className={xcClass}>{t.potential}</div>
             </div>
           </div>
@@ -1794,7 +1758,14 @@ export default async function Home({
 
           <div className="runwayVisualWrap">
             <svg viewBox="0 0 360 250" className="runwaySvg">
-              <rect x="0" y="0" width="360" height="250" rx="16" fill="rgba(15,23,42,0.35)" />
+              <rect
+                x="0"
+                y="0"
+                width="360"
+                height="250"
+                rx="16"
+                fill="rgba(15,23,42,0.35)"
+              />
 
               <text x="180" y="20" className="runwayNorthLabel">
                 N
@@ -1826,22 +1797,19 @@ export default async function Home({
               </g>
 
               <g transform={`rotate(${Math.round(airportSurfaceWindDir)} 180 130)`}>
-                <line
-                  x1="180"
-                  y1="48"
-                  x2="180"
-                  y2="95"
-                  className="windArrowLine"
-                />
-                <polygon
-                  points="180,34 171,52 189,52"
-                  className="windArrowHead"
-                />
+                <line x1="180" y1="48" x2="180" y2="95" className="windArrowLine" />
+                <polygon points="180,34 171,52 189,52" className="windArrowHead" />
               </g>
 
               <circle cx="180" cy="130" r="4.5" className="runwayCenterDot" />
 
-              <text x="180" y="212" textAnchor="middle" fontSize="13" fill="#e2e8f0">
+              <text
+                x="180"
+                y="212"
+                textAnchor="middle"
+                fontSize="13"
+                fill="#e2e8f0"
+              >
                 {Math.round(airportSurfaceWindDir)}° / {airportSurfaceWindKt} kt
               </text>
             </svg>
@@ -1867,11 +1835,12 @@ export default async function Home({
               <strong>{headwind >= 0 ? t.headwind : t.tailwind}:</strong>{" "}
               {Math.abs(headwind)} kt
             </div>
-            <div>
-              <strong>{t.crosswind}:</strong>{" "}
-              <span className={crosswindAbs >= 12 ? "crossBad" : crosswindAbs >= 7 ? "crossWarn" : undefined}>
-                {crosswindAbs} kt
-              </span>
+            <div
+              className={
+                crosswindAbs > 12 ? "crossBad" : crosswindAbs > 6 ? "crossWarn" : ""
+              }
+            >
+              <strong>{t.crosswind}:</strong> {crosswindAbs} kt
             </div>
           </div>
         </div>
@@ -1881,19 +1850,12 @@ export default async function Home({
           {hazards.length === 0 ? (
             <p className="badgeGreen">{t.noSignificantHazards}</p>
           ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            <div className="hazardsWrap">
               {hazards.map((h, i) => (
                 <span
                   key={`${h.type}-${i}`}
-                  style={{
-                    padding: "7px 11px",
-                    borderRadius: "999px",
-                    background: getHazardColor(h.type),
-                    fontSize: "0.86rem",
-                    color: "#e5eefc",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    fontWeight: 600,
-                  }}
+                  className="hazardPill"
+                  style={{ background: getHazardColor(h.type) }}
                 >
                   {h.icon} {h.label}
                 </span>
@@ -1935,31 +1897,31 @@ export default async function Home({
             <Cloud size={18} /> {t.cloudLayers}
           </h3>
 
-         <div className="cloudLayersGrid">
-  {[
-    { label: t.lowLayer, value: cloudLow },
-    { label: t.middleLayer, value: cloudMid },
-    { label: t.highLayer, value: cloudHigh },
-  ].map((layer) => (
-    <div key={layer.label} className="cloudLayerItem">
-      <div className="cloudLayerTop">
-        <strong>{layer.label}</strong>
-        <span>{layer.value} %</span>
-      </div>
+          <div className="cloudLayersGrid">
+            {[
+              { label: t.lowLayer, value: cloudLow },
+              { label: t.middleLayer, value: cloudMid },
+              { label: t.highLayer, value: cloudHigh },
+            ].map((layer) => (
+              <div key={layer.label} className="cloudLayerItem">
+                <div className="cloudLayerTop">
+                  <strong>{layer.label}</strong>
+                  <span>{layer.value} %</span>
+                </div>
 
-      <div className="cloudLayerBarWrap">
-        <div
-          className="cloudLayerBarFill"
-          style={{ width: `${Math.max(4, layer.value)}%` }}
-        />
-      </div>
+                <div className="cloudLayerBarWrap">
+                  <div
+                    className="cloudLayerBarFill"
+                    style={{ width: `${Math.max(4, layer.value)}%` }}
+                  />
+                </div>
 
-      <div className="cloudLayerCaption">
-        {getCoverageLabel(layer.value, lang)}
-      </div>
-    </div>
-  ))}
-</div>
+                <div className="cloudLayerCaption">
+                  {getCoverageLabel(layer.value, lang)}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="card">
@@ -1967,7 +1929,8 @@ export default async function Home({
             <Wind size={18} /> {t.windProfile}
           </h3>
           <p>
-            {t.surface}: {modelSurfaceWindKt} kt {modelSurfaceWindArrow} ({Math.round(modelSurfaceWindDir)}°) • {t.modelSource}
+            {t.surface}: {modelSurfaceWindKt} kt {modelSurfaceWindArrow} (
+            {Math.round(modelSurfaceWindDir)}°) • {t.modelSource}
           </p>
           <p>
             850 hPa: {wind850} kt {wind850Arrow} ({Math.round(wind850Dir)}°)
@@ -1994,21 +1957,29 @@ export default async function Home({
                 cloudBase: t.cloudBaseShort,
                 thermal: t.thermalShort,
                 temperature: t.temperature,
+                dewPoint: t.dewPoint,
                 surfaceWind: t.surfaceWind,
                 wind850: t.wind850,
                 wind700: t.wind700,
+                cloudLow: t.lowLayer,
+                cloudMid: t.middleLayer,
+                cloudHigh: t.highLayer,
               }}
               data={{
                 labels: hours,
                 lcl: lclArray,
                 thermal: thermalArray,
                 temperature: temperatureAll,
+                dewPoint: dewPointAll,
                 windSurface: windSurfaceAll,
                 wind850: wind850All,
                 wind700: wind700All,
                 windSurfaceDir: windSurfaceDirAll,
                 wind850Dir: wind850DirAll,
                 wind700Dir: wind700DirAll,
+                cloudLow: cloudLowAll,
+                cloudMid: cloudMidAll,
+                cloudHigh: cloudHighAll,
                 sunrise: data.daily.sunrise,
                 sunset: data.daily.sunset,
                 currentIndex,
@@ -2077,12 +2048,6 @@ export default async function Home({
             {t.dewPoint}: {dewpoint.toFixed(1)} °C
           </p>
           <p>
-            {t.airportObservedWind}: {airportSurfaceWindKt} kt ({airportWindSourceLabel})
-          </p>
-          <p>
-            {t.modelSurfaceWind}: {modelSurfaceWindKt} kt ({t.modelSource})
-          </p>
-          <p>
             {t.clouds}: {clouds} %
           </p>
           <p>
@@ -2099,14 +2064,31 @@ export default async function Home({
         <div className="card">
           <h3>{t.metarInfo}</h3>
           <p>{t.checkCurrentWeather}</p>
-          <p style={{ color: "#cbd5e1", marginTop: "8px" }}>
-            {hasMetar ? t.metarAvailable : t.metarUnavailable}
+
+          <p style={{ color: "#dbe7fb", marginTop: "8px" }}>
+            <strong>{t.sourceLabel}:</strong>{" "}
+            {hasMetar ? t.metarSource : t.metarUnavailable}
           </p>
+
           {hasMetar && metarWind?.rawText ? (
             <p style={{ color: "#dbe7fb", fontSize: "0.85rem" }}>
               <strong>RAW:</strong> {metarWind.rawText}
             </p>
-          ) : null}
+          ) : (
+            <p style={{ color: "#cbd5e1", fontSize: "0.9rem" }}>
+              {t.metarUnavailable}
+            </p>
+          )}
+
+          <a
+            href={AIRPORT_WEBCAM}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="briefingLink"
+            style={{ marginTop: "10px", display: "inline-flex" }}
+          >
+            📷 Webkamera LKFR
+          </a>
         </div>
       </div>
 
@@ -2115,14 +2097,7 @@ export default async function Home({
           <h3>
             <Camera size={18} /> {t.quickLinks}
           </h3>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              marginTop: "8px",
-            }}
-          >
+          <div className="quickLinksColumn">
             <a
               href={METAR_PAGE}
               target="_blank"
@@ -2158,34 +2133,15 @@ export default async function Home({
           </h3>
 
           <div className="ratingWrap" style={{ marginTop: "10px" }}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                className="ratingButton"
-                aria-label={`Rate ${n}`}
-                title={`${n} / 5`}
-              >
-                ★
-              </button>
-            ))}
+            ⭐ ⭐ ⭐ ⭐ ⭐
           </div>
 
-          <p style={{ marginTop: "10px", color: "#cbd5e1", fontSize: "0.85rem" }}>
-            {t.rateNote}
-          </p>
+          <p className="rateNoteText">{t.rateNote}</p>
         </div>
       </div>
 
       <footer className="card disclaimerCard">
-        <h3
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            marginBottom: "8px",
-          }}
-        >
+        <h3 className="disclaimerTitleRow">
           <Info size={18} />
           {t.disclaimerTitle}
         </h3>
