@@ -370,17 +370,13 @@ const translations: Record<Lang, Translation> = {
 
     pilotNoGo: "Den není vhodný pro běžné plachtění",
     pilotFlyable: "Den je létatelný pro plachtařský provoz",
-    pilotMarginal:
-      "Den je hraniční a vyžaduje pečlivý úsudek pilota",
+    pilotMarginal: "Den je hraniční a vyžaduje pečlivý úsudek pilota",
 
     pilotConvective:
       "kupovitá oblačnost by měla podporovat použitelnou termiku",
-    pilotBlue:
-      "převládá modrá termika s omezeným značkováním",
-    pilotOvercast:
-      "oblačnost omezuje ohřev povrchu a tlumí termiku",
-    pilotMixed:
-      "vývoj oblohy je smíšený a prostorově nerovnoměrný",
+    pilotBlue: "převládá modrá termika s omezeným značkováním",
+    pilotOvercast: "oblačnost omezuje ohřev povrchu a tlumí termiku",
+    pilotMixed: "vývoj oblohy je smíšený a prostorově nerovnoměrný",
 
     pilotStrongerClimbs: "očekávaná stoupání kolem",
     pilotUsableClimbs: "použitelná stoupání kolem",
@@ -581,10 +577,8 @@ const translations: Record<Lang, Translation> = {
 
     pilotConvective:
       "convective cloud field should support usable thermals",
-    pilotBlue:
-      "blue thermal conditions with limited cloud marking",
-    pilotOvercast:
-      "cloud cover suppresses surface heating and thermals",
+    pilotBlue: "blue thermal conditions with limited cloud marking",
+    pilotOvercast: "cloud cover suppresses surface heating and thermals",
     pilotMixed: "sky development is mixed and uneven",
 
     pilotStrongerClimbs: "expected climbs around",
@@ -605,13 +599,11 @@ const translations: Record<Lang, Translation> = {
     pilotXcVeryGood: "very good XC potential",
     pilotXcGood: "good XC potential",
     pilotXcLocal: "possible short local XC",
-    pilotXcLocalOnly:
-      "better suited to local flying than XC",
+    pilotXcLocalOnly: "better suited to local flying than XC",
 
     pilotStormMain: "the main limitation is thunderstorm risk",
     pilotShowers: "precipitation may interrupt the day",
-    pilotWatchCloud:
-      "watch for cloud spreading and loss of heating",
+    pilotWatchCloud: "watch for cloud spreading and loss of heating",
     pilotWatchWind: "watch the wind profile and drift",
 
     pilotRiskHigh: "overall operational risk is high",
@@ -1276,40 +1268,30 @@ export default async function Home({
     return Math.round(Math.max(0, 125 * (temp - td)));
   });
 
-  const thermalArray = data.hourly.temperature_2m.map(
-    (temp: number, i: number) => {
-      const td = safeArrayValue(data.hourly.dew_point_2m, i);
-      const low = safeArrayValue(data.hourly.cloud_cover_low, i, 0);
-      const mid = safeArrayValue(data.hourly.cloud_cover_mid, i, 0);
-      const high = safeArrayValue(data.hourly.cloud_cover_high, i, 0);
-      const radNow = safeArrayValue(data.hourly.shortwave_radiation, i, 0);
-      const rain = safeArrayValue(data.hourly.precipitation, i, 0);
-      const rainProb = safeArrayValue(
-        data.hourly.precipitation_probability,
-        i,
-        0
-      );
-      const sfcWind = kmhToKt(safeArrayValue(data.hourly.wind_speed_10m, i, 0));
-      const w850Now = kmhToKt(
-        safeArrayValue(data.hourly.wind_speed_850hPa, i, 0)
-      );
-      const w700Now = kmhToKt(
-        safeArrayValue(data.hourly.wind_speed_700hPa, i, 0)
-      );
+  const thermalArray = data.hourly.temperature_2m.map((temp: number, i: number) => {
+    const td = safeArrayValue(data.hourly.dew_point_2m, i);
+    const low = safeArrayValue(data.hourly.cloud_cover_low, i, 0);
+    const mid = safeArrayValue(data.hourly.cloud_cover_mid, i, 0);
+    const high = safeArrayValue(data.hourly.cloud_cover_high, i, 0);
+    const radNow = safeArrayValue(data.hourly.shortwave_radiation, i, 0);
+    const rain = safeArrayValue(data.hourly.precipitation, i, 0);
+    const rainProb = safeArrayValue(data.hourly.precipitation_probability, i, 0);
+    const sfcWind = kmhToKt(safeArrayValue(data.hourly.wind_speed_10m, i, 0));
+    const w850Now = kmhToKt(safeArrayValue(data.hourly.wind_speed_850hPa, i, 0));
+    const w700Now = kmhToKt(safeArrayValue(data.hourly.wind_speed_700hPa, i, 0));
 
-      const localSpread = temp - td;
-      const localLcl = Math.round(Math.max(0, 125 * localSpread));
-      const localTop = localLcl + 300;
+    const localSpread = temp - td;
+    const localLcl = Math.round(Math.max(0, 125 * localSpread));
+    const localTop = localLcl + 300;
 
-      const raw = rawThermalPotential(localSpread, radNow, localTop);
-      const cf = cloudSuppressionFactor(low, mid, high, radNow, localSpread);
-      const rf = precipitationSuppressionFactor(rain, rainProb);
-      const wf = windSuppressionFactor(sfcWind, w850Now, w700Now);
+    const raw = rawThermalPotential(localSpread, radNow, localTop);
+    const cf = cloudSuppressionFactor(low, mid, high, radNow, localSpread);
+    const rf = precipitationSuppressionFactor(rain, rainProb);
+    const wf = windSuppressionFactor(sfcWind, w850Now, w700Now);
 
-      const score = clamp(raw * cf * rf * wf, 0, 100);
-      return Number(estimateClimbFromScore(score).toFixed(1));
-    }
-  );
+    const score = clamp(raw * cf * rf * wf, 0, 100);
+    return Number(estimateClimbFromScore(score).toFixed(1));
+  });
 
   const hours = data.hourly.time.map((tStr: string) =>
     new Date(tStr).toLocaleTimeString(t.locale, {
@@ -1454,12 +1436,7 @@ export default async function Home({
     cloudMid > 50 &&
     expectedClimb > 2.2
   ) {
-    hazards.push({
-      icon: "⛈",
-      label: t.stormRisk,
-      type: "storm",
-      severity: 6,
-    });
+    hazards.push({ icon: "⛈", label: t.stormRisk, type: "storm", severity: 6 });
   }
   if (temperature < 0) {
     hazards.push({ icon: "🧊", label: t.freezing, type: "ice", severity: 5 });
@@ -1468,31 +1445,16 @@ export default async function Home({
     hazards.push({ icon: "❄", label: t.snow, type: "snow", severity: 5 });
   }
   if (airportSurfaceWindKt > 15 || wind850 > 22 || crosswindAbs > 12) {
-    hazards.push({
-      icon: "💨",
-      label: t.strongWind,
-      type: "wind",
-      severity: 4,
-    });
+    hazards.push({ icon: "💨", label: t.strongWind, type: "wind", severity: 4 });
   }
   if (precipitation > 0.2 || precipitationProbability > 45) {
     hazards.push({ icon: "🌧", label: t.rain, type: "rain", severity: 3 });
   }
   if (lcl < 500 || (cloudLow > 75 && radiation < 180)) {
-    hazards.push({
-      icon: "☁",
-      label: t.lowCloudBase,
-      type: "cloud",
-      severity: 2,
-    });
+    hazards.push({ icon: "☁", label: t.lowCloudBase, type: "cloud", severity: 2 });
   }
   if (sky.overcast) {
-    hazards.push({
-      icon: "🌫",
-      label: t.overcastRisk,
-      type: "overcast",
-      severity: 1,
-    });
+    hazards.push({ icon: "🌫", label: t.overcastRisk, type: "overcast", severity: 1 });
   }
 
   hazards.sort((a, b) => b.severity - a.severity);
@@ -1509,11 +1471,7 @@ export default async function Home({
       (hasStorm ? 35 : 0) +
         (hasRain ? 18 : 0) +
         clamp(crosswindAbs * 2, 0, 20) +
-        clamp(
-          airportSurfaceWindKt > 0 ? airportSurfaceWindKt * 1.2 : 0,
-          0,
-          20
-        ) +
+        clamp(airportSurfaceWindKt > 0 ? airportSurfaceWindKt * 1.2 : 0, 0, 20) +
         clamp((sky.overcast ? 18 : 0) + (cloudLow > 70 ? 8 : 0), 0, 18),
       0,
       100
@@ -1613,8 +1571,7 @@ export default async function Home({
 
   if (lcl < 600) summaryParts.push(t.summaryLowBase);
   if (sky.overcast) summaryParts.push(t.overcastRisk);
-  if (airportSurfaceWindKt > 12 || crosswindAbs > 10)
-    summaryParts.push(t.summaryWindy);
+  if (airportSurfaceWindKt > 12 || crosswindAbs > 10) summaryParts.push(t.summaryWindy);
   if (sky.convective) summaryParts.push(t.summaryCu);
   if (xcPotential === t.xcPotentialGood || xcPotential === t.xcPotentialDay) {
     summaryParts.push(t.summaryXc);
@@ -1965,10 +1922,14 @@ export default async function Home({
                 cloudLow: t.lowLayer,
                 cloudMid: t.middleLayer,
                 cloudHigh: t.highLayer,
-                axesLegendTitle: lang === "cs" ? "Osy a datové vrstvy grafu" : "Chart axes and data layers",
+                axesLegendTitle:
+                  lang === "cs"
+                    ? "Osy a datové vrstvy grafu"
+                    : "Chart axes and data layers",
               }}
               data={{
                 labels: hours,
+                times: data.hourly.time,
                 lcl: lclArray,
                 thermal: thermalArray,
                 temperature: temperatureAll,
@@ -2095,39 +2056,39 @@ export default async function Home({
       </div>
 
       <div className="grid" style={{ marginBottom: "18px" }}>
-       <div className="card">
-  <h3>
-    <Camera size={18} /> {t.quickLinks}
-  </h3>
+        <div className="card">
+          <h3>
+            <Camera size={18} /> {t.quickLinks}
+          </h3>
 
-  <div className="quickLinksColumn">
-    <a
-      href={METAR_PAGE}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="briefingLink"
-    >
-      {t.openMetar}
-    </a>
+          <div className="quickLinksColumn">
+            <a
+              href={METAR_PAGE}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              {t.openMetar}
+            </a>
 
-    <a
-      href={AIRPORT_WEBSITE}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="briefingLink"
-    >
-      {t.openWebsite}
-    </a>
-  </div>
-</div>
+            <a
+              href={AIRPORT_WEBSITE}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              {t.openWebsite}
+            </a>
+          </div>
+        </div>
 
-       <div className="card">
-  <h3>
-    <Star size={18} /> {t.appRating}
-  </h3>
+        <div className="card">
+          <h3>
+            <Star size={18} /> {t.appRating}
+          </h3>
 
-  <AppRating note={t.rateNote} />
-</div>
+          <AppRating note={t.rateNote} />
+        </div>
       </div>
 
       <footer className="card disclaimerCard">
