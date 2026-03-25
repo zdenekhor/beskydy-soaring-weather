@@ -92,7 +92,7 @@ function formatShortDay(dateString: string, lang: Lang) {
 export default function WeatherChart({ lang, labelsText, data }: Props) {
   const [selectedDay, setSelectedDay] = useState(0);
   const [hoveredAxis, setHoveredAxis] = useState<string | null>(null);
-
+ console.log("hoveredAxis:", hoveredAxis);
   const dayKeys = useMemo(() => {
     return data.sunrise.map((s) => getDateKey(s));
   }, [data.sunrise]);
