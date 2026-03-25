@@ -338,9 +338,13 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         title: {
           display: false,
         },
-        grid: {
-          color: "rgba(148,163,184,0.08)",
-        },
+      grid: {
+  color:
+    hoveredAxis === "temp"
+      ? "rgba(251,191,36,0.25)"
+      : "rgba(148,163,184,0.06)",
+  lineWidth: hoveredAxis === "temp" ? 1.2 : 0.6,
+},
       },
       yHeight: {
   type: "linear" as const,
@@ -351,9 +355,14 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         title: {
           display: false,
         },
-        grid: {
-          drawOnChartArea: false,
-        },
+       grid: {
+  color:
+    hoveredAxis === "height"
+      ? "rgba(45,212,191,0.22)"
+      : "rgba(148,163,184,0.05)",
+  drawOnChartArea: true,
+  lineWidth: hoveredAxis === "height" ? 1.2 : 0.5,
+},
       },
      yThermal: {
   type: "linear" as const,
@@ -366,9 +375,14 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         title: {
           display: false,
         },
-        grid: {
-          drawOnChartArea: false,
-        },
+       grid: {
+  color:
+    hoveredAxis === "thermal"
+      ? "rgba(34,197,94,0.22)"
+      : "rgba(148,163,184,0.05)",
+  drawOnChartArea: true,
+  lineWidth: hoveredAxis === "thermal" ? 1.2 : 0.5,
+},
       },
      yWind: {
   type: "linear" as const,
@@ -377,12 +391,18 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   ticks: {
     color: hoveredAxis === "wind" ? "#fbcfe8" : "#f9a8d4",
   },
-        title: {
+   title: {
           display: false,
         },
-        grid: {
-          drawOnChartArea: false,
-        },
+      grid: {
+  color:
+    hoveredAxis === "wind"
+      ? "rgba(244,114,182,0.22)"
+      : "rgba(148,163,184,0.05)",
+  drawOnChartArea: true,
+  lineWidth: hoveredAxis === "wind" ? 1.2 : 0.5,
+},
+
       },
      yCloud: {
   type: "linear" as const,
@@ -395,9 +415,14 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         title: {
           display: false,
         },
-        grid: {
-          drawOnChartArea: false,
-        },
+      grid: {
+  color:
+    hoveredAxis === "cloud"
+      ? "rgba(203,213,225,0.25)"
+      : "rgba(148,163,184,0.05)",
+  drawOnChartArea: true,
+  lineWidth: hoveredAxis === "cloud" ? 1.2 : 0.5,
+},
       },
     },
   };
