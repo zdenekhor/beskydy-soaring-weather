@@ -459,7 +459,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
 </div>
 
       <div className="chartCanvasWrap">
-        <Line data={chartData} options={options} />
+       <Line
+  key={hoveredAxis ?? "default"}
+  data={chartData}
+  options={options}
+/>
       </div>
 
       {currentVisibleIndex >= 0 ? (
