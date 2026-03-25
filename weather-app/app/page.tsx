@@ -1965,6 +1965,7 @@ export default async function Home({
                 cloudLow: t.lowLayer,
                 cloudMid: t.middleLayer,
                 cloudHigh: t.highLayer,
+                axesLegendTitle: lang === "cs" ? "Osy a datové vrstvy grafu" : "Chart axes and data layers",
               }}
               data={{
                 labels: hours,
