@@ -2087,10 +2087,9 @@ export default async function Home({
             <Star size={18} /> {t.appRating}
           </h3>
 
-          <AppRating note={t.rateNote} />
-        </div>
+         <AppRating note={t.rateNote} lang={lang} storageKey="lkfr-app-rating" />
       </div>
-
+ </div>
       <footer className="card disclaimerCard">
         <h3 className="disclaimerTitleRow">
           <Info size={18} />
