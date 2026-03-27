@@ -140,13 +140,30 @@ type Translation = {
   xcPotentialGood: string;
   xcPotentialDay: string;
 
+    skyLowStratus: string;
   skyLowOvercast: string;
   skyOvercast: string;
-  skyCuDay: string;
+  skyBlueWeak: string;
   skyBlueDay: string;
+  skyBlueThermal: string;
+  skyWeakCu: string;
+  skyCuDay: string;
+  skyCuStreets: string;
   skyUsable: string;
   skyMixed: string;
+  skyOverdeveloped: string;
+  skyHighCloudShield: string;
+  skyDecaying: string;
   thermalSkyEstimate: string;
+
+  pilotLowStratus: string;
+  pilotBlueWeak: string;
+  pilotBlueThermal: string;
+  pilotWeakCu: string;
+  pilotCuStreets: string;
+  pilotOverdeveloped: string;
+  pilotHighCloudShield: string;
+  pilotDecaying: string;
 
   stormRisk: string;
   freezing: string;
@@ -344,13 +361,38 @@ const translations: Record<Lang, Translation> = {
     xcPotentialGood: "Dobrý",
     xcPotentialDay: "XC den",
 
-    skyLowOvercast: "Nízká deka",
-    skyOvercast: "Zataženo",
-    skyCuDay: "Kupovitý den",
+        skyLowStratus: "Nízký stratus / mlha",
+    skyLowOvercast: "Nízká zatažená vrstva",
+    skyOvercast: "Zataženo / rozlitá oblačnost",
+    skyBlueWeak: "Slabý modrý den",
     skyBlueDay: "Modrý den",
+    skyBlueThermal: "Modrá termika",
+    skyWeakCu: "Slabé kupy",
+    skyCuDay: "Kupovitý den",
+    skyCuStreets: "Cumulus streets",
     skyUsable: "Použitelná termická obloha",
     skyMixed: "Smíšený vývoj",
-    thermalSkyEstimate: "orientační klasifikace oblohy",
+    skyOverdeveloped: "Přerůstání oblačnosti",
+    skyHighCloudShield: "Vysoká oblačnost tlumící ohřev",
+    skyDecaying: "Vyhasínající termika",
+    thermalSkyEstimate: "orientační plachtařská klasifikace oblohy",
+
+    pilotLowStratus:
+      "nízká vrstvená oblačnost nebo mlha prakticky znemožňuje běžné plachtění",
+    pilotBlueWeak:
+      "termika může existovat, ale bude slabá a bez spolehlivého značkování",
+    pilotBlueThermal:
+      "čeká se modrá termika bez kupovitého značkování, vyhledávání stoupání bude náročnější",
+    pilotWeakCu:
+      "malé kupy mohou značit jen slabší a méně pravidelnou termiku",
+    pilotCuStreets:
+      "uspořádané kupy v liniích mohou výrazně podpořit přeletové podmínky",
+    pilotOverdeveloped:
+      "oblačnost přerůstá a může potlačovat ohřev nebo přecházet do přeháněk a bouřek",
+    pilotHighCloudShield:
+      "vysoká oblačnost omezuje sluneční ohřev a tím i rozvoj termiky",
+    pilotDecaying:
+      "termika už slábne nebo se rozpadá a podmínky budou spíše dohasínat",
 
     stormRisk: "Riziko bouřek",
     freezing: "Mrznutí",
@@ -546,13 +588,38 @@ const translations: Record<Lang, Translation> = {
     xcPotentialGood: "Good",
     xcPotentialDay: "XC day",
 
+       skyLowStratus: "Low stratus / fog",
     skyLowOvercast: "Low overcast",
-    skyOvercast: "Overcast",
-    skyCuDay: "Cu day",
+    skyOvercast: "Overcast / spread-out cloud",
+    skyBlueWeak: "Weak blue day",
     skyBlueDay: "Blue day",
+    skyBlueThermal: "Blue thermal day",
+    skyWeakCu: "Weak Cu",
+    skyCuDay: "Cu day",
+    skyCuStreets: "Cu streets",
     skyUsable: "Usable thermal sky",
     skyMixed: "Mixed development",
-    thermalSkyEstimate: "approximate sky classification",
+    skyOverdeveloped: "Overdevelopment",
+    skyHighCloudShield: "High cloud shield",
+    skyDecaying: "Decaying thermals",
+    thermalSkyEstimate: "approximate soaring sky classification",
+
+    pilotLowStratus:
+      "low stratus or fog makes normal soaring effectively impossible",
+    pilotBlueWeak:
+      "thermals may exist but will be weak and poorly marked",
+    pilotBlueThermal:
+      "blue thermal conditions are expected, with little or no Cu marking",
+    pilotWeakCu:
+      "small Cu may indicate only weak and less regular thermals",
+    pilotCuStreets:
+      "organised cloud streets may strongly support XC conditions",
+    pilotOverdeveloped:
+      "clouds are overdeveloping and may suppress heating or lead to showers and storms",
+    pilotHighCloudShield:
+      "high cloud reduces solar heating and weakens convection",
+    pilotDecaying:
+      "thermals are fading and the day is likely moving into decay",
 
     stormRisk: "Thunderstorm risk",
     freezing: "Freezing",
@@ -891,67 +958,269 @@ function detectSkyType(
     radiation: number;
     spread: number;
     lcl: number;
+    precipitation: number;
+    precipitationProbability: number;
+    surfaceWind: number;
+    wind850: number;
+    isWithinVfrDay: boolean;
+    currentHour: number;
+    sunriseHour: number;
+    sunsetHour: number;
   },
   t: Translation
 ) {
-  const { cloudLow, cloudMid, clouds, radiation, spread, lcl } = params;
+  const {
+    cloudLow,
+    cloudMid,
+    cloudHigh,
+    clouds,
+    radiation,
+    spread,
+    lcl,
+    precipitation,
+    precipitationProbability,
+    surfaceWind,
+    wind850,
+    isWithinVfrDay,
+    currentHour,
+    sunriseHour,
+    sunsetHour,
+  } = params;
 
-  const isOvercast = cloudLow > 80 && radiation < 180 && spread < 7;
-  const isLowOvercast = cloudLow > 75 && radiation < 160;
-  const isBlueDay =
-    radiation >= 430 && spread >= 6 && cloudLow < 20 && cloudMid < 25;
-  const isCuDay =
-    cloudLow >= 20 &&
-    cloudLow <= 85 &&
-    radiation >= 260 &&
-    spread >= 3.5 &&
-    lcl >= 700 &&
-    !(cloudLow > 80 && radiation < 180);
-  const isUsableThermalSky =
-    radiation >= 220 && spread >= 3 && lcl >= 600 && !isOvercast;
+  const convectiveWindow =
+    isWithinVfrDay &&
+    currentHour >= sunriseHour + 2 &&
+    currentHour <= sunsetHour - 2;
 
-  if (isLowOvercast) {
+  const lowStratus =
+    cloudLow >= 85 &&
+    lcl < 350 &&
+    radiation < 120;
+
+  const lowOvercast =
+    cloudLow >= 75 &&
+    lcl < 700 &&
+    radiation < 180;
+
+  const overcast =
+    (clouds >= 90 || cloudLow >= 80) &&
+    radiation < 220 &&
+    spread < 6;
+
+  const highCloudShield =
+    cloudHigh >= 70 &&
+    cloudLow < 50 &&
+    radiation < 260;
+
+  const overdeveloped =
+    convectiveWindow &&
+    cloudLow >= 70 &&
+    cloudMid >= 45 &&
+    radiation < 220 &&
+    spread >= 4 &&
+    (precipitation > 0.1 || precipitationProbability >= 45);
+
+  const blueWeak =
+    cloudLow < 15 &&
+    cloudMid < 20 &&
+    cloudHigh < 35 &&
+    radiation >= 220 &&
+    radiation < 420 &&
+    spread >= 2.5 &&
+    spread < 5.5;
+
+  const blueThermal =
+    cloudLow < 20 &&
+    cloudMid < 25 &&
+    cloudHigh < 35 &&
+    radiation >= 380 &&
+    spread >= 5.5 &&
+    lcl >= 700;
+
+  const weakCu =
+    cloudLow >= 15 &&
+    cloudLow < 35 &&
+    radiation >= 250 &&
+    spread >= 3 &&
+    lcl >= 600 &&
+    lcl < 1100;
+
+  const cuDay =
+    cloudLow >= 25 &&
+    cloudLow <= 60 &&
+    radiation >= 300 &&
+    spread >= 4.5 &&
+    lcl >= 900 &&
+    precipitation < 0.1;
+
+  const cuStreets =
+    cloudLow >= 25 &&
+    cloudLow <= 60 &&
+    radiation >= 320 &&
+    spread >= 5 &&
+    lcl >= 1100 &&
+    surfaceWind >= 8 &&
+    surfaceWind <= 18 &&
+    wind850 >= 12 &&
+    wind850 <= 28 &&
+    cloudMid < 35 &&
+    precipitation < 0.1;
+
+  const usable =
+    radiation >= 220 &&
+    spread >= 3 &&
+    lcl >= 600 &&
+    !overcast &&
+    !lowOvercast &&
+    !lowStratus;
+
+  const decaying =
+    isWithinVfrDay &&
+    currentHour >= sunsetHour - 2 &&
+    radiation < 180 &&
+    spread < 5;
+
+  if (lowStratus) {
+    return {
+      label: t.skyLowStratus,
+      className: "badgeRed",
+      convective: false,
+      overcast: true,
+      blue: false,
+      streeting: false,
+      riskOd: false,
+    };
+  }
+
+  if (lowOvercast) {
     return {
       label: t.skyLowOvercast,
       className: "badgeRed",
       convective: false,
       overcast: true,
+      blue: false,
+      streeting: false,
+      riskOd: false,
     };
   }
 
-  if (isOvercast || (clouds > 90 && radiation < 150)) {
+  if (overdeveloped) {
+    return {
+      label: t.skyOverdeveloped,
+      className: "badgeRed",
+      convective: true,
+      overcast: false,
+      blue: false,
+      streeting: false,
+      riskOd: true,
+    };
+  }
+
+  if (overcast) {
     return {
       label: t.skyOvercast,
       className: "badgeRed",
       convective: false,
       overcast: true,
+      blue: false,
+      streeting: false,
+      riskOd: false,
     };
   }
 
-  if (isCuDay) {
+  if (highCloudShield) {
+    return {
+      label: t.skyHighCloudShield,
+      className: "badgeYellow",
+      convective: false,
+      overcast: false,
+      blue: false,
+      streeting: false,
+      riskOd: false,
+    };
+  }
+
+  if (cuStreets) {
+    return {
+      label: t.skyCuStreets,
+      className: "badgeBlue",
+      convective: true,
+      overcast: false,
+      blue: false,
+      streeting: true,
+      riskOd: false,
+    };
+  }
+
+  if (cuDay) {
     return {
       label: t.skyCuDay,
       className: "badgeGreen",
       convective: true,
       overcast: false,
+      blue: false,
+      streeting: false,
+      riskOd: false,
     };
   }
 
-  if (isBlueDay) {
+  if (weakCu) {
     return {
-      label: t.skyBlueDay,
+      label: t.skyWeakCu,
+      className: "badgeYellow",
+      convective: true,
+      overcast: false,
+      blue: false,
+      streeting: false,
+      riskOd: false,
+    };
+  }
+
+  if (blueThermal) {
+    return {
+      label: t.skyBlueThermal,
       className: "badgeBlue",
       convective: false,
       overcast: false,
+      blue: true,
+      streeting: false,
+      riskOd: false,
     };
   }
 
-  if (isUsableThermalSky) {
+  if (blueWeak) {
+    return {
+      label: t.skyBlueWeak,
+      className: "badgeYellow",
+      convective: false,
+      overcast: false,
+      blue: true,
+      streeting: false,
+      riskOd: false,
+    };
+  }
+
+  if (decaying) {
+    return {
+      label: t.skyDecaying,
+      className: "badgeYellow",
+      convective: false,
+      overcast: false,
+      blue: false,
+      streeting: false,
+      riskOd: false,
+    };
+  }
+
+  if (usable) {
     return {
       label: t.skyUsable,
       className: "badgeGreen",
       convective: false,
       overcast: false,
+      blue: false,
+      streeting: false,
+      riskOd: false,
     };
   }
 
@@ -960,6 +1229,9 @@ function detectSkyType(
     className: "badgeYellow",
     convective: false,
     overcast: false,
+    blue: false,
+    streeting: false,
+    riskOd: false,
   };
 }
 
@@ -1016,12 +1288,26 @@ function buildPilotComment(params: {
     parts.push(t.pilotMarginal);
   }
 
-  if (skyType === t.skyCuDay) {
-    parts.push(t.pilotConvective);
-  } else if (skyType === t.skyBlueDay) {
-    parts.push(t.pilotBlue);
-  } else if (skyType === t.skyOvercast || skyType === t.skyLowOvercast) {
+  if (skyType === t.skyLowStratus) {
+    parts.push(t.pilotLowStratus);
+  } else if (skyType === t.skyLowOvercast || skyType === t.skyOvercast) {
     parts.push(t.pilotOvercast);
+  } else if (skyType === t.skyHighCloudShield) {
+    parts.push(t.pilotHighCloudShield);
+  } else if (skyType === t.skyOverdeveloped) {
+    parts.push(t.pilotOverdeveloped);
+  } else if (skyType === t.skyCuStreets) {
+    parts.push(t.pilotCuStreets);
+  } else if (skyType === t.skyCuDay) {
+    parts.push(t.pilotConvective);
+  } else if (skyType === t.skyWeakCu) {
+    parts.push(t.pilotWeakCu);
+  } else if (skyType === t.skyBlueThermal || skyType === t.skyBlueDay) {
+    parts.push(t.pilotBlueThermal);
+  } else if (skyType === t.skyBlueWeak) {
+    parts.push(t.pilotBlueWeak);
+  } else if (skyType === t.skyDecaying) {
+    parts.push(t.pilotDecaying);
   } else {
     parts.push(t.pilotMixed);
   }
@@ -1102,7 +1388,26 @@ function getCoverageLabel(value: number, lang: Lang) {
   if (value >= 10) return "few clouds";
   return "mostly clear";
 }
-
+function getSkyDescription(
+  skyLabel: string,
+  t: Translation
+) {
+  if (skyLabel === t.skyLowStratus) return t.pilotLowStratus;
+  if (skyLabel === t.skyLowOvercast || skyLabel === t.skyOvercast) {
+    return t.pilotOvercast;
+  }
+  if (skyLabel === t.skyHighCloudShield) return t.pilotHighCloudShield;
+  if (skyLabel === t.skyOverdeveloped) return t.pilotOverdeveloped;
+  if (skyLabel === t.skyCuStreets) return t.pilotCuStreets;
+  if (skyLabel === t.skyCuDay) return t.pilotConvective;
+  if (skyLabel === t.skyWeakCu) return t.pilotWeakCu;
+  if (skyLabel === t.skyBlueThermal || skyLabel === t.skyBlueDay) {
+    return t.pilotBlueThermal;
+  }
+  if (skyLabel === t.skyBlueWeak) return t.pilotBlueWeak;
+  if (skyLabel === t.skyDecaying) return t.pilotDecaying;
+  return t.pilotMixed;
+}
 export default async function Home({
   searchParams,
 }: {
@@ -1414,18 +1719,30 @@ export default async function Home({
   const thermalMax = thermalMaxIndex >= 0 ? hours[thermalMaxIndex] : "-";
   const thermalEnd = thermalEndIndex >= 0 ? hours[thermalEndIndex] : "-";
 
+const currentHourObj = new Date(data.hourly.time[currentIndex]);
+const sunriseHourObj = sunriseTime ?? new Date();
+const sunsetHourObj = sunsetTime ?? new Date();
+
   const sky = detectSkyType(
-    {
-      cloudLow,
-      cloudMid,
-      cloudHigh,
-      clouds,
-      radiation,
-      spread,
-      lcl,
-    },
-    t
-  );
+  {
+    cloudLow,
+    cloudMid,
+    cloudHigh,
+    clouds,
+    radiation,
+    spread,
+    lcl,
+    precipitation,
+    precipitationProbability,
+    surfaceWind: airportSurfaceWindKt,
+    wind850,
+    isWithinVfrDay,
+    currentHour: currentHourObj.getHours(),
+    sunriseHour: sunriseHourObj.getHours(),
+    sunsetHour: sunsetHourObj.getHours(),
+  },
+  t
+);
 
   const hazards: { icon: string; label: string; type: string; severity: number }[] =
     [];
@@ -1456,6 +1773,27 @@ export default async function Home({
   if (sky.overcast) {
     hazards.push({ icon: "🌫", label: t.overcastRisk, type: "overcast", severity: 1 });
   }
+
+  if (sky.riskOd) {
+  hazards.push({
+    icon: "🌦",
+    label: lang === "cs" ? "Přerůstání oblačnosti" : "Overdevelopment",
+    type: "storm",
+    severity: 5,
+  });
+}
+
+if (sky.label === t.skyHighCloudShield) {
+  hazards.push({
+    icon: "🌥",
+    label:
+      lang === "cs"
+        ? "Útlum ohřevu vysokou oblačností"
+        : "Heating reduced by high cloud",
+    type: "overcast",
+    severity: 2,
+  });
+}
 
   hazards.sort((a, b) => b.severity - a.severity);
 
@@ -1573,6 +1911,24 @@ export default async function Home({
   if (sky.overcast) summaryParts.push(t.overcastRisk);
   if (airportSurfaceWindKt > 12 || crosswindAbs > 10) summaryParts.push(t.summaryWindy);
   if (sky.convective) summaryParts.push(t.summaryCu);
+  if (sky.label === t.skyCuStreets) {
+  summaryParts.push(lang === "cs" ? "Streets" : "Streets");
+}
+if (sky.label === t.skyBlueThermal) {
+  summaryParts.push(lang === "cs" ? "Modrá termika" : "Blue thermals");
+}
+if (sky.label === t.skyWeakCu) {
+  summaryParts.push(lang === "cs" ? "Slabé Cu" : "Weak Cu");
+}
+if (sky.label === t.skyOverdeveloped) {
+  summaryParts.push(lang === "cs" ? "Přerůstání" : "Overdevelopment");
+}
+if (sky.label === t.skyHighCloudShield) {
+  summaryParts.push(lang === "cs" ? "Vysoká oblačnost" : "High cloud");
+}
+if (sky.label === t.skyDecaying) {
+  summaryParts.push(lang === "cs" ? "Vyhasínání dne" : "Day decay");
+}
   if (xcPotential === t.xcPotentialGood || xcPotential === t.xcPotentialDay) {
     summaryParts.push(t.summaryXc);
   }
@@ -1600,6 +1956,8 @@ export default async function Home({
     t,
     isWithinVfrDay,
   });
+
+  const skyDescription = getSkyDescription(sky.label, t);
 
   return (
     <main className="container">
@@ -1953,13 +2311,14 @@ export default async function Home({
       </section>
 
       <div className="grid" style={{ marginBottom: "18px" }}>
-        <div className="card">
-          <h3>
-            <Cloud size={18} /> {t.skyType}
-          </h3>
-          <p className={`big ${sky.className}`}>{sky.label}</p>
-          <p className="small">{t.thermalSkyEstimate}</p>
-        </div>
+       <div className="card">
+  <h3>
+    <Cloud size={18} /> {t.skyType}
+  </h3>
+  <p className={`big ${sky.className}`}>{sky.label}</p>
+  <p className="small">{t.thermalSkyEstimate}</p>
+  <p style={{ marginTop: "10px", lineHeight: 1.6 }}>{skyDescription}</p>
+</div>
 
         <div className="card">
           <h3>
