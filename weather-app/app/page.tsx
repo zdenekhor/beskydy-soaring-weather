@@ -1370,7 +1370,15 @@ function buildPilotComment(params: {
     parts.push(t.pilotRiskManageable);
   }
 
-  return parts.join(". ") + ".";
+return (
+  parts
+    .map((part) =>
+      part && part.length > 0
+        ? part.charAt(0).toUpperCase() + part.slice(1)
+        : part
+    )
+    .join(". ") + "."
+);
 }
 
 function getCoverageLabel(value: number, lang: Lang) {
@@ -1396,6 +1404,10 @@ function getSkyDescription(
   if (skyLabel === t.skyLowOvercast || skyLabel === t.skyOvercast) {
     return t.pilotOvercast;
   }
+  function capitalizeFirst(text: string) {
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
   if (skyLabel === t.skyHighCloudShield) return t.pilotHighCloudShield;
   if (skyLabel === t.skyOverdeveloped) return t.pilotOverdeveloped;
   if (skyLabel === t.skyCuStreets) return t.pilotCuStreets;
@@ -1697,15 +1709,18 @@ export default async function Home({
   const thermalStartIndex =
     vfrIndices.find((i: number) => thermalArray[i] >= THERMAL_THRESHOLD) ?? -1;
 
-  let thermalMaxIndex = -1;
-  let bestThermalValue = -1;
-  for (const i of vfrIndices) {
-    if (thermalArray[i] > bestThermalValue) {
-      bestThermalValue = thermalArray[i];
-      thermalMaxIndex = i;
-    }
-  }
+ let thermalMaxIndex = -1;
+let bestThermalValue = -1;
 
+for (const i of vfrIndices) {
+  if (
+    thermalArray[i] >= THERMAL_THRESHOLD &&
+    thermalArray[i] > bestThermalValue
+  ) {
+    bestThermalValue = thermalArray[i];
+    thermalMaxIndex = i;
+  }
+}
   let thermalEndIndex = -1;
   for (let j = vfrIndices.length - 1; j >= 0; j--) {
     const i = vfrIndices[j];
@@ -1715,9 +1730,14 @@ export default async function Home({
     }
   }
 
-  const thermalStart = thermalStartIndex >= 0 ? hours[thermalStartIndex] : "-";
-  const thermalMax = thermalMaxIndex >= 0 ? hours[thermalMaxIndex] : "-";
-  const thermalEnd = thermalEndIndex >= 0 ? hours[thermalEndIndex] : "-";
+ const hasUsableThermalWindow =
+  thermalStartIndex >= 0 &&
+  thermalMaxIndex >= 0 &&
+  thermalEndIndex >= 0;
+
+const thermalStart = hasUsableThermalWindow ? hours[thermalStartIndex] : "-";
+const thermalMax = hasUsableThermalWindow ? hours[thermalMaxIndex] : "-";
+const thermalEnd = hasUsableThermalWindow ? hours[thermalEndIndex] : "-";
 
 const currentHourObj = new Date(data.hourly.time[currentIndex]);
 const sunriseHourObj = sunriseTime ?? new Date();
