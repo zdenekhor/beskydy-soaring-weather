@@ -5,11 +5,9 @@ import {
   upsertRating,
 } from "@/app/lib/rating-store";
 
-type RouteContext = {
-  params: Promise<{
-    key: string;
-  }>;
-};
+type Params = Promise<{
+  key: string;
+}>;
 
 function normalizeRating(value: unknown) {
   const num = Number(value);
@@ -18,15 +16,21 @@ function normalizeRating(value: unknown) {
   return Math.round(num);
 }
 
-export async function GET(_: NextRequest, context: RouteContext) {
-  const { key } = await context.params;
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Params }
+) {
+  const { key } = await params;
   const stats = getRatingStats(key);
 
   return NextResponse.json(stats);
 }
 
-export async function POST(req: NextRequest, context: RouteContext) {
-  const { key } = await context.params;
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Params }
+) {
+  const { key } = await params;
   const body = await req.json().catch(() => ({}));
 
   const previousRating = normalizeRating(body?.previousRating);
@@ -47,8 +51,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
   });
 }
 
-export async function DELETE(req: NextRequest, context: RouteContext) {
-  const { key } = await context.params;
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Params }
+) {
+  const { key } = await params;
   const body = await req.json().catch(() => ({}));
 
   const previousRating = normalizeRating(body?.previousRating);
