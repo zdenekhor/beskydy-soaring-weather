@@ -151,6 +151,32 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   const activeCloudMid = pick(data.cloudMid)[safeActiveIndex] ?? 0;
   const activeCloudHigh = pick(data.cloudHigh)[safeActiveIndex] ?? 0;
 
+  const colors = {
+    temp: "rgba(199, 167, 108, 0.95)",
+    dew: "rgba(122, 156, 176, 0.95)",
+    height: "rgba(106, 147, 132, 0.96)",
+    thermal: "rgba(122, 160, 112, 0.96)",
+    windSurface: "rgba(168, 124, 144, 0.95)",
+    wind850: "rgba(134, 123, 164, 0.95)",
+    wind700: "rgba(156, 110, 110, 0.95)",
+    cloudLow: "rgba(214, 220, 227, 0.72)",
+    cloudMid: "rgba(160, 171, 184, 0.82)",
+    cloudHigh: "rgba(122, 137, 169, 0.9)",
+  };
+
+  const faded = {
+    temp: "rgba(199, 167, 108, 0.24)",
+    dew: "rgba(122, 156, 176, 0.24)",
+    height: "rgba(106, 147, 132, 0.22)",
+    thermal: "rgba(122, 160, 112, 0.22)",
+    windSurface: "rgba(168, 124, 144, 0.2)",
+    wind850: "rgba(134, 123, 164, 0.2)",
+    wind700: "rgba(156, 110, 110, 0.2)",
+    cloudLow: "rgba(214, 220, 227, 0.16)",
+    cloudMid: "rgba(160, 171, 184, 0.16)",
+    cloudHigh: "rgba(122, 137, 169, 0.16)",
+  };
+
   const chartData = useMemo<ChartData<"line">>(
     () => ({
       labels: pickLabels,
@@ -159,134 +185,106 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           label: labelsText.temperature,
           data: pick(data.temperature),
           yAxisID: "yTemp",
-          borderColor:
-            hoveredAxis && hoveredAxis !== "temp"
-              ? "rgba(251,191,36,0.28)"
-              : "rgba(251,191,36,1)",
+          borderColor: hoveredAxis && hoveredAxis !== "temp" ? faded.temp : colors.temp,
           tension: 0.3,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "temp" ? 3.6 : 2.5,
+          borderWidth: hoveredAxis === "temp" ? 3.2 : 2.2,
         },
         {
           label: labelsText.dewPoint,
           data: pick(data.dewPoint),
           yAxisID: "yTemp",
-          borderColor:
-            hoveredAxis && hoveredAxis !== "temp"
-              ? "rgba(56,189,248,0.28)"
-              : "rgba(56,189,248,1)",
+          borderColor: hoveredAxis && hoveredAxis !== "temp" ? faded.dew : colors.dew,
           tension: 0.3,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "temp" ? 3.1 : 2.2,
+          borderWidth: hoveredAxis === "temp" ? 2.8 : 2.0,
         },
         {
           label: labelsText.cloudBase,
           data: pick(data.lcl),
           yAxisID: "yHeight",
-          borderColor:
-            hoveredAxis && hoveredAxis !== "height"
-              ? "rgba(45,212,191,0.25)"
-              : "rgba(45,212,191,1)",
+          borderColor: hoveredAxis && hoveredAxis !== "height" ? faded.height : colors.height,
           tension: 0.25,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "height" ? 3.6 : 2.4,
+          borderWidth: hoveredAxis === "height" ? 3.2 : 2.2,
         },
         {
           label: labelsText.thermal,
           data: pick(data.thermal),
           yAxisID: "yThermal",
-          borderColor:
-            hoveredAxis && hoveredAxis !== "thermal"
-              ? "rgba(34,197,94,0.25)"
-              : "rgba(34,197,94,1)",
+          borderColor: hoveredAxis && hoveredAxis !== "thermal" ? faded.thermal : colors.thermal,
           tension: 0.3,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "thermal" ? 3.5 : 2.4,
+          borderWidth: hoveredAxis === "thermal" ? 3.1 : 2.2,
         },
         {
           label: labelsText.surfaceWind,
           data: pick(data.windSurface),
           yAxisID: "yWind",
           borderColor:
-            hoveredAxis && hoveredAxis !== "wind"
-              ? "rgba(244,114,182,0.22)"
-              : "rgba(244,114,182,1)",
+            hoveredAxis && hoveredAxis !== "wind" ? faded.windSurface : colors.windSurface,
           tension: 0.25,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "wind" ? 3.1 : 2,
+          borderWidth: hoveredAxis === "wind" ? 2.8 : 1.9,
         },
         {
           label: labelsText.wind850,
           data: pick(data.wind850),
           yAxisID: "yWind",
-          borderColor:
-            hoveredAxis && hoveredAxis !== "wind"
-              ? "rgba(168,85,247,0.22)"
-              : "rgba(168,85,247,1)",
+          borderColor: hoveredAxis && hoveredAxis !== "wind" ? faded.wind850 : colors.wind850,
           tension: 0.25,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "wind" ? 3.1 : 2,
+          borderWidth: hoveredAxis === "wind" ? 2.8 : 1.9,
         },
         {
           label: labelsText.wind700,
           data: pick(data.wind700),
           yAxisID: "yWind",
-          borderColor:
-            hoveredAxis && hoveredAxis !== "wind"
-              ? "rgba(239,68,68,0.22)"
-              : "rgba(239,68,68,1)",
+          borderColor: hoveredAxis && hoveredAxis !== "wind" ? faded.wind700 : colors.wind700,
           tension: 0.25,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "wind" ? 3.1 : 2,
+          borderWidth: hoveredAxis === "wind" ? 2.8 : 1.9,
         },
         {
           label: labelsText.cloudLow,
           data: pick(data.cloudLow),
           yAxisID: "yCloud",
-          borderColor:
-            hoveredAxis && hoveredAxis !== "cloud"
-              ? "rgba(255,255,255,0.18)"
-              : "rgba(255,255,255,0.78)",
+          borderColor: hoveredAxis && hoveredAxis !== "cloud" ? faded.cloudLow : colors.cloudLow,
           borderDash: [2, 2],
           tension: 0.25,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "cloud" ? 2.2 : 1.5,
+          borderWidth: hoveredAxis === "cloud" ? 2.0 : 1.4,
         },
         {
           label: labelsText.cloudMid,
           data: pick(data.cloudMid),
           yAxisID: "yCloud",
-          borderColor:
-            hoveredAxis && hoveredAxis !== "cloud"
-              ? "rgba(148,163,184,0.18)"
-              : "rgba(148,163,184,0.95)",
+          borderColor: hoveredAxis && hoveredAxis !== "cloud" ? faded.cloudMid : colors.cloudMid,
           borderDash: [6, 3],
           tension: 0.25,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "cloud" ? 2.2 : 1.5,
+          borderWidth: hoveredAxis === "cloud" ? 2.0 : 1.4,
         },
         {
           label: labelsText.cloudHigh,
           data: pick(data.cloudHigh),
           yAxisID: "yCloud",
           borderColor:
-            hoveredAxis && hoveredAxis !== "cloud"
-              ? "rgba(99,102,241,0.18)"
-              : "rgba(99,102,241,0.95)",
+            hoveredAxis && hoveredAxis !== "cloud" ? faded.cloudHigh : colors.cloudHigh,
           borderDash: [10, 4],
           tension: 0.25,
           pointRadius: 0,
           pointHoverRadius: 4,
-          borderWidth: hoveredAxis === "cloud" ? 2.2 : 1.5,
+          borderWidth: hoveredAxis === "cloud" ? 2.0 : 1.4,
         },
       ],
     }),
@@ -319,20 +317,31 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
       scales: {
         x: {
           ticks: {
-            color: "#cbd5e1",
+            color: "#aeb9c4",
             maxRotation: 0,
             autoSkip: true,
             maxTicksLimit: 12,
+            font: {
+              size: 11,
+              weight: 500,
+            },
           },
           grid: {
-            color: "rgba(148,163,184,0.08)",
+            color: "rgba(148, 163, 184, 0.055)",
+          },
+          border: {
+            color: "rgba(148, 163, 184, 0.14)",
           },
         },
         yTemp: {
           type: "linear",
           position: "left",
           ticks: {
-            color: "#fcd34d",
+            color: "#c7a76c",
+            font: {
+              size: 11,
+              weight: 500,
+            },
           },
           title: {
             display: false,
@@ -340,16 +349,23 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           grid: {
             color:
               hoveredAxis === "temp"
-                ? "rgba(251,191,36,0.25)"
-                : "rgba(148,163,184,0.06)",
-            lineWidth: hoveredAxis === "temp" ? 1.2 : 0.6,
+                ? "rgba(199, 167, 108, 0.14)"
+                : "rgba(148, 163, 184, 0.045)",
+            lineWidth: hoveredAxis === "temp" ? 1.0 : 0.55,
+          },
+          border: {
+            color: "rgba(148, 163, 184, 0.14)",
           },
         },
         yHeight: {
           type: "linear",
           position: "right",
           ticks: {
-            color: "#5eead4",
+            color: "#6a9384",
+            font: {
+              size: 11,
+              weight: 500,
+            },
           },
           title: {
             display: false,
@@ -357,10 +373,13 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           grid: {
             color:
               hoveredAxis === "height"
-                ? "rgba(45,212,191,0.22)"
-                : "rgba(148,163,184,0.05)",
+                ? "rgba(106, 147, 132, 0.14)"
+                : "rgba(148, 163, 184, 0.04)",
             drawOnChartArea: true,
-            lineWidth: hoveredAxis === "height" ? 1.2 : 0.5,
+            lineWidth: hoveredAxis === "height" ? 1.0 : 0.45,
+          },
+          border: {
+            color: "rgba(148, 163, 184, 0.14)",
           },
         },
         yThermal: {
@@ -369,7 +388,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           min: 0,
           suggestedMax: 4,
           ticks: {
-            color: "#86efac",
+            color: "#7aa070",
+            font: {
+              size: 11,
+              weight: 500,
+            },
           },
           title: {
             display: false,
@@ -377,10 +400,13 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           grid: {
             color:
               hoveredAxis === "thermal"
-                ? "rgba(34,197,94,0.22)"
-                : "rgba(148,163,184,0.05)",
+                ? "rgba(122, 160, 112, 0.14)"
+                : "rgba(148, 163, 184, 0.04)",
             drawOnChartArea: true,
-            lineWidth: hoveredAxis === "thermal" ? 1.2 : 0.5,
+            lineWidth: hoveredAxis === "thermal" ? 1.0 : 0.45,
+          },
+          border: {
+            color: "rgba(148, 163, 184, 0.14)",
           },
         },
         yWind: {
@@ -388,7 +414,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           position: "right",
           min: 0,
           ticks: {
-            color: "#f9a8d4",
+            color: "#a87c90",
+            font: {
+              size: 11,
+              weight: 500,
+            },
           },
           title: {
             display: false,
@@ -396,10 +426,13 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           grid: {
             color:
               hoveredAxis === "wind"
-                ? "rgba(244,114,182,0.22)"
-                : "rgba(148,163,184,0.05)",
+                ? "rgba(168, 124, 144, 0.14)"
+                : "rgba(148, 163, 184, 0.04)",
             drawOnChartArea: true,
-            lineWidth: hoveredAxis === "wind" ? 1.2 : 0.5,
+            lineWidth: hoveredAxis === "wind" ? 1.0 : 0.45,
+          },
+          border: {
+            color: "rgba(148, 163, 184, 0.14)",
           },
         },
         yCloud: {
@@ -408,7 +441,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           min: 0,
           max: 100,
           ticks: {
-            color: "#cbd5e1",
+            color: "#c8d1da",
+            font: {
+              size: 11,
+              weight: 500,
+            },
           },
           title: {
             display: false,
@@ -416,10 +453,13 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           grid: {
             color:
               hoveredAxis === "cloud"
-                ? "rgba(203,213,225,0.25)"
-                : "rgba(148,163,184,0.05)",
+                ? "rgba(200, 209, 218, 0.14)"
+                : "rgba(148, 163, 184, 0.04)",
             drawOnChartArea: true,
-            lineWidth: hoveredAxis === "cloud" ? 1.2 : 0.5,
+            lineWidth: hoveredAxis === "cloud" ? 1.0 : 0.45,
+          },
+          border: {
+            color: "rgba(148, 163, 184, 0.14)",
           },
         },
       },

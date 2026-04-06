@@ -1649,4 +1649,239 @@ h3,
     flex-direction: column;
     gap: 6px;
   }
+}/* ===== WEATHER CHART ===== */
+
+.weatherChartRoot {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.chartToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.chartDayTabsWrap {
+  display: flex;
+  align-items: center;
+}
+
+.chartDayTabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(24, 34, 44, 0.7);
+}
+
+.chartDayButton {
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.chartDayButton:hover {
+  background: rgba(127, 155, 179, 0.08);
+  color: var(--text);
+}
+
+.chartDayButton.active {
+  background: rgba(127, 155, 179, 0.14);
+  border-color: rgba(127, 155, 179, 0.35);
+  color: var(--text-strong);
+}
+
+.chartMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chartMarker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(33, 45, 57, 0.88);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.chartMarker.sunrise {
+  border-color: rgba(199, 167, 108, 0.32);
+}
+
+.chartMarker.sunset {
+  border-color: rgba(122, 137, 169, 0.32);
+}
+
+.chartAxisLegendBlock {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 66, 80, 0.85);
+  background: rgba(14, 22, 29, 0.34);
+}
+
+.chartAxisLegendTitle {
+  margin-bottom: 10px;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.chartAxisLegendTop {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.axisLegend {
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(33, 45, 57, 0.88);
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.axisLegend:hover,
+.axisLegend.isHovered {
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.axisLegend.axisTemp.isHovered {
+  border-color: rgba(199, 167, 108, 0.42);
+  box-shadow: 0 0 0 3px rgba(199, 167, 108, 0.10);
+}
+
+.axisLegend.axisThermal.isHovered {
+  border-color: rgba(122, 160, 112, 0.42);
+  box-shadow: 0 0 0 3px rgba(122, 160, 112, 0.10);
+}
+
+.axisLegend.axisWind.isHovered {
+  border-color: rgba(168, 124, 144, 0.42);
+  box-shadow: 0 0 0 3px rgba(168, 124, 144, 0.10);
+}
+
+.axisLegend.axisHeight.isHovered {
+  border-color: rgba(106, 147, 132, 0.42);
+  box-shadow: 0 0 0 3px rgba(106, 147, 132, 0.10);
+}
+
+.axisLegend.axisCloud.isHovered {
+  border-color: rgba(160, 171, 184, 0.42);
+  box-shadow: 0 0 0 3px rgba(160, 171, 184, 0.10);
+}
+
+.chartCanvasWrap {
+  position: relative;
+  min-height: 430px;
+  padding: 10px 8px 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 66, 80, 0.9);
+  background: linear-gradient(180deg, rgba(16, 24, 31, 0.65), rgba(12, 18, 24, 0.45));
+}
+
+.chartReadoutCard {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(51, 66, 80, 0.92);
+  background: rgba(22, 31, 40, 0.86);
+}
+
+.chartReadoutHeader {
+  margin-bottom: 10px;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.chartReadoutGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chartReadoutItem {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(51, 66, 80, 0.86);
+  background: rgba(33, 45, 57, 0.72);
+}
+
+.chartReadoutLabel {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.chartReadoutValue {
+  display: block;
+  color: var(--text-strong);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .chartToolbar {
+    align-items: flex-start;
+  }
+
+  .chartDayTabs {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .chartDayButton {
+    flex: 1 1 auto;
+  }
+
+  .chartMeta {
+    width: 100%;
+  }
+
+  .chartAxisLegendTop {
+    gap: 6px;
+  }
+
+  .axisLegend {
+    font-size: 0.72rem;
+    padding: 6px 9px;
+  }
+
+  .chartCanvasWrap {
+    min-height: 320px;
+    padding: 8px 4px 2px;
+  }
+
+  .chartReadoutGrid {
+    grid-template-columns: 1fr;
+  }
 }
