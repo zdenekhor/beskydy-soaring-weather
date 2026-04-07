@@ -140,7 +140,7 @@ type Translation = {
   xcPotentialGood: string;
   xcPotentialDay: string;
 
-    skyLowStratus: string;
+  skyLowStratus: string;
   skyLowOvercast: string;
   skyOvercast: string;
   skyBlueWeak: string;
@@ -361,7 +361,7 @@ const translations: Record<Lang, Translation> = {
     xcPotentialGood: "Dobrý",
     xcPotentialDay: "XC den",
 
-        skyLowStratus: "Nízký stratus / mlha",
+    skyLowStratus: "Nízký stratus / mlha",
     skyLowOvercast: "Nízká zatažená vrstva",
     skyOvercast: "Zataženo / rozlitá oblačnost",
     skyBlueWeak: "Slabý modrý den",
@@ -588,7 +588,7 @@ const translations: Record<Lang, Translation> = {
     xcPotentialGood: "Good",
     xcPotentialDay: "XC day",
 
-       skyLowStratus: "Low stratus / fog",
+    skyLowStratus: "Low stratus / fog",
     skyLowOvercast: "Low overcast",
     skyOvercast: "Overcast / spread-out cloud",
     skyBlueWeak: "Weak blue day",
@@ -713,7 +713,7 @@ const translations: Record<Lang, Translation> = {
   },
 };
 
-async function getWeather(): Promise<ForecastData> {
+async function getWeather(): Promise<ForecastData | null> {
   const latitude = 49.592;
   const longitude = 18.359;
 
@@ -747,14 +747,20 @@ async function getWeather(): Promise<ForecastData> {
     `&forecast_days=3` +
     `&timezone=auto`;
 
-  const res = await fetch(url, { cache: "no-store" });
+  try {
+    const res = await fetch(url, { cache: "no-store" });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Failed to load forecast: ${res.status} ${text}`);
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Failed to load forecast:", res.status, text);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error("Forecast fetch crashed:", err);
+    return null;
   }
-
-  return res.json();
 }
 
 async function getMetarWind(icao: string) {
@@ -992,25 +998,15 @@ function detectSkyType(
     currentHour >= sunriseHour + 2 &&
     currentHour <= sunsetHour - 2;
 
-  const lowStratus =
-    cloudLow >= 85 &&
-    lcl < 350 &&
-    radiation < 120;
+  const lowStratus = cloudLow >= 85 && lcl < 350 && radiation < 120;
 
-  const lowOvercast =
-    cloudLow >= 75 &&
-    lcl < 700 &&
-    radiation < 180;
+  const lowOvercast = cloudLow >= 75 && lcl < 700 && radiation < 180;
 
   const overcast =
-    (clouds >= 90 || cloudLow >= 80) &&
-    radiation < 220 &&
-    spread < 6;
+    (clouds >= 90 || cloudLow >= 80) && radiation < 220 && spread < 6;
 
   const highCloudShield =
-    cloudHigh >= 70 &&
-    cloudLow < 50 &&
-    radiation < 260;
+    cloudHigh >= 70 && cloudLow < 50 && radiation < 260;
 
   const overdeveloped =
     convectiveWindow &&
@@ -1370,15 +1366,15 @@ function buildPilotComment(params: {
     parts.push(t.pilotRiskManageable);
   }
 
-return (
-  parts
-    .map((part) =>
-      part && part.length > 0
-        ? part.charAt(0).toUpperCase() + part.slice(1)
-        : part
-    )
-    .join(". ") + "."
-);
+  return (
+    parts
+      .map((part) =>
+        part && part.length > 0
+          ? part.charAt(0).toUpperCase() + part.slice(1)
+          : part
+      )
+      .join(". ") + "."
+  );
 }
 
 function getCoverageLabel(value: number, lang: Lang) {
@@ -1396,18 +1392,12 @@ function getCoverageLabel(value: number, lang: Lang) {
   if (value >= 10) return "few clouds";
   return "mostly clear";
 }
-function getSkyDescription(
-  skyLabel: string,
-  t: Translation
-) {
+
+function getSkyDescription(skyLabel: string, t: Translation) {
   if (skyLabel === t.skyLowStratus) return t.pilotLowStratus;
   if (skyLabel === t.skyLowOvercast || skyLabel === t.skyOvercast) {
     return t.pilotOvercast;
   }
-  function capitalizeFirst(text: string) {
-  if (!text) return text;
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
   if (skyLabel === t.skyHighCloudShield) return t.pilotHighCloudShield;
   if (skyLabel === t.skyOverdeveloped) return t.pilotOverdeveloped;
   if (skyLabel === t.skyCuStreets) return t.pilotCuStreets;
@@ -1420,6 +1410,7 @@ function getSkyDescription(
   if (skyLabel === t.skyDecaying) return t.pilotDecaying;
   return t.pilotMixed;
 }
+
 export default async function Home({
   searchParams,
 }: {
@@ -1429,8 +1420,59 @@ export default async function Home({
   const lang: Lang = params?.lang === "en" ? "en" : "cs";
   const t = translations[lang];
 
-  const data = await getWeather();
-  const metarWind = await getMetarWind("LKFR");
+  const [data, metarWind] = await Promise.all([
+    getWeather(),
+    getMetarWind("LKFR"),
+  ]);
+
+  if (!data) {
+    return (
+      <main className="container">
+        <div className="topHeaderRow">
+          <div>
+            <h1>{t.title}</h1>
+            <h2>{t.subtitle}</h2>
+          </div>
+
+          <div className="langSwitch">
+            <span className="langLabel">{t.language}:</span>
+
+            <Link
+              href={{ pathname: "/", query: { lang: "cs" } }}
+              className={`langButton ${lang === "cs" ? "active" : ""}`}
+            >
+              CZ
+            </Link>
+
+            <Link
+              href={{ pathname: "/", query: { lang: "en" } }}
+              className={`langButton ${lang === "en" ? "active" : ""}`}
+            >
+              EN
+            </Link>
+          </div>
+        </div>
+
+        <div className="card" style={{ marginTop: "18px" }}>
+          <h3>⚠️ {t.modelForecast}</h3>
+          <p style={{ lineHeight: 1.7, margin: 0 }}>
+            {lang === "cs"
+              ? "Modelová předpověď je dočasně nedostupná. Zkuste stránku za chvíli obnovit."
+              : "Model forecast is temporarily unavailable. Please refresh the page in a moment."}
+          </p>
+        </div>
+
+        <footer className="card disclaimerCard" style={{ marginTop: "18px" }}>
+          <h3 className="disclaimerTitleRow">
+            <Info size={18} />
+            {t.disclaimerTitle}
+          </h3>
+          <p style={{ margin: 0, lineHeight: 1.7 }}>{t.disclaimerText}</p>
+        </footer>
+      </main>
+    );
+  }
+
   const hasMetar = !!metarWind;
 
   const now = new Date();
@@ -1709,18 +1751,19 @@ export default async function Home({
   const thermalStartIndex =
     vfrIndices.find((i: number) => thermalArray[i] >= THERMAL_THRESHOLD) ?? -1;
 
- let thermalMaxIndex = -1;
-let bestThermalValue = -1;
+  let thermalMaxIndex = -1;
+  let bestThermalValue = -1;
 
-for (const i of vfrIndices) {
-  if (
-    thermalArray[i] >= THERMAL_THRESHOLD &&
-    thermalArray[i] > bestThermalValue
-  ) {
-    bestThermalValue = thermalArray[i];
-    thermalMaxIndex = i;
+  for (const i of vfrIndices) {
+    if (
+      thermalArray[i] >= THERMAL_THRESHOLD &&
+      thermalArray[i] > bestThermalValue
+    ) {
+      bestThermalValue = thermalArray[i];
+      thermalMaxIndex = i;
+    }
   }
-}
+
   let thermalEndIndex = -1;
   for (let j = vfrIndices.length - 1; j >= 0; j--) {
     const i = vfrIndices[j];
@@ -1730,42 +1773,46 @@ for (const i of vfrIndices) {
     }
   }
 
- const hasUsableThermalWindow =
-  thermalStartIndex >= 0 &&
-  thermalMaxIndex >= 0 &&
-  thermalEndIndex >= 0;
+  const hasUsableThermalWindow =
+    thermalStartIndex >= 0 &&
+    thermalMaxIndex >= 0 &&
+    thermalEndIndex >= 0;
 
-const thermalStart = hasUsableThermalWindow ? hours[thermalStartIndex] : "-";
-const thermalMax = hasUsableThermalWindow ? hours[thermalMaxIndex] : "-";
-const thermalEnd = hasUsableThermalWindow ? hours[thermalEndIndex] : "-";
+  const thermalStart = hasUsableThermalWindow ? hours[thermalStartIndex] : "-";
+  const thermalMax = hasUsableThermalWindow ? hours[thermalMaxIndex] : "-";
+  const thermalEnd = hasUsableThermalWindow ? hours[thermalEndIndex] : "-";
 
-const currentHourObj = new Date(data.hourly.time[currentIndex]);
-const sunriseHourObj = sunriseTime ?? new Date();
-const sunsetHourObj = sunsetTime ?? new Date();
+  const currentHourObj = new Date(data.hourly.time[currentIndex]);
+  const sunriseHourObj = sunriseTime ?? new Date();
+  const sunsetHourObj = sunsetTime ?? new Date();
 
   const sky = detectSkyType(
-  {
-    cloudLow,
-    cloudMid,
-    cloudHigh,
-    clouds,
-    radiation,
-    spread,
-    lcl,
-    precipitation,
-    precipitationProbability,
-    surfaceWind: airportSurfaceWindKt,
-    wind850,
-    isWithinVfrDay,
-    currentHour: currentHourObj.getHours(),
-    sunriseHour: sunriseHourObj.getHours(),
-    sunsetHour: sunsetHourObj.getHours(),
-  },
-  t
-);
+    {
+      cloudLow,
+      cloudMid,
+      cloudHigh,
+      clouds,
+      radiation,
+      spread,
+      lcl,
+      precipitation,
+      precipitationProbability,
+      surfaceWind: airportSurfaceWindKt,
+      wind850,
+      isWithinVfrDay,
+      currentHour: currentHourObj.getHours(),
+      sunriseHour: sunriseHourObj.getHours(),
+      sunsetHour: sunsetHourObj.getHours(),
+    },
+    t
+  );
 
-  const hazards: { icon: string; label: string; type: string; severity: number }[] =
-    [];
+  const hazards: {
+    icon: string;
+    label: string;
+    type: string;
+    severity: number;
+  }[] = [];
 
   if (
     precipitationProbability > 60 &&
@@ -1782,38 +1829,53 @@ const sunsetHourObj = sunsetTime ?? new Date();
     hazards.push({ icon: "❄", label: t.snow, type: "snow", severity: 5 });
   }
   if (airportSurfaceWindKt > 15 || wind850 > 22 || crosswindAbs > 12) {
-    hazards.push({ icon: "💨", label: t.strongWind, type: "wind", severity: 4 });
+    hazards.push({
+      icon: "💨",
+      label: t.strongWind,
+      type: "wind",
+      severity: 4,
+    });
   }
   if (precipitation > 0.2 || precipitationProbability > 45) {
     hazards.push({ icon: "🌧", label: t.rain, type: "rain", severity: 3 });
   }
   if (lcl < 500 || (cloudLow > 75 && radiation < 180)) {
-    hazards.push({ icon: "☁", label: t.lowCloudBase, type: "cloud", severity: 2 });
+    hazards.push({
+      icon: "☁",
+      label: t.lowCloudBase,
+      type: "cloud",
+      severity: 2,
+    });
   }
   if (sky.overcast) {
-    hazards.push({ icon: "🌫", label: t.overcastRisk, type: "overcast", severity: 1 });
+    hazards.push({
+      icon: "🌫",
+      label: t.overcastRisk,
+      type: "overcast",
+      severity: 1,
+    });
   }
 
   if (sky.riskOd) {
-  hazards.push({
-    icon: "🌦",
-    label: lang === "cs" ? "Přerůstání oblačnosti" : "Overdevelopment",
-    type: "storm",
-    severity: 5,
-  });
-}
+    hazards.push({
+      icon: "🌦",
+      label: lang === "cs" ? "Přerůstání oblačnosti" : "Overdevelopment",
+      type: "storm",
+      severity: 5,
+    });
+  }
 
-if (sky.label === t.skyHighCloudShield) {
-  hazards.push({
-    icon: "🌥",
-    label:
-      lang === "cs"
-        ? "Útlum ohřevu vysokou oblačností"
-        : "Heating reduced by high cloud",
-    type: "overcast",
-    severity: 2,
-  });
-}
+  if (sky.label === t.skyHighCloudShield) {
+    hazards.push({
+      icon: "🌥",
+      label:
+        lang === "cs"
+          ? "Útlum ohřevu vysokou oblačností"
+          : "Heating reduced by high cloud",
+      type: "overcast",
+      severity: 2,
+    });
+  }
 
   hazards.sort((a, b) => b.severity - a.severity);
 
@@ -1932,23 +1994,23 @@ if (sky.label === t.skyHighCloudShield) {
   if (airportSurfaceWindKt > 12 || crosswindAbs > 10) summaryParts.push(t.summaryWindy);
   if (sky.convective) summaryParts.push(t.summaryCu);
   if (sky.label === t.skyCuStreets) {
-  summaryParts.push(lang === "cs" ? "Streets" : "Streets");
-}
-if (sky.label === t.skyBlueThermal) {
-  summaryParts.push(lang === "cs" ? "Modrá termika" : "Blue thermals");
-}
-if (sky.label === t.skyWeakCu) {
-  summaryParts.push(lang === "cs" ? "Slabé Cu" : "Weak Cu");
-}
-if (sky.label === t.skyOverdeveloped) {
-  summaryParts.push(lang === "cs" ? "Přerůstání" : "Overdevelopment");
-}
-if (sky.label === t.skyHighCloudShield) {
-  summaryParts.push(lang === "cs" ? "Vysoká oblačnost" : "High cloud");
-}
-if (sky.label === t.skyDecaying) {
-  summaryParts.push(lang === "cs" ? "Vyhasínání dne" : "Day decay");
-}
+    summaryParts.push(lang === "cs" ? "Streets" : "Streets");
+  }
+  if (sky.label === t.skyBlueThermal) {
+    summaryParts.push(lang === "cs" ? "Modrá termika" : "Blue thermals");
+  }
+  if (sky.label === t.skyWeakCu) {
+    summaryParts.push(lang === "cs" ? "Slabé Cu" : "Weak Cu");
+  }
+  if (sky.label === t.skyOverdeveloped) {
+    summaryParts.push(lang === "cs" ? "Přerůstání" : "Overdevelopment");
+  }
+  if (sky.label === t.skyHighCloudShield) {
+    summaryParts.push(lang === "cs" ? "Vysoká oblačnost" : "High cloud");
+  }
+  if (sky.label === t.skyDecaying) {
+    summaryParts.push(lang === "cs" ? "Vyhasínání dne" : "Day decay");
+  }
   if (xcPotential === t.xcPotentialGood || xcPotential === t.xcPotentialDay) {
     summaryParts.push(t.summaryXc);
   }
@@ -2331,14 +2393,14 @@ if (sky.label === t.skyDecaying) {
       </section>
 
       <div className="grid" style={{ marginBottom: "18px" }}>
-       <div className="card">
-  <h3>
-    <Cloud size={18} /> {t.skyType}
-  </h3>
-  <p className={`big ${sky.className}`}>{sky.label}</p>
-  <p className="small">{t.thermalSkyEstimate}</p>
-  <p style={{ marginTop: "10px", lineHeight: 1.6 }}>{skyDescription}</p>
-</div>
+        <div className="card">
+          <h3>
+            <Cloud size={18} /> {t.skyType}
+          </h3>
+          <p className={`big ${sky.className}`}>{sky.label}</p>
+          <p className="small">{t.thermalSkyEstimate}</p>
+          <p style={{ marginTop: "10px", lineHeight: 1.6 }}>{skyDescription}</p>
+        </div>
 
         <div className="card">
           <h3>
@@ -2466,9 +2528,10 @@ if (sky.label === t.skyDecaying) {
             <Star size={18} /> {t.appRating}
           </h3>
 
-         <AppRating note={t.rateNote} lang={lang} storageKey="lkfr-app-rating" />
+          <AppRating note={t.rateNote} lang={lang} storageKey="lkfr-app-rating" />
+        </div>
       </div>
- </div>
+
       <footer className="card disclaimerCard">
         <h3 className="disclaimerTitleRow">
           <Info size={18} />
