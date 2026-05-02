@@ -667,10 +667,11 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
             drawWindBarb(
               ctx,
               point.x,
-              point.y,
+              point.y + 28,
               spd,
               dir,
-              withAlpha(series.color, 0.95)
+              withAlpha(series.color, 0.95),
+              24
             );
           }
         }
