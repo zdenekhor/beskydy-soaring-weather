@@ -4,6 +4,7 @@ export async function GET() {
   try {
     const latitude = 49.592;
     const longitude = 18.359;
+    const timeZone = "Europe/Prague";
 
     const hourlyParams = [
       "temperature_2m",
@@ -33,7 +34,8 @@ export async function GET() {
       `&hourly=${hourlyParams}` +
       `&daily=${dailyParams}` +
       `&forecast_days=3` +
-      `&timezone=auto`;
+      `&timezone=${encodeURIComponent(timeZone)}` +
+      `&timeformat=unixtime`;
 
     const response = await fetch(url, {
       cache: "no-store",

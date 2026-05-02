@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SPL LKFR maskable">
+  <defs>
+    <radialGradient id="bgm" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#164574"/>
+      <stop offset="1" stop-color="#0a1833"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bgm)"/>
+  <circle cx="256" cy="220" r="130" fill="#d9efff" fill-opacity="0.92"/>
+  <path d="M140 334c32-34 70-56 116-56 44 0 86 20 120 54" stroke="#79d2b0" stroke-width="20" fill="none" stroke-linecap="round"/>
+  <path d="M172 232l82-70 82 70" stroke="#0f3e68" stroke-width="18" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="256" y="420" text-anchor="middle" font-family="Verdana, sans-serif" font-size="62" font-weight="700" fill="#f4fbff">SPL</text>
+</svg>

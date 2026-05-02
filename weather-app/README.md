@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SPL Pocasi LKFR (PC + Android)
 
-## Getting Started
+Aplikace poskytuje predpoved pocasi pro LKFR (Frydlant n. Ostravici) se zamerenim na vyhodnoceni podminek pro plachtare SPL.
 
-First, run the development server:
+## Funkce
+
+- 3denni hodinova predpoved z Open-Meteo
+- Vyhodnoceni letovych podminek (soaring index, semafor GO/CAUTION/NO-GO)
+- Prepinatelne SPL profily (Zak / Klub / Zkuseny XC)
+- Grafy teploty, rosneho bodu, vetru, oblacnosti a termiky
+- Dvojjazycne rozhrani (CZ/EN)
+- Hodnoceni aplikace (backend agregace) + pocet zobrazeni
+- PWA instalace na desktop i Android
+
+## Spusteni lokalne
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Otevrete `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Produkcni build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+## Backend pro hodnoceni
 
-To learn more about Next.js, take a look at the following resources:
+Aplikace umi bezet ve dvou rezimech:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Bez DATABASE_URL: in-memory backend (data se resetuji po restartu serveru)
+- S DATABASE_URL: trvale ukladani hodnoceni a zobrazeni v PostgreSQL
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Priklad nastaveni:
 
-## Deploy on Vercel
+```bash
+export DATABASE_URL="postgres://user:pass@host:5432/dbname"
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Instalace jako aplikace
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### PC (Chrome / Edge)
+
+1. Otevrete nasazenou aplikaci v prohlizeci.
+2. V adresnim radku kliknete na ikonu instalace (nebo menu -> Install app).
+3. Potvrdte instalaci.
+
+### Android (Chrome)
+
+1. Otevrete nasazenou HTTPS URL aplikace.
+2. V menu prohlizece zvolte `Pridat na plochu` nebo `Instalovat aplikaci`.
+3. Potvrdte instalaci.
+
+Poznamka: Instalace na Android vyzaduje HTTPS nasazeni (lokalne funguje pouze testovaci beh v prohlizeci).
+
+## Android APK (native wrapper)
+
+Aplikace obsahuje pripravenou konfiguraci pro Android wrapper pres Capacitor.
+Wrapper muze nacitat nasazenou HTTPS verzi aplikace.
+
+1. Nastavte URL nasazene aplikace:
+
+```bash
+export CAP_SERVER_URL="https://vas-nasazeny-web.example.com"
+```
+
+2. Nainstalujte zavislosti a pripravte Android projekt:
+
+```bash
+npm install
+npm run android:init
+npm run android:sync
+```
+
+3. Otevrete Android Studio:
+
+```bash
+npm run android:open
+```
+
+4. V Android Studiu vytvorte APK nebo AAB.
+
+Poznamka: Pokud chcete wrapper bez vzdalene URL, je potreba dodelat staticky export frontendu bez dynamickych API route.
+
+Detailni release postup (signed APK/AAB) je v [ANDROID_RELEASE.md](ANDROID_RELEASE.md).
+
+## Struktura
+
+- `app/page.tsx`: hlavni stranka s vyhodnocenim podminek
+- `app/api/forecast/route.ts`: API endpoint pro predpoved
+- `app/manifest.ts`: web app manifest pro PWA
+- `public/sw.js`: service worker pro PWA cache

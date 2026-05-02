@@ -1,0 +1,8 @@
+# Copy this file to android/signing.properties and fill real values.
+# Never commit android/signing.properties to git.
+
+# Relative path from weather-app/android
+STORE_FILE=release-upload-keystore.jks
+STORE_PASSWORD=replace-with-store-password
+KEY_ALIAS=upload
+KEY_PASSWORD=replace-with-key-password

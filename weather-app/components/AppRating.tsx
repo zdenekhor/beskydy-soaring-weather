@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   note?: string;
@@ -11,8 +11,28 @@ type Props = {
 type RatingStats = {
   count: number;
   average: number;
+  views: number;
   userRating: number;
 };
+
+function getOrCreateClientId(storageKey: string) {
+  const idKey = `${storageKey}-client-id`;
+
+  try {
+    const existing = window.localStorage.getItem(idKey);
+    if (existing && existing.length > 0) return existing;
+
+    const generated =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+    window.localStorage.setItem(idKey, generated);
+    return generated;
+  } catch {
+    return `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
 
 export default function AppRating({
   note,
@@ -26,10 +46,12 @@ export default function AppRating({
   const [stats, setStats] = useState<RatingStats>({
     count: 0,
     average: 0,
+    views: 0,
     userRating: 0,
   });
 
   const saveTimeoutRef = useRef<number | null>(null);
+  const trackedViewRef = useRef<boolean>(false);
 
   const text = useMemo(() => {
     if (lang === "en") {
@@ -38,9 +60,9 @@ export default function AppRating({
         titleEmpty: "Tap or click the stars",
         titleValue: `Your rating: ${rating} / 5`,
         saved: "Saved",
-        clear: "Clear rating",
         average: "Average rating",
         votes: "Votes",
+        views: "Views",
         loading: "Loading rating...",
         noVotes: "No ratings yet",
       };
@@ -51,27 +73,15 @@ export default function AppRating({
       titleEmpty: "Klikněte nebo klepněte na hvězdičky",
       titleValue: `Vaše hodnocení: ${rating} / 5`,
       saved: "Uloženo",
-      clear: "Smazat hodnocení",
       average: "Průměrné hodnocení",
       votes: "Počet hodnocení",
+      views: "Počet zobrazení",
       loading: "Načítám hodnocení...",
       noVotes: "Zatím bez hodnocení",
     };
   }, [lang, rating]);
 
-  useEffect(() => {
-    void loadStats();
-  }, [storageKey]);
-
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current !== null) {
-        window.clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     setLoading(true);
 
     let localRating = 0;
@@ -99,26 +109,74 @@ export default function AppRating({
         throw new Error("Failed to fetch rating stats");
       }
 
-      const data = (await res.json()) as { count: number; average: number };
+      const data = (await res.json()) as {
+        count: number;
+        average: number;
+        views: number;
+      };
 
       setStats({
         count: data.count ?? 0,
         average: data.average ?? 0,
+        views: data.views ?? 0,
         userRating: localRating,
       });
     } catch {
       setStats({
         count: 0,
         average: 0,
+        views: 0,
         userRating: localRating,
       });
     } finally {
       setLoading(false);
     }
-  }
+  }, [storageKey]);
+
+  useEffect(() => {
+    void loadStats();
+  }, [loadStats]);
+
+  useEffect(() => {
+    if (trackedViewRef.current) return;
+    trackedViewRef.current = true;
+
+    const viewerId = getOrCreateClientId(storageKey);
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/ratings/${encodeURIComponent(storageKey)}/views`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ viewerId }),
+        });
+
+        if (!res.ok) return;
+
+        const data = (await res.json()) as { views: number };
+        setStats((prev) => ({
+          ...prev,
+          views: data.views ?? prev.views,
+        }));
+      } catch {
+        // ignore tracking errors
+      }
+    })();
+  }, [storageKey]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current !== null) {
+        window.clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   async function saveRating(value: number) {
     const previousRating = rating;
+    const userId = getOrCreateClientId(storageKey);
 
     setRating(value);
     setSaved(true);
@@ -136,7 +194,7 @@ export default function AppRating({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          previousRating,
+          userId,
           newRating: value,
         }),
       });
@@ -148,14 +206,16 @@ export default function AppRating({
       const data = (await res.json()) as {
         count: number;
         average: number;
+        views: number;
         userRating: number;
       };
 
-      setStats({
+      setStats((prev) => ({
         count: data.count ?? 0,
         average: data.average ?? 0,
+        views: data.views ?? prev.views,
         userRating: data.userRating ?? value,
-      });
+      }));
     } catch {
       setRating(previousRating);
       try {
@@ -176,57 +236,6 @@ export default function AppRating({
     saveTimeoutRef.current = window.setTimeout(() => {
       setSaved(false);
     }, 1400);
-  }
-
-  async function clearRating() {
-    const previousRating = rating;
-
-    setRating(0);
-    setHovered(0);
-    setSaved(false);
-
-    try {
-      window.localStorage.removeItem(storageKey);
-    } catch {
-      // ignore localStorage errors
-    }
-
-    try {
-      const res = await fetch(`/api/ratings/${encodeURIComponent(storageKey)}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          previousRating,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to clear rating");
-      }
-
-      const data = (await res.json()) as {
-        count: number;
-        average: number;
-        userRating: number;
-      };
-
-      setStats({
-        count: data.count ?? 0,
-        average: data.average ?? 0,
-        userRating: 0,
-      });
-    } catch {
-      setRating(previousRating);
-      try {
-        if (previousRating > 0) {
-          window.localStorage.setItem(storageKey, String(previousRating));
-        }
-      } catch {
-        // ignore localStorage errors
-      }
-    }
   }
 
   function handleKeyDown(
@@ -251,11 +260,6 @@ export default function AppRating({
     if (e.key === "End") {
       e.preventDefault();
       void saveRating(5);
-    }
-
-    if (e.key === "Delete" || e.key === "Backspace") {
-      e.preventDefault();
-      void clearRating();
     }
   }
 
@@ -283,6 +287,13 @@ export default function AppRating({
           <div className="ratingStatLabel">{text.votes}</div>
           <div className="ratingStatValue">
             {loading ? "..." : stats.count}
+          </div>
+        </div>
+
+        <div className="ratingStatItem">
+          <div className="ratingStatLabel">{text.views}</div>
+          <div className="ratingStatValue">
+            {loading ? "..." : stats.views}
           </div>
         </div>
       </div>
@@ -321,16 +332,6 @@ export default function AppRating({
 
       <div className="ratingFooterRow">
         <p className="ratingValue">{summaryText}</p>
-
-        {rating > 0 ? (
-          <button
-            type="button"
-            className="ratingClearButton"
-            onClick={() => void clearRating()}
-          >
-            {text.clear}
-          </button>
-        ) : null}
       </div>
 
       {note ? <p className="rateNoteText">{note}</p> : null}

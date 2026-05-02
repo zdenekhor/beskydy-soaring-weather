@@ -78,6 +78,20 @@ p {
   margin-bottom: 14px;
 }
 
+.titleWithLogo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topBrandLogo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(2, 6, 23, 0.3);
+  flex-shrink: 0;
+}
+
 .langSwitch {
   display: flex;
   align-items: center;
@@ -349,15 +363,20 @@ p {
 
 .runwayCard {
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
 }
 
 .runwayVisualWrap {
   width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
   overflow: hidden;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.16);
   background: rgba(2, 6, 23, 0.35);
-  margin-bottom: 14px;
 }
 
 .runwaySvg {
@@ -547,6 +566,60 @@ p {
   margin-top: 8px;
 }
 
+.metarEmbedWrap {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.metarEmbedRoot {
+  display: block;
+  width: min(100%, 340px);
+  min-height: 435px;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #dbe7fb;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(165deg, rgba(11, 20, 39, 0.92), rgba(16, 27, 50, 0.86));
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.28);
+}
+
+.metarEmbedRoot,
+.metarEmbedRoot * {
+  color: #e6eefc !important;
+}
+
+.metarEmbedRoot svg text,
+.metarEmbedRoot svg tspan {
+  fill: #e6eefc !important;
+}
+
+.metarEmbedRoot a {
+  color: #dbe7fb !important;
+}
+
+.metarEmbedRoot [style*="background: rgb(255"],
+.metarEmbedRoot [style*="background-color: rgb(255"],
+.metarEmbedRoot [style*="background:#fff"],
+.metarEmbedRoot [style*="background: #fff"],
+.metarEmbedRoot [style*="background-color:#fff"],
+.metarEmbedRoot [style*="background-color: #fff"] {
+  color: #0f172a !important;
+}
+
+.metarEmbedRoot [style*="background: rgb(255"] *,
+.metarEmbedRoot [style*="background-color: rgb(255"] *,
+.metarEmbedRoot [style*="background:#fff"] *,
+.metarEmbedRoot [style*="background: #fff"] *,
+.metarEmbedRoot [style*="background-color:#fff"] *,
+.metarEmbedRoot [style*="background-color: #fff"] * {
+  color: #0f172a !important;
+  fill: #0f172a !important;
+}
+
 .briefingLink {
   display: inline-flex;
   align-items: center;
@@ -604,6 +677,16 @@ p {
     padding: 18px 12px 34px;
   }
 
+  .topBrandLogo {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+  }
+
+  .titleWithLogo {
+    gap: 10px;
+  }
+
   .card,
   .chartCard,
   .topStatusCard {
@@ -616,6 +699,11 @@ p {
 
   .chartCanvasWrap {
     min-height: 320px;
+  }
+
+  .metarEmbedRoot {
+    width: 100%;
+    min-height: 420px;
   }
 }
 .chartToolbar {
@@ -895,6 +983,7 @@ p {
   border-radius: 12px;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.06);
+  border-left: 3px solid rgba(148, 163, 184, 0.35);
 }
 
 .chartReadoutLabel {
@@ -907,6 +996,58 @@ p {
   font-size: 0.92rem;
   color: #e2e8f0;
   font-weight: 700;
+}
+
+.chartReadoutTemp {
+  border-left-color: rgba(199, 167, 108, 0.95);
+}
+
+.chartReadoutTemp .chartReadoutLabel {
+  color: rgba(226, 201, 150, 0.94);
+}
+
+.chartReadoutHeight {
+  border-left-color: rgba(106, 147, 132, 0.96);
+}
+
+.chartReadoutHeight .chartReadoutLabel {
+  color: rgba(151, 199, 180, 0.94);
+}
+
+.chartReadoutThermal {
+  border-left-color: rgba(122, 160, 112, 0.96);
+}
+
+.chartReadoutThermal .chartReadoutLabel {
+  color: rgba(172, 221, 156, 0.94);
+}
+
+.chartReadoutWindSurface {
+  border-left-color: rgba(240, 161, 66, 0.96);
+}
+
+.chartReadoutWindSurface .chartReadoutLabel {
+  color: rgba(252, 202, 138, 0.96);
+}
+
+.chartReadoutWind850 {
+  border-left-color: rgba(76, 175, 210, 0.96);
+}
+
+.chartReadoutWind850 .chartReadoutLabel {
+  color: rgba(147, 227, 255, 0.94);
+}
+
+.chartReadoutWind700 {
+  border-left-color: rgba(165, 120, 232, 0.96);
+}
+
+.chartReadoutWind700 .chartReadoutLabel {
+  color: rgba(214, 182, 255, 0.94);
+}
+
+.chartReadoutCloud {
+  border-left-color: rgba(160, 171, 184, 0.82);
 }
 
 @media (max-width: 640px) {
@@ -1303,7 +1444,7 @@ body {
 
 /* hlavní kontejner */
 .container {
-  max-width: 1200px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 18px 16px 28px;
   color: var(--text);
@@ -1591,6 +1732,15 @@ h3,
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+}
+
+.appFooterLogo {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(127, 155, 179, 0.35);
+  background: rgba(127, 155, 179, 0.1);
+  padding: 4px;
 }
 
 .appFooterName {
@@ -1883,5 +2033,1235 @@ h3,
 
   .chartReadoutGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* SPL UI harmonization */
+.appMetaStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  padding: 10px 12px;
+  margin: 0 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.appMetaStrip span {
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+body {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+h3 {
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+h3 svg {
+  width: 18px;
+  height: 18px;
+  color: #cbd5e1;
+  stroke-width: 2.1;
+}
+
+.statusPill,
+.sourceBadge,
+.summaryBox,
+.card p,
+.metricSub,
+.cloudLayerCaption,
+.runwayReadout,
+.hazardPill,
+.briefingLink,
+.rateNoteText,
+.disclaimerCard {
+  font-size: 0.9rem;
+}
+
+.ratingButton {
+  width: 38px;
+  height: 38px;
+  font-size: 1.35rem;
+}
+
+.priorityGrid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+  grid-auto-flow: row dense;
+}
+
+.priorityGrid .card {
+  grid-column: span 4;
+  height: auto;
+  align-self: start;
+}
+
+.priorityGrid .priorityCardRunway {
+  grid-column: span 8;
+}
+
+.priorityGrid .priorityCardRisks {
+  grid-column: span 4;
+}
+
+.priorityGrid .priorityCardBriefing,
+.priorityGrid .priorityCardOfficialAirport {
+  grid-column: span 6;
+}
+
+.priorityGrid .priorityCardConditions,
+.priorityGrid .priorityCardSoaring {
+  grid-column: span 4;
+}
+
+.priorityGrid .priorityCardWindow,
+.priorityGrid .priorityCardWind {
+  grid-column: span 4;
+}
+
+.priorityGrid .priorityCardClouds {
+  grid-column: span 8;
+}
+
+.dataGrid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+  grid-auto-flow: row dense;
+}
+
+.dataGrid .card {
+  grid-column: span 3;
+  height: auto;
+  align-self: start;
+}
+
+.dataGrid .highPriorityCard,
+.dataGrid .wideCard {
+  grid-column: span 6;
+}
+
+@media (max-width: 980px) {
+  .priorityGrid,
+  .dataGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .priorityGrid .card,
+  .priorityGrid .highPriorityCard,
+  .priorityGrid .lowPriorityCard,
+  .priorityGrid .wideCard,
+  .dataGrid .card,
+  .dataGrid .highPriorityCard,
+  .dataGrid .wideCard {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .priorityGrid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "runway"
+      "risks"
+      "briefing"
+      "official"
+      "conditions"
+      "soaring"
+      "window"
+      "clouds"
+      "wind";
+  }
+
+  .appMetaStrip {
+    gap: 6px;
+    padding: 9px 10px;
+  }
+
+  .appMetaStrip span {
+    width: 100%;
+  }
+
+  .priorityGrid,
+  .dataGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .ratingButton {
+    width: 34px;
+    height: 34px;
+    font-size: 1.15rem;
+  }
+}
+
+/* Pro visual refinement */
+.container {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+}
+
+.topHeaderRow,
+.statusPills,
+.metricGrid,
+.grid,
+.runwayReadout,
+.quickLinksColumn,
+.hazardsWrap {
+  gap: var(--space-2);
+}
+
+.card,
+.chartCard,
+.topStatusCard,
+.metricCard {
+  padding: var(--space-4);
+  border-radius: 16px;
+}
+
+h3 {
+  margin: 0 0 var(--space-2);
+}
+
+.card p + p {
+  margin-top: var(--space-2);
+}
+
+.card,
+.chartCard,
+.topStatusCard,
+.metricCard {
+  border-color: rgba(141, 160, 180, 0.22);
+  box-shadow: 0 10px 28px rgba(4, 10, 22, 0.28);
+}
+
+.topPilotCard {
+  border: 1px solid rgba(186, 217, 255, 0.34);
+  box-shadow:
+    0 0 0 1px rgba(147, 197, 253, 0.14) inset,
+    0 14px 34px rgba(8, 18, 34, 0.34);
+}
+
+.trainingCrosswindCard {
+  background: linear-gradient(180deg, rgba(24, 35, 48, 0.98), rgba(19, 30, 42, 0.98));
+  border: 1px solid rgba(147, 197, 253, 0.34);
+}
+
+.runwayCard {
+  background: linear-gradient(180deg, rgba(16, 24, 38, 0.96), rgba(12, 20, 32, 0.96));
+}
+
+.runwayVisualWrap {
+  border-color: rgba(141, 160, 180, 0.3);
+  background:
+    radial-gradient(circle at 50% 44%, rgba(96, 165, 250, 0.08), transparent 52%),
+    linear-gradient(180deg, rgba(12, 20, 32, 0.88), rgba(8, 14, 24, 0.92));
+}
+
+.compassOuterRing {
+  fill: none;
+  stroke: rgba(203, 213, 225, 0.58);
+  stroke-width: 1.8;
+}
+
+.compassInnerRing {
+  fill: rgba(15, 23, 42, 0.35);
+  stroke: rgba(148, 163, 184, 0.3);
+  stroke-width: 1.2;
+}
+
+.compassTick.major {
+  stroke: rgba(226, 232, 240, 0.72);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.compassTick.minor {
+  stroke: rgba(148, 163, 184, 0.52);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.compassCardinal {
+  fill: #f1f5f9;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.compassIntercardinal {
+  fill: #cbd5e1;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.runwayStrip {
+  fill: rgba(51, 65, 85, 0.92);
+  stroke: rgba(203, 213, 225, 0.3);
+  stroke-width: 1.4;
+}
+
+.runwayCenterMark {
+  stroke: rgba(255, 255, 255, 0.58);
+  stroke-width: 2.8;
+  stroke-dasharray: 12 8;
+}
+
+.windArrowLine,
+.windArrowTail {
+  stroke: #93c5fd;
+  stroke-width: 3.6;
+  stroke-linecap: round;
+}
+
+.windArrowHead {
+  fill: #93c5fd;
+}
+
+.runwayCenterBadge {
+  fill: rgba(2, 6, 23, 0.76);
+  stroke: rgba(148, 163, 184, 0.5);
+  stroke-width: 1.2;
+}
+
+.runwayCenterValue {
+  fill: #e2e8f0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.runwayCenterValue.secondary {
+  fill: #cbd5e1;
+  font-size: 12px;
+}
+
+.runwayWindCaption {
+  fill: #dbe7fb;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.badgeGreen {
+  color: #dcfce7;
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.42);
+}
+
+.badgeYellow {
+  color: #fef3c7;
+  background: rgba(245, 158, 11, 0.24);
+  border-color: rgba(245, 158, 11, 0.46);
+}
+
+.badgeRed {
+  color: #fee2e2;
+  background: rgba(239, 68, 68, 0.24);
+  border-color: rgba(239, 68, 68, 0.48);
+}
+
+.semaphoreBadge.go,
+.semaphoreBadge.warn,
+.semaphoreBadge.bad {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* Comments visual unification */
+.commentsCard {
+  background: linear-gradient(180deg, rgba(16, 24, 38, 0.96), rgba(12, 20, 32, 0.96));
+}
+
+.commentsSection {
+  display: grid;
+  gap: 12px;
+}
+
+.commentsComposer,
+.commentItem,
+.commentReplyComposer {
+  border-radius: 12px;
+  border: 1px solid rgba(141, 160, 180, 0.2);
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.commentsComposer,
+.commentItem {
+  padding: 12px;
+}
+
+.commentReplyComposer {
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.commentsHint,
+.commentEmptyState,
+.commentMetaRow span,
+.commentErrorText {
+  color: #b9c8d9;
+  font-size: 0.84rem;
+}
+
+.commentMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.commentMetaRow strong {
+  color: #e5eefc;
+}
+
+.commentMessage {
+  margin: 0;
+  color: #dce7f4;
+  line-height: 1.55;
+}
+
+.commentFormGrid {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.commentInput,
+.commentTextarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(2, 6, 23, 0.48);
+  color: #e6eef8;
+  padding: 10px 12px;
+  font: inherit;
+  line-height: 1.45;
+}
+
+.commentInput::placeholder,
+.commentTextarea::placeholder {
+  color: rgba(185, 200, 217, 0.75);
+}
+
+.commentInput:focus,
+.commentTextarea:focus {
+  outline: none;
+  border-color: rgba(147, 197, 253, 0.55);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.16);
+}
+
+.commentActionsRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.commentActionsRow.inline {
+  margin-top: 8px;
+}
+
+.commentSubmitButton,
+.commentReplyButton {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(30, 41, 59, 0.85);
+  color: #e5eefc;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.commentsSection .commentSubmitButton {
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.42), rgba(29, 78, 216, 0.34));
+  border-color: rgba(96, 165, 250, 0.58);
+  color: #eff6ff;
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.15) inset;
+}
+
+.commentsSection .commentSubmitButton:hover,
+.commentsSection .commentReplyButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(148, 163, 184, 0.5);
+}
+
+.commentsSection .commentSubmitButton:focus-visible,
+.commentsSection .commentReplyButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+}
+
+.commentsSection .commentSubmitButton:active,
+.commentsSection .commentReplyButton:active {
+  transform: translateY(0);
+}
+
+.commentsSection .commentSubmitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.commentReplies {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(141, 160, 180, 0.2);
+  display: grid;
+  gap: 8px;
+}
+
+.commentItem.reply {
+  background: rgba(2, 6, 23, 0.34);
+  border-color: rgba(141, 160, 180, 0.16);
+  padding: 10px;
+}
+
+.chartMarker {
+  gap: 8px;
+}
+
+.chartMarkerIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.75);
+  color: #dbe7fb;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.chartMarker.currentHour {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: rgba(37, 99, 235, 0.12);
+}
+
+.axisLegend.isSelected,
+.axisLegend.isSelected:hover {
+  transform: translateY(-1px);
+  border-color: rgba(96, 165, 250, 0.58);
+  background: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.18) inset;
+  color: #eff6ff;
+}
+
+.runwayDerivedState {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.52);
+  line-height: 1.5;
+}
+
+.runwayDerivedState.go {
+  border-color: rgba(74, 222, 128, 0.32);
+  background: rgba(22, 101, 52, 0.18);
+}
+
+.runwayDerivedState.warn {
+  border-color: rgba(251, 191, 36, 0.34);
+  background: rgba(133, 77, 14, 0.18);
+}
+
+.runwayDerivedState.bad {
+  border-color: rgba(248, 113, 113, 0.34);
+  background: rgba(127, 29, 29, 0.18);
+}
+
+.officialAirportBriefing {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(141, 160, 180, 0.18);
+  display: grid;
+  gap: 10px;
+}
+
+.officialAirportBriefing.standalone {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.officialAirportHeading {
+  color: #eff6ff;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.officialAirportGrid {
+  display: grid;
+  gap: 8px;
+  color: #dbe7fb;
+}
+
+.officialNotesList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: #dbe7fb;
+}
+
+.officialSourceNote {
+  margin: 0;
+  color: #aebfd5;
+  line-height: 1.5;
+}
+
+.briefingCard {
+  display: grid;
+  gap: 12px;
+}
+
+.briefingLead {
+  margin: 0;
+  color: #dbe7fb;
+  line-height: 1.6;
+}
+
+.briefingLinkGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.briefingInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.briefingInfoCard {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(141, 160, 180, 0.18);
+  background: rgba(8, 15, 29, 0.34);
+  color: #dbe7fb;
+}
+
+.briefingInfoCard strong {
+  color: #eff6ff;
+}
+
+.briefingInfoCard span {
+  color: #bfd0e6;
+  line-height: 1.55;
+}
+
+.documentEmbedWrap {
+  width: 100%;
+  min-height: 520px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(141, 160, 180, 0.24);
+  background: rgba(8, 15, 29, 0.42);
+}
+
+.documentEmbedFrame {
+  width: 100%;
+  height: 520px;
+  border: 0;
+  display: block;
+}
+
+.documentEmbedHint {
+  margin: 0;
+  color: #a9bbd3;
+  font-size: 0.88rem;
+}
+
+.documentMissingBox {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: rgba(127, 29, 29, 0.22);
+  color: #fecaca;
+  line-height: 1.5;
+}
+
+.documentActionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.documentFullscreenButton {
+  width: fit-content;
+}
+
+.documentModal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: rgba(2, 6, 23, 0.92);
+}
+
+.documentModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #eff6ff;
+}
+
+.documentModalClose {
+  flex-shrink: 0;
+}
+
+.documentModalActions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.documentModalFrame {
+  width: 100%;
+  height: calc(100vh - 72px);
+  border: 1px solid rgba(141, 160, 180, 0.28);
+  border-radius: 12px;
+  background: #fff;
+}
+
+@media (max-width: 720px) {
+  .documentEmbedFrame {
+    height: 420px;
+  }
+
+  .documentModal {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .documentModalHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .documentModalActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .documentModalFrame {
+    height: calc(100dvh - 118px);
+    border-radius: 10px;
+  }
+}
+
+.limitsList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: #dbe7fb;
+}
+
+.briefingSourceLink {
+  color: #bfdbfe;
+  text-underline-offset: 2px;
+}
+
+.briefingSourceLink:hover {
+  color: #eff6ff;
+}
+
+/* SPL Trainer button family */
+.langButton,
+.briefingLink,
+.chartDayButton,
+.chartToggleButton,
+.axisLegend,
+.commentReplyButton,
+.commentSubmitButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(30, 41, 59, 0.84);
+  color: #dbe7fb;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease,
+    color 0.16s ease;
+}
+
+.langButton:hover,
+.briefingLink:hover,
+.chartDayButton:hover,
+.chartToggleButton:hover,
+.axisLegend:hover,
+.commentReplyButton:hover,
+.commentSubmitButton:hover {
+  transform: translateY(-1px);
+  background: rgba(41, 55, 74, 0.94);
+  border-color: rgba(148, 163, 184, 0.48);
+  color: #eff6ff;
+}
+
+.langButton:focus-visible,
+.briefingLink:focus-visible,
+.chartDayButton:focus-visible,
+.chartToggleButton:focus-visible,
+.axisLegend:focus-visible,
+.commentReplyButton:focus-visible,
+.commentSubmitButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18);
+}
+
+.langButton {
+  min-width: 42px;
+}
+
+.chartToggleButton,
+.commentsSection .commentSubmitButton {
+  border-color: rgba(96, 165, 250, 0.56);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.44), rgba(29, 78, 216, 0.34));
+  color: #eff6ff;
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.14) inset;
+}
+
+.chartToggleButton:hover,
+.commentsSection .commentSubmitButton:hover {
+  border-color: rgba(147, 197, 253, 0.72);
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.5), rgba(37, 99, 235, 0.4));
+}
+
+.langButton.active,
+.chartDayButton.active,
+.chartToggleButton.active,
+.axisLegend.isSelected,
+.axisLegend.isSelected:hover {
+  border-color: rgba(96, 165, 250, 0.58);
+  background: rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.18) inset;
+  color: #eff6ff;
+}
+
+.axisLegend {
+  justify-content: flex-start;
+  min-height: 36px;
+}
+
+.chartDayButton,
+.chartToggleButton,
+.axisLegend {
+  font-size: 0.82rem;
+}
+
+.chartMobileToggleRow {
+  margin-bottom: 12px;
+}
+
+.commentsSection .commentSubmitButton:active,
+.commentsSection .commentReplyButton:active,
+.chartToggleButton:active {
+  transform: translateY(0);
+}
+
+.commentsSection .commentSubmitButton:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Final theme override aligned with SPL-TRAINER visual direction */
+:root {
+  --bg: #0d141b;
+  --panel: rgba(24, 34, 44, 0.96);
+  --panel-2: rgba(33, 45, 57, 0.94);
+  --line: rgba(51, 66, 80, 0.9);
+  --text: #e7edf3;
+  --muted: #a8b4c0;
+  --soft: #a8b4c0;
+  --good: #6e8e79;
+  --warn: #c89a61;
+  --bad: #9d7a7a;
+  --blue: #7d93a8;
+}
+
+html,
+body {
+  background:
+    radial-gradient(circle at top, rgba(95, 120, 145, 0.08), transparent 32%),
+    linear-gradient(180deg, #111a22, #0d141b);
+  color: var(--text);
+}
+
+.topStatusCard,
+.chartCard,
+.card {
+  background: linear-gradient(180deg, rgba(24, 34, 44, 0.98), rgba(19, 28, 37, 0.98));
+  border-color: var(--line);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+}
+
+.metricCard,
+.chartReadoutCard,
+.briefingInfoCard,
+.documentEmbedWrap {
+  background: rgba(33, 45, 57, 0.5);
+  border-color: rgba(51, 66, 80, 0.88);
+}
+
+.statusPill,
+.sourceBadge,
+.langSwitch {
+  border-color: rgba(51, 66, 80, 0.9);
+  background: rgba(33, 45, 57, 0.55);
+}
+
+.langButton,
+.briefingLink,
+.chartDayButton,
+.chartToggleButton,
+.axisLegend,
+.commentReplyButton,
+.commentSubmitButton {
+  border-color: rgba(51, 66, 80, 0.9);
+  background: linear-gradient(180deg, #2c3947, #253240);
+  color: #e7edf3;
+}
+
+.langButton:hover,
+.briefingLink:hover,
+.chartDayButton:hover,
+.chartToggleButton:hover,
+.axisLegend:hover,
+.commentReplyButton:hover,
+.commentSubmitButton:hover {
+  border-color: rgba(125, 147, 168, 0.9);
+  background: linear-gradient(180deg, #344454, #2a3948);
+  color: #f4f7fa;
+}
+
+.langButton.active,
+.chartDayButton.active,
+.chartToggleButton.active,
+.axisLegend.isSelected,
+.axisLegend.isSelected:hover {
+  border-color: #7d93a8;
+  background: rgba(125, 147, 168, 0.2);
+  box-shadow: 0 0 0 1px rgba(125, 147, 168, 0.2) inset;
+}
+
+.grid {
+  align-items: start;
+}
+
+.grid > .card {
+  height: auto;
+}
+
+.utilityGrid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+  grid-auto-flow: row dense;
+}
+
+.utilityGrid > .card {
+  grid-column: span 3;
+  height: 100%;
+}
+
+.utilityGrid .wideCard {
+  grid-column: span 6;
+}
+
+.utilityGrid .commentsCard {
+  grid-column: span 12;
+}
+
+@media (max-width: 980px) {
+  .utilityGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .utilityGrid > .card {
+    grid-column: span 1;
+  }
+
+  .utilityGrid .wideCard,
+  .utilityGrid .commentsCard {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  h1 {
+    font-size: 1.72rem;
+  }
+
+  h2 {
+    font-size: 0.9rem;
+  }
+
+  h3 {
+    font-size: 0.95rem;
+  }
+
+  h3 svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .big {
+    font-size: 1.6rem;
+  }
+
+  .metricValue {
+    font-size: 1.4rem;
+  }
+
+  .metricValueLarge {
+    font-size: 1.12rem;
+  }
+
+  .statusPill,
+  .sourceBadge,
+  .summaryBox,
+  .card p,
+  .card li,
+  .metricSub,
+  .cloudLayerCaption,
+  .runwayReadout,
+  .hazardPill,
+  .briefingLink,
+  .rateNoteText,
+  .disclaimerCard,
+  .chartReadoutValue,
+  .chartReadoutLabel {
+    font-size: 0.84rem;
+  }
+
+  .appMetaStrip span {
+    font-size: 0.8rem;
+  }
+
+  .chartDayButton,
+  .chartToggleButton,
+  .axisLegend {
+    font-size: 0.78rem;
+  }
+
+  .runwayVisualWrap {
+    max-width: 278px;
+  }
+
+  .compassCardinal {
+    font-size: 12px;
+  }
+
+  .compassIntercardinal {
+    font-size: 10px;
+  }
+
+  .runwayLabel {
+    font-size: 14px;
+  }
+
+  .windArrowLine,
+  .windArrowTail {
+    stroke-width: 3.1;
+  }
+
+  .runwayCenterValue {
+    font-size: 12px;
+  }
+
+  .runwayCenterValue.secondary {
+    font-size: 10.5px;
+  }
+
+  .runwayWindCaption {
+    font-size: 10px;
+  }
+
+  .priorityGrid,
+  .dataGrid,
+  .utilityGrid {
+    gap: 14px;
+  }
+
+  .priorityGrid > .card,
+  .dataGrid > .card,
+  .utilityGrid > .card {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+}
+
+.layoutStandaloneDesktop .priorityGrid,
+.layoutStandaloneDesktop .dataGrid,
+.layoutStandaloneDesktop .utilityGrid {
+  display: grid !important;
+  column-count: initial !important;
+  column-gap: 0 !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.layoutStandaloneDesktop .priorityGrid > [data-layout-id],
+.layoutStandaloneDesktop .dataGrid > [data-layout-id],
+.layoutStandaloneDesktop .utilityGrid > [data-layout-id] {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  break-inside: auto;
+  page-break-inside: auto;
+  grid-column: span 4;
+}
+
+.layoutStandaloneDesktop [data-layout-id][data-layout-size="s"] {
+  grid-column: span 4;
+}
+
+.layoutStandaloneDesktop [data-layout-id][data-layout-size="m"] {
+  grid-column: span 6;
+}
+
+.layoutStandaloneDesktop [data-layout-id][data-layout-size="l"] {
+  grid-column: span 8;
+}
+
+.layoutEditorToolbar {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(125, 147, 168, 0.38);
+  background: rgba(13, 20, 27, 0.94);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  color: #e7edf3;
+}
+
+.layoutEditorToolbar strong {
+  font-size: 0.84rem;
+  color: #e7edf3;
+}
+
+.layoutCardControls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(125, 147, 168, 0.3);
+  background: rgba(13, 20, 27, 0.84);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.layoutControlButton {
+  min-width: 28px;
+  height: 28px;
+  border: 1px solid rgba(51, 66, 80, 0.9);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #2c3947, #253240);
+  color: #e7edf3;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.layoutControlButton:hover {
+  border-color: rgba(125, 147, 168, 0.9);
+  background: linear-gradient(180deg, #344454, #2a3948);
+}
+
+.layoutControlButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.layoutPickButton.active {
+  border-color: rgba(125, 211, 252, 0.95);
+  background: linear-gradient(180deg, #1f4f69, #1a4258);
+}
+
+.layoutDragHandle {
+  cursor: grab;
+}
+
+.layoutDragHandle:active {
+  cursor: grabbing;
+}
+
+.layoutStandaloneDesktop .layoutDropTarget {
+  outline: 2px dashed rgba(147, 197, 253, 0.7);
+  outline-offset: -4px;
+}
+
+@media (pointer: coarse) {
+  .layoutCardControls {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .layoutControlButton {
+    min-width: 34px;
+    height: 34px;
+    font-size: 0.88rem;
   }
 }

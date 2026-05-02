@@ -1,12 +1,19 @@
 import { Analytics } from "@vercel/analytics/react";
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
+import PwaRegister from "../components/PwaRegister";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SPL Weather LKFR– Beskydy",
-  description: "Gliding weather briefing for Beskydy",
+  title: "Počasí LKFR",
+  description: "Predpoved pocasi pro LKFR a hodnoceni podminek pro plachtare SPL.",
+  applicationName: "Počasí LKFR",
   manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Počasí LKFR",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
@@ -21,11 +28,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={GeistSans.className}>
+    <html lang="cs" className={GeistSans.className}>
       <body>
-  {children}
-  <Analytics />
-</body>
+        <PwaRegister />
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }

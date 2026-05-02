@@ -1,5 +1,11 @@
 import Link from "next/link";
+import Script from "next/script";
 import AppRating from "../components/AppRating";
+import CommentThread from "../components/CommentThread";
+import DesktopLayoutEnhancer from "../components/desktop-layout-enhancer";
+
+import LivePragueDateTime from "../components/LivePragueDateTime";
+import Vpl4Viewer from "../components/vpl4-viewer";
 import WeatherChart from "../components/WeatherChart";
 import {
   Cloud,
@@ -11,12 +17,14 @@ import {
   MapPinned,
   Camera,
   Info,
+  NotebookPen,
   Star,
+  MessageSquare,
 } from "lucide-react";
 
 type ForecastData = {
   hourly: {
-    time: string[];
+    time: number[];
     temperature_2m: number[];
     dew_point_2m: number[];
     cloud_cover: number[];
@@ -35,12 +43,47 @@ type ForecastData = {
     wind_direction_700hPa?: number[];
   };
   daily: {
-    sunrise: string[];
-    sunset: string[];
+    sunrise: number[];
+    sunset: number[];
   };
 };
 
 type Lang = "cs" | "en";
+
+type MetarCloudLayer = {
+  cover: string;
+  baseFtAgl: number;
+  cloudType?: string | null;
+};
+
+type MetarObservation = {
+  speedKt: number;
+  gustKt: number | null;
+  directionDeg: number;
+  rawText: string;
+  temperatureC: number | null;
+  dewPointC: number | null;
+  cloudLayers: MetarCloudLayer[];
+  ceilingFtAgl: number | null;
+  qnhHpa: number | null;
+  visibilityM: number | null;
+  weatherCodes: string[];
+};
+
+type TafBriefing = {
+  sourceIcao: string;
+  rawTaf: string;
+  hasWindshear: boolean;
+};
+
+type OfficialAirportBriefing = {
+  category: string | null;
+  operation: string | null;
+  frequency: string | null;
+  circuitAltitude: string | null;
+  circuitDirections: string[];
+  runwayWarnings: string[];
+};
 
 type Translation = {
   locale: string;
@@ -51,10 +94,12 @@ type Translation = {
   version: string;
   appUpdate: string;
   local: string;
+  allTimesUtc: string;
 
   language: string;
   czech: string;
   english: string;
+  forecastUnavailable: string;
 
   flightSemaphore: string;
   pilotComment: string;
@@ -74,9 +119,22 @@ type Translation = {
   metarInfo: string;
   cloudLayers: string;
   airportConditions: string;
+  officialBriefing: string;
+  operationalBriefing: string;
   modelForecast: string;
   quickLinks: string;
   appRating: string;
+  layoutEditor: string;
+  layoutReset: string;
+  layoutMoveEarlier: string;
+  layoutMoveLater: string;
+  layoutPickCard: string;
+  layoutPlaceBefore: string;
+  layoutCardSelected: string;
+  layoutDragAndDrop: string;
+  layoutSizeSmall: string;
+  layoutSizeMedium: string;
+  layoutSizeLarge: string;
   disclaimerTitle: string;
   disclaimerText: string;
 
@@ -109,7 +167,84 @@ type Translation = {
   openMetar: string;
   openWebsite: string;
   openWebcam: string;
+  openSplTrainer: string;
+  openOfficialManual: string;
+  openOfficialBriefing: string;
+  openOfficialTextPdf: string;
+  vpl4DocumentTitle: string;
+  vpl4Expand: string;
+  vpl4Collapse: string;
+  vpl4OpenFullscreen: string;
+  vpl4CloseFullscreen: string;
+  vpl4Missing: string;
   checkCurrentWeather: string;
+
+  airportCategoryLabel: string;
+  airportOperationLabel: string;
+  airportFrequencyLabel: string;
+  trafficCircuitLabel: string;
+  circuitAltitudeLabel: string;
+  officialRunwayStatusLabel: string;
+  recentRainLabel: string;
+  officialSourceNote: string;
+  currentNoticesLabel: string;
+  atisStatusLabel: string;
+  atisUnavailableNote: string;
+  radioInfoLabel: string;
+  officialBriefingLead: string;
+  runwayWetRisk: string;
+  runwayWetNote: string;
+  runwaySnowNote: string;
+  runwayNoSofteningSign: string;
+  gustsLabel: string;
+  infoLabel: string;
+  windLimitLabel: string;
+  windLimitNote: string;
+  lkfrTrainingLimitsTitle: string;
+  lkfrCrosswindLimitText: string;
+  lkfrVfrGoodText: string;
+  lkfrWetRunwayWarningText: string;
+  lkfrWetRunwayCriticalText: string;
+  lkfrDataSourceLabel: string;
+  meteoDataSourceNote: string;
+  windShearInTaf: string;
+  yes: string;
+  no: string;
+  liProxyLabel: string;
+  cloudCoverageLabel: string;
+  cloudTypeLabel: string;
+  verticalDevelopmentLabel: string;
+  riskLabel: string;
+  lowRiskLabel: string;
+  verticalDevelopmentRiskNote: string;
+  verticalDevelopmentLowNote: string;
+  chartAxesLegendTitle: string;
+  phenomenaLabel: string;
+  webcamLinkLabel: string;
+  pilotCommentsTitle: string;
+  vfrSuitable: string;
+  vfrMarginal: string;
+  vfrNotSuitable: string;
+  crosswindDemanding: string;
+  crosswindCaution: string;
+  crosswindSuitable: string;
+  overdevelopmentLabel: string;
+  highCloudHeatingReducedLabel: string;
+  hazardOccurrenceLow: string;
+  hazardOccurrenceCountLabel: string;
+  occurrenceRiskHigh: string;
+  occurrenceRiskMedium: string;
+  occurrenceRiskLow: string;
+  gaforLikeNote: string;
+  instabilityStrong: string;
+  instabilitySlight: string;
+  instabilityStable: string;
+  verticalDevelopmentTag: string;
+  streetsLabel: string;
+  blueThermalsLabel: string;
+  weakCuLabel: string;
+  highCloudLabel: string;
+  dayDecayLabel: string;
 
   noSignificantHazards: string;
 
@@ -224,6 +359,8 @@ type Translation = {
   dayPlus2: string;
 
   currentForecastHour: string;
+  flightDayStart: string;
+  flightDayEnd: string;
   cloudBaseShort: string;
   thermalShort: string;
   surfaceWind: string;
@@ -245,35 +382,107 @@ type Translation = {
   middleLayer: string;
   highLayer: string;
   sourceLabel: string;
+  observedLabel: string;
+  forecastLabel: string;
+  priorityLabel: string;
+  metarFirstLabel: string;
+  qnh: string;
+  visibility: string;
+  ceilingLabel: string;
   modelSurfaceWind: string;
   airportObservedWind: string;
   rateNote: string;
   metarFallbackLabel: string;
   liveLabel: string;
+  tafLabel: string;
+  gaforLikeLabel: string;
 };
 
 const FIELD_ELEVATION_MSL = 439;
-const APP_VERSION = "v1.4.0";
-const APP_UPDATED = "24 Mar 2026";
+const APP_VERSION = "v1.5.0";
+const APP_UPDATED = "10 Apr 2026";
+const LKFR_TIME_ZONE = "Europe/Prague";
+const VFR_DAY_START_OFFSET_SEC = 0;
+const VFR_DAY_END_OFFSET_SEC = 0;
+const DEFAULT_FETCH_TIMEOUT_MS = 9000;
+
+type NextFetchInit = RequestInit & {
+  next?: {
+    revalidate?: number;
+  };
+};
+
+async function fetchWithTimeout(
+  input: string,
+  init: NextFetchInit = {},
+  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS
+) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+const studentProfileCfg = {
+  thermalWindowThreshold: 1.4,
+  noGoCrosswind: 9,
+  noGoSurfaceWind: 13,
+  noGoOperationalRisk: 52,
+  goMinThermalScore: 60,
+  goMaxOperationalRisk: 26,
+  goMinLcl: 800,
+};
+
+const LKFR_LIMITS = {
+  // LKFR: travnatá RWY + SPL výcvik, konzervativnější limity
+  runwayWet6hWarnMm: 1.5,
+  runwayWet12hWarnMm: 3,
+  runwayWet6hBadMm: 3,
+  runwayWet12hBadMm: 6,
+  vfrVisibilityGoodM: 8000,
+  vfrVisibilityMarginalM: 5000,
+  vfrCloudBaseGoodM: 600,
+  vfrCloudBaseMarginalM: 450,
+  vfrSurfaceWindMaxKt: 14,
+  vfrCrosswindMaxKt: 10,
+  strongWindSurfaceKt: 13,
+  strongWind850Kt: 20,
+  strongWindCrosswindKt: 10,
+  compassLimitSurfaceKt: 13,
+  compassLimitCrosswindKt: 9,
+  compassLimitGustKt: 18,
+} as const;
 
 const AIRPORT_WEBSITE = "https://www.akfrydlant.cz/";
-const AIRPORT_WEBCAM = "https://www.akfrydlant.cz/webkamera/";
 const METAR_PAGE = "https://metar-taf.com/metar/LKFR";
+const AIM_VFR_MANUAL_URL = "https://aim.rlp.cz/vfrmanual/actual/lkfr_text_cz.html";
+const AIM_VFR_TEXT_PDF_URL = "https://aim.rlp.cz/vfrmanual/actual/pdf/ad-lkfr_text_cz.pdf";
+const AISVIEW_URL = "https://aisview.rlp.cz/";
+const SPL_TRAINER_URL = "https://zdenekhor.github.io/SPL-TRAINER/";
 
 const translations: Record<Lang, Translation> = {
   cs: {
     locale: "cs-CZ",
-    title: "SPL Počasí LKFR – Beskydy",
+    title: "Počasí LKFR",
     subtitle: "Frýdlant nad Ostravicí • testovací provoz",
     updated: "Aktualizováno",
     forecastHour: "Hodina předpovědi",
     version: "Verze",
     appUpdate: "Aktualizace aplikace",
     local: "místního času",
+    allTimesUtc: "Všechny časy v předpovědi jsou v místním čase",
 
     language: "Jazyk",
     czech: "Čeština",
     english: "English",
+    forecastUnavailable: "Modelová předpověď je dočasně nedostupná. Zkuste stránku za chvíli obnovit.",
 
     flightSemaphore: "Letový semafor",
     pilotComment: "Pilotní komentář",
@@ -293,9 +502,22 @@ const translations: Record<Lang, Translation> = {
     metarInfo: "METAR / letištní informace",
     cloudLayers: "Oblačnost podle vrstev",
     airportConditions: "Aktuální letištní podmínky",
+    officialBriefing: "Oficiální briefing LKFR",
+    operationalBriefing: "NOTAM / SNOWTAM / ATIS briefing",
     modelForecast: "Modelová předpověď",
     quickLinks: "Rychlé odkazy",
     appRating: "Ohodnoť aplikaci",
+    layoutEditor: "Rozložení aplikace",
+    layoutReset: "Obnovit výchozí",
+    layoutMoveEarlier: "Posunout dříve",
+    layoutMoveLater: "Posunout později",
+    layoutPickCard: "Vybrat kartu",
+    layoutPlaceBefore: "Vložit před tuto",
+    layoutCardSelected: "Karta je vybraná",
+    layoutDragAndDrop: "Přetáhnout kartu",
+    layoutSizeSmall: "Malá karta",
+    layoutSizeMedium: "Střední karta",
+    layoutSizeLarge: "Velká karta",
     disclaimerTitle: "Upozornění",
     disclaimerText:
       "Tato aplikace není oficiálním leteckým meteorologickým systémem. Slouží pouze jako orientační pomůcka pro plánování letu. Pilot je vždy odpovědný za ověření aktuálních informací (METAR, TAF, briefing).",
@@ -329,7 +551,94 @@ const translations: Record<Lang, Translation> = {
     openMetar: "Otevřít METAR / TAF",
     openWebsite: "Otevřít web LKFR",
     openWebcam: "Otevřít webkameru",
+    openSplTrainer: "Otevřít SPL-TRAINER",
+    openOfficialManual: "Otevřít VFR příručku LKFR",
+    openOfficialBriefing: "Otevřít AIS View / NOTAM briefing",
+    openOfficialTextPdf: "Otevřít PDF text LKFR",
+    vpl4DocumentTitle: "Dokument VPL-4",
+    vpl4Expand: "Zobrazit dokument",
+    vpl4Collapse: "Minimalizovat dokument",
+    vpl4OpenFullscreen: "Otevřít na celou obrazovku",
+    vpl4CloseFullscreen: "Zavřít dokument",
+    vpl4Missing: "Soubor nebyl nalezen. Nahraj prosím weather-app/public/vpl4.pdf.",
     checkCurrentWeather: "Kontrola aktuálního počasí a letištní situace LKFR",
+
+    airportCategoryLabel: "Zařazení letiště",
+    airportOperationLabel: "Typ provozu",
+    airportFrequencyLabel: "Oficiální kmitočet",
+    trafficCircuitLabel: "Letištní okruhy",
+    circuitAltitudeLabel: "Výška okruhu",
+    officialRunwayStatusLabel: "Odhad stavu travnaté RWY",
+    recentRainLabel: "Srážky za posledních 6 / 12 h",
+    officialSourceNote:
+      "Zdroj: oficiální text AD LKFR ve VFR příručce ŘLP ČR. NOTAM, SNOWTAM a další provozní informace vždy ověř v AIS View.",
+    currentNoticesLabel: "Aktuální provozní informace",
+    atisStatusLabel: "ATIS",
+    atisUnavailableNote:
+      "Na LKFR se standardní ATIS běžně nepublikuje. Pro aktuální provoz sleduj AIS View, METAR/TAF a provozní informaci na Frýdlant RADIO.",
+    radioInfoLabel: "Provozní informace / rádio",
+    officialBriefingLead:
+      "Samostatný briefing pro provozní omezení a stav letiště. Tady ověřuj NOTAM, SNOWTAM, publikované údaje LKFR i návazné aktuální informace.",
+    runwayWetRisk: "Mokrá / měkká travnatá RWY",
+    runwayWetNote:
+      "Travnatá RWY LKFR je po vydatnějších srážkách provozně citlivá. Ověř aktuální použitelnost v oficiálním briefingu.",
+    runwaySnowNote:
+      "LKFR nemá zajištěné odstraňování sněhu z pohybových ploch. Před letem ověř SNOWTAM / oficiální briefing.",
+    runwayNoSofteningSign:
+      "Bez modelového náznaku rozbahnění; přesto ověř oficiální briefing.",
+    gustsLabel: "Nárazy",
+    infoLabel: "Info",
+    windLimitLabel: "Mezní vítr",
+    windLimitNote:
+      "blíží se/meze pro výcvik SPL, zvýšená opatrnost při startu a přistání",
+    lkfrTrainingLimitsTitle: "Limity LKFR pro SPL výcvik",
+    lkfrCrosswindLimitText: "Crosswind max {crosswind} kt, surface wind max {surfaceWind} kt.",
+    lkfrVfrGoodText: "VFR good: dohlednost min {visibilityKm} km, základna min {cloudBase} m AGL.",
+    lkfrWetRunwayWarningText: "Mokrá RWY varování: {rain6h} mm/6h nebo {rain12h} mm/12h.",
+    lkfrWetRunwayCriticalText: "Mokrá RWY kritické: {rain6h} mm/6h nebo {rain12h} mm/12h.",
+    lkfrDataSourceLabel: "Zdroj dat LKFR:",
+    meteoDataSourceNote:
+      "Zdroj meteo dat: AviationWeather (METAR/TAF) + Open-Meteo (model). Výcvikové prahy jsou konzervativní interní nastavení aplikace pro LKFR/SPL.",
+    windShearInTaf: "Wind shear v TAF",
+    yes: "ano",
+    no: "ne",
+    liProxyLabel: "LI proxy",
+    cloudCoverageLabel: "pokrytí",
+    cloudTypeLabel: "Druh",
+    verticalDevelopmentLabel: "Vertikální vývoj",
+    riskLabel: "riziko",
+    lowRiskLabel: "nízké",
+    verticalDevelopmentRiskNote:
+      "Přítomné podmínky podporují přerůstání oblačnosti (bouřky/CB).",
+    verticalDevelopmentLowNote: "Bez výrazného signálu přerůstání oblačnosti.",
+    chartAxesLegendTitle: "Osy a datové vrstvy grafu",
+    phenomenaLabel: "Jevy",
+    webcamLinkLabel: "Webkamera LKFR",
+    pilotCommentsTitle: "Komentáře pilotů",
+    vfrSuitable: "VFR: vyhovuje",
+    vfrMarginal: "VFR: hraniční",
+    vfrNotSuitable: "VFR: nevyhovuje",
+    crosswindDemanding: "Náročné",
+    crosswindCaution: "Pozor",
+    crosswindSuitable: "Vhodné",
+    overdevelopmentLabel: "Přerůstání oblačnosti",
+    highCloudHeatingReducedLabel: "Útlum ohřevu vysokou oblačností",
+    hazardOccurrenceLow: "Výskyt významných jevů: nízký",
+    hazardOccurrenceCountLabel: "Výskyt jevů: {count}",
+    occurrenceRiskHigh: "Riziko výskytu: vysoké",
+    occurrenceRiskMedium: "Riziko výskytu: střední",
+    occurrenceRiskLow: "Riziko výskytu: nízké",
+    gaforLikeNote:
+      "Lokální GAFOR-like odhad z viditelnosti, základny, srážek a větru. Není to oficiální GAFOR produkt.",
+    instabilityStrong: "výrazně nestabilní",
+    instabilitySlight: "mírně nestabilní",
+    instabilityStable: "stabilnější",
+    verticalDevelopmentTag: "Vertikální vývoj",
+    streetsLabel: "Streets",
+    blueThermalsLabel: "Modrá termika",
+    weakCuLabel: "Slabé Cu",
+    highCloudLabel: "Vysoká oblačnost",
+    dayDecayLabel: "Vyhasínání dne",
 
     noSignificantHazards: "Bez významných meteorologických rizik",
 
@@ -337,10 +646,10 @@ const translations: Record<Lang, Translation> = {
     caution: "🟡 POZOR",
     noGo: "🔴 NO GO",
 
-    semaphoreGoNote: "Podmínky jsou pro běžné plachtění převážně příznivé.",
+    semaphoreGoNote: "Podmínky jsou pro plachtění převážně příznivé.",
     semaphoreCautionNote:
       "Podmínky vyžadují zvýšenou pozornost a úsudek pilota.",
-    semaphoreNoGoNote: "Podmínky jsou nevhodné nebo provozně rizikové.",
+    semaphoreNoGoNote: "Podmínky jsou nevhodné nebo provozně nepřijatelné.",
 
     weak: "🔴 Slabé",
     usable: "🟡 Použitelné",
@@ -352,9 +661,9 @@ const translations: Record<Lang, Translation> = {
     goodDay: "🟢 Dobré",
     xcDay: "🔵 XC den",
 
-    flyingGood: "🟢 Dobré podmínky pro plachtění",
-    flyingWeak: "🟡 Hraniční podmínky pro plachtění",
-    flyingPoor: "🔴 Nevhodné podmínky pro plachtění",
+    flyingGood: "🟢 Dobré podmínky pro let",
+    flyingWeak: "🟡 Hraniční podmínky pro let",
+    flyingPoor: "🔴 Nevhodné podmínky pro let",
 
     low: "Nízký",
     moderate: "Střední",
@@ -363,36 +672,36 @@ const translations: Record<Lang, Translation> = {
 
     skyLowStratus: "Nízký stratus / mlha",
     skyLowOvercast: "Nízká zatažená vrstva",
-    skyOvercast: "Zataženo / rozlitá oblačnost",
+    skyOvercast: "Zataženo / souvislá oblačnost",
     skyBlueWeak: "Slabý modrý den",
     skyBlueDay: "Modrý den",
     skyBlueThermal: "Modrá termika",
-    skyWeakCu: "Slabé kupy",
-    skyCuDay: "Kupovitý den",
-    skyCuStreets: "Cumulus streets",
-    skyUsable: "Použitelná termická obloha",
-    skyMixed: "Smíšený vývoj",
-    skyOverdeveloped: "Přerůstání oblačnosti",
+    skyWeakCu: "Slabá kupovitá oblačnost",
+    skyCuDay: "Kupovitý vývoj",
+    skyCuStreets: "Kupovitá oblačnost v řadách",
+    skyUsable: "Použitelný termický režim",
+    skyMixed: "Proměnlivý vývoj oblačnosti",
+    skyOverdeveloped: "Přerůstající oblačnost",
     skyHighCloudShield: "Vysoká oblačnost tlumící ohřev",
     skyDecaying: "Vyhasínající termika",
-    thermalSkyEstimate: "orientační plachtařská klasifikace oblohy",
+    thermalSkyEstimate: "orientační plachtařské hodnocení oblohy",
 
     pilotLowStratus:
-      "nízká vrstvená oblačnost nebo mlha prakticky znemožňuje běžné plachtění",
+      "nízká vrstvená oblačnost nebo mlha prakticky znemožňují bezpečný let",
     pilotBlueWeak:
-      "termika může existovat, ale bude slabá a bez spolehlivého značkování",
+      "termika se může vytvářet, bude však slabá a bez spolehlivého značkování",
     pilotBlueThermal:
-      "čeká se modrá termika bez kupovitého značkování, vyhledávání stoupání bude náročnější",
+      "očekává se modrá termika bez kupovité oblačnosti; vyhledávání stoupání bude obtížnější",
     pilotWeakCu:
-      "malé kupy mohou značit jen slabší a méně pravidelnou termiku",
+      "slabá kupovitá oblačnost bude pravděpodobně značit jen slabší a méně pravidelnou termiku",
     pilotCuStreets:
-      "uspořádané kupy v liniích mohou výrazně podpořit přeletové podmínky",
+      "kupovitá oblačnost v řadách může výrazně podpořit přeletové podmínky",
     pilotOverdeveloped:
-      "oblačnost přerůstá a může potlačovat ohřev nebo přecházet do přeháněk a bouřek",
+      "oblačnost přerůstá a může omezovat ohřev povrchu nebo přecházet v přeháňky a bouřky",
     pilotHighCloudShield:
-      "vysoká oblačnost omezuje sluneční ohřev a tím i rozvoj termiky",
+      "vysoká oblačnost omezuje sluneční ohřev, a tím i rozvoj termiky",
     pilotDecaying:
-      "termika už slábne nebo se rozpadá a podmínky budou spíše dohasínat",
+      "termika již slábne nebo se rozpadá a podmínky budou dále slábnout",
 
     stormRisk: "Riziko bouřek",
     freezing: "Mrznutí",
@@ -410,42 +719,42 @@ const translations: Record<Lang, Translation> = {
     summaryCu: "Kupovitý vývoj",
     summaryXc: "Přeletový potenciál",
 
-    pilotNoGo: "Den není vhodný pro běžné plachtění",
-    pilotFlyable: "Den je létatelný pro plachtařský provoz",
-    pilotMarginal: "Den je hraniční a vyžaduje pečlivý úsudek pilota",
+    pilotNoGo: "Podmínky nejsou vhodné pro plachtařský provoz",
+    pilotFlyable: "Podmínky jsou vhodné pro plachtařský provoz",
+    pilotMarginal: "Podmínky jsou hraniční a vyžadují velmi pečlivé rozhodování pilota",
 
     pilotConvective:
-      "kupovitá oblačnost by měla podporovat použitelnou termiku",
+      "kupovitá oblačnost by měla podporovat využitelnou termiku",
     pilotBlue: "převládá modrá termika s omezeným značkováním",
-    pilotOvercast: "oblačnost omezuje ohřev povrchu a tlumí termiku",
-    pilotMixed: "vývoj oblohy je smíšený a prostorově nerovnoměrný",
+    pilotOvercast: "souvislá oblačnost omezuje ohřev povrchu a potlačuje termiku",
+    pilotMixed: "vývoj oblačnosti je proměnlivý a místy nerovnoměrný",
 
-    pilotStrongerClimbs: "očekávaná stoupání kolem",
-    pilotUsableClimbs: "použitelná stoupání kolem",
-    pilotWeakClimbs: "spíše slabá stoupání kolem",
+    pilotStrongerClimbs: "očekávaná stoupání",
+    pilotUsableClimbs: "využitelná stoupání",
+    pilotWeakClimbs: "spíše slabá stoupání",
 
-    pilotBaseGood: "základny vypadají dobře kolem",
-    pilotBaseModerate: "základna je střední kolem",
-    pilotBaseLow: "základna je spíše nízká kolem",
+    pilotBaseGood: "základny se jeví příznivě, kolem",
+    pilotBaseModerate: "základna bude střední, kolem",
+    pilotBaseLow: "základna bude spíše nízká, kolem",
 
-    pilotBestWindow: "nejvhodnější okno přibližně",
-    pilotPeakNear: "maximum kolem",
+    pilotBestWindow: "nejvhodnější letové okno",
+    pilotPeakNear: "maximum se očekává kolem",
 
     pilotWindLight: "přízemní vítr je slabý",
     pilotWindManageable: "přízemní vítr je provozně přijatelný",
-    pilotWindCaution: "přízemní vítr vyžaduje zvýšenou pozornost",
+    pilotWindCaution: "přízemní vítr vyžaduje zvýšenou pozornost při vzletu i přistání",
 
-    pilotXcVeryGood: "velmi dobrý potenciál pro přelet",
-    pilotXcGood: "dobrý potenciál pro přelet",
-    pilotXcLocal: "možný kratší místní přelet",
+    pilotXcVeryGood: "potenciál pro přelet je velmi dobrý",
+    pilotXcGood: "potenciál pro přelet je dobrý",
+    pilotXcLocal: "možný je kratší místní přelet",
     pilotXcLocalOnly:
-      "vhodnější spíše pro místní létání než pro přelet",
+      "podmínky jsou vhodnější spíše pro místní létání než pro přelet",
 
     pilotStormMain: "hlavním omezením je riziko bouřkové činnosti",
-    pilotShowers: "srážky mohou narušovat průběh dne",
+    pilotShowers: "srážky mohou zhoršovat využitelnost dne",
     pilotWatchCloud:
       "sledujte rozšiřování oblačnosti a úbytek slunečního ohřevu",
-    pilotWatchWind: "sledujte profil větru a drift",
+    pilotWatchWind: "sledujte profil větru a drift termiky",
 
     pilotRiskHigh: "celkové provozní riziko je vysoké",
     pilotRiskModerate: "celkové provozní riziko je střední",
@@ -455,7 +764,9 @@ const translations: Record<Lang, Translation> = {
     tomorrow: "Zítra",
     dayPlus2: "Pozítří",
 
-    currentForecastHour: "Aktuální hodina předpovědi",
+    currentForecastHour: "Aktuální hodina modelu",
+    flightDayStart: "Začátek letového dne",
+    flightDayEnd: "Konec letového dne",
     cloudBaseShort: "Základna",
     thermalShort: "Termika",
     surfaceWind: "Přízemní vítr",
@@ -467,7 +778,7 @@ const translations: Record<Lang, Translation> = {
 
     outsideVfrDay: "🔴 Mimo VFR den",
     outsideVfrNote:
-      "Mimo VFR den — po západu slunce nebo před východem slunce nelze běžné VFR plachtění provádět.",
+      "Mimo VFR den — mimo interval letového dne (orientačně podle civilního soumraku) nelze let VFR provádět.",
     metarSource: "METAR LKFR (LIVE)",
     modelSource: "MODEL (fallback)",
     windSource: "Zdroj větru",
@@ -478,27 +789,38 @@ const translations: Record<Lang, Translation> = {
     middleLayer: "Střední vrstva",
     highLayer: "Vysoká vrstva",
     sourceLabel: "Zdroj",
+    observedLabel: "Pozorováno",
+    forecastLabel: "Předpověď",
+    priorityLabel: "Priorita",
+    metarFirstLabel: "LKFR METAR, poté modelový fallback",
+    qnh: "QNH",
+    visibility: "Dohlednost",
+    ceilingLabel: "Základna / ceiling",
     modelSurfaceWind: "Modelový přízemní vítr",
     airportObservedWind: "Letištní přízemní vítr",
     rateNote:
-      "Jednoduché hodnocení. Později můžete napojit na formulář nebo backend.",
+      "Jednoduché hodnocení aplikace. V budoucnu je možné jej rozšířit o formulář nebo další backendové zpracování.",
     metarFallbackLabel: "MODEL (fallback)",
     liveLabel: "LIVE",
+    tafLabel: "TAF",
+    gaforLikeLabel: "GAFOR-like:",
   },
 
   en: {
     locale: "en-GB",
-    title: "SPL Weather LKFR – Beskydy",
+    title: "Počasí LKFR",
     subtitle: "Frýdlant nad Ostravicí • test mode",
     updated: "Updated",
     forecastHour: "Forecast hour",
     version: "Version",
     appUpdate: "App update",
     local: "local time",
+    allTimesUtc: "All forecast times are in local time",
 
     language: "Language",
     czech: "Čeština",
     english: "English",
+    forecastUnavailable: "Model forecast is temporarily unavailable. Please refresh the page in a moment.",
 
     flightSemaphore: "Flight semaphore",
     pilotComment: "Pilot comment",
@@ -518,9 +840,22 @@ const translations: Record<Lang, Translation> = {
     metarInfo: "METAR / aerodrome information",
     cloudLayers: "Cloud layers",
     airportConditions: "Current aerodrome conditions",
+    officialBriefing: "Official LKFR briefing",
+    operationalBriefing: "NOTAM / SNOWTAM / ATIS briefing",
     modelForecast: "Model forecast",
     quickLinks: "Quick links",
     appRating: "Rate the app",
+    layoutEditor: "App layout",
+    layoutReset: "Reset default",
+    layoutMoveEarlier: "Move earlier",
+    layoutMoveLater: "Move later",
+    layoutPickCard: "Pick card",
+    layoutPlaceBefore: "Place before this",
+    layoutCardSelected: "Card selected",
+    layoutDragAndDrop: "Drag and drop",
+    layoutSizeSmall: "Small card",
+    layoutSizeMedium: "Medium card",
+    layoutSizeLarge: "Large card",
     disclaimerTitle: "Disclaimer",
     disclaimerText:
       "This application is not an official aviation meteorological system. It is intended only as a planning aid. The pilot is always responsible for verifying current information (METAR, TAF, briefing).",
@@ -554,7 +889,94 @@ const translations: Record<Lang, Translation> = {
     openMetar: "Open METAR / TAF",
     openWebsite: "Open LKFR website",
     openWebcam: "Open webcam",
+    openSplTrainer: "Open SPL-TRAINER",
+    openOfficialManual: "Open LKFR VFR manual",
+    openOfficialBriefing: "Open AIS View / NOTAM briefing",
+    openOfficialTextPdf: "Open LKFR text PDF",
+    vpl4DocumentTitle: "VPL-4 document",
+    vpl4Expand: "Show document",
+    vpl4Collapse: "Minimize document",
+    vpl4OpenFullscreen: "Open fullscreen",
+    vpl4CloseFullscreen: "Close document",
+    vpl4Missing: "File not found. Please upload weather-app/public/vpl4.pdf.",
     checkCurrentWeather: "Check current LKFR weather and aerodrome situation",
+
+    airportCategoryLabel: "Aerodrome category",
+    airportOperationLabel: "Operation type",
+    airportFrequencyLabel: "Official frequency",
+    trafficCircuitLabel: "Traffic circuits",
+    circuitAltitudeLabel: "Circuit altitude",
+    officialRunwayStatusLabel: "Estimated grass runway state",
+    recentRainLabel: "Precipitation over last 6 / 12 h",
+    officialSourceNote:
+      "Source: official LKFR aerodrome text in the Czech ANS VFR manual. Always verify NOTAM, SNOWTAM and operational data in AIS View.",
+    currentNoticesLabel: "Current operational notices",
+    atisStatusLabel: "ATIS",
+    atisUnavailableNote:
+      "A standard ATIS is generally not published for LKFR. For current operations use AIS View, METAR/TAF and Frýdlant RADIO information.",
+    radioInfoLabel: "Operational information / radio",
+    officialBriefingLead:
+      "Dedicated briefing block for operational restrictions and aerodrome status. Use it to verify NOTAM, SNOWTAM, published LKFR data and current supporting information.",
+    runwayWetRisk: "Wet / soft grass runway",
+    runwayWetNote:
+      "The LKFR grass runway is operationally sensitive after heavier rain. Verify actual usability in the official briefing.",
+    runwaySnowNote:
+      "LKFR does not provide snow removal on movement areas. Verify SNOWTAM / official briefing before flight.",
+    runwayNoSofteningSign:
+      "No model-derived sign of a soft runway; still verify the official briefing.",
+    gustsLabel: "Gusts",
+    infoLabel: "Info",
+    windLimitLabel: "Wind limit",
+    windLimitNote:
+      "approaching/training limits for SPL, use extra caution for take-off and landing",
+    lkfrTrainingLimitsTitle: "LKFR limits for SPL training",
+    lkfrCrosswindLimitText: "Crosswind max {crosswind} kt, surface wind max {surfaceWind} kt.",
+    lkfrVfrGoodText: "VFR good: visibility min {visibilityKm} km, cloud base min {cloudBase} m AGL.",
+    lkfrWetRunwayWarningText: "Wet RWY warning: {rain6h} mm/6h or {rain12h} mm/12h.",
+    lkfrWetRunwayCriticalText: "Wet RWY critical: {rain6h} mm/6h or {rain12h} mm/12h.",
+    lkfrDataSourceLabel: "LKFR data source:",
+    meteoDataSourceNote:
+      "Meteo data source: AviationWeather (METAR/TAF) + Open-Meteo (model). Training thresholds are conservative internal app settings for LKFR/SPL.",
+    windShearInTaf: "Wind shear in TAF",
+    yes: "yes",
+    no: "no",
+    liProxyLabel: "LI proxy",
+    cloudCoverageLabel: "coverage",
+    cloudTypeLabel: "Type",
+    verticalDevelopmentLabel: "Vertical development",
+    riskLabel: "risk",
+    lowRiskLabel: "low",
+    verticalDevelopmentRiskNote:
+      "Current conditions support vertical overdevelopment (storms/CB).",
+    verticalDevelopmentLowNote: "No strong signal of convective overdevelopment.",
+    chartAxesLegendTitle: "Chart axes and data layers",
+    phenomenaLabel: "Phenomena",
+    webcamLinkLabel: "LKFR webcam",
+    pilotCommentsTitle: "Pilot comments",
+    vfrSuitable: "VFR: suitable",
+    vfrMarginal: "VFR: marginal",
+    vfrNotSuitable: "VFR: not suitable",
+    crosswindDemanding: "Demanding",
+    crosswindCaution: "Caution",
+    crosswindSuitable: "Suitable",
+    overdevelopmentLabel: "Overdevelopment",
+    highCloudHeatingReducedLabel: "Heating reduced by high cloud",
+    hazardOccurrenceLow: "Hazard occurrence: low",
+    hazardOccurrenceCountLabel: "Hazard occurrence: {count}",
+    occurrenceRiskHigh: "Occurrence risk: high",
+    occurrenceRiskMedium: "Occurrence risk: medium",
+    occurrenceRiskLow: "Occurrence risk: low",
+    gaforLikeNote:
+      "Local GAFOR-like estimate from visibility, cloud base, precipitation and wind. This is not an official GAFOR product.",
+    instabilityStrong: "strongly unstable",
+    instabilitySlight: "slightly unstable",
+    instabilityStable: "more stable",
+    verticalDevelopmentTag: "Vertical development",
+    streetsLabel: "Streets",
+    blueThermalsLabel: "Blue thermals",
+    weakCuLabel: "Weak Cu",
+    highCloudLabel: "High cloud",
+    dayDecayLabel: "Day decay",
 
     noSignificantHazards: "No significant weather hazards",
 
@@ -682,6 +1104,8 @@ const translations: Record<Lang, Translation> = {
     dayPlus2: "Day +2",
 
     currentForecastHour: "Current forecast hour",
+    flightDayStart: "Start of flight day",
+    flightDayEnd: "End of flight day",
     cloudBaseShort: "Cloud base",
     thermalShort: "Thermal",
     surfaceWind: "Surface wind",
@@ -693,7 +1117,7 @@ const translations: Record<Lang, Translation> = {
 
     outsideVfrDay: "🔴 Outside VFR day",
     outsideVfrNote:
-      "Outside VFR day — normal VFR soaring is not possible after sunset or before sunrise.",
+      "Outside VFR day — outside the flight-day interval (approximately civil twilight), VFR operations are not permitted.",
     metarSource: "METAR LKFR (LIVE)",
     modelSource: "MODEL (fallback)",
     windSource: "Wind source",
@@ -704,12 +1128,21 @@ const translations: Record<Lang, Translation> = {
     middleLayer: "Middle layer",
     highLayer: "High layer",
     sourceLabel: "Source",
+    observedLabel: "Observed",
+    forecastLabel: "Forecast",
+    priorityLabel: "Priority",
+    metarFirstLabel: "LKFR METAR, then model fallback",
+    qnh: "QNH",
+    visibility: "Visibility",
+    ceilingLabel: "Ceiling",
     modelSurfaceWind: "Model surface wind",
     airportObservedWind: "Aerodrome surface wind",
     rateNote:
       "Simple rating. You can later connect it to a form or backend.",
     metarFallbackLabel: "MODEL (fallback)",
     liveLabel: "LIVE",
+    tafLabel: "TAF",
+    gaforLikeLabel: "GAFOR-like:",
   },
 };
 
@@ -745,10 +1178,17 @@ async function getWeather(): Promise<ForecastData | null> {
     `&hourly=${hourlyParams}` +
     `&daily=${dailyParams}` +
     `&forecast_days=3` +
-    `&timezone=auto`;
+    `&timezone=${encodeURIComponent(LKFR_TIME_ZONE)}` +
+    `&timeformat=unixtime`;
 
   try {
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetchWithTimeout(
+      url,
+      {
+        next: { revalidate: 300 },
+      },
+      9000
+    );
 
     if (!res.ok) {
       const text = await res.text();
@@ -765,14 +1205,15 @@ async function getWeather(): Promise<ForecastData | null> {
 
 async function getMetarWind(icao: string) {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`,
       {
-        cache: "no-store",
+        next: { revalidate: 120 },
         headers: {
           "User-Agent": "beskydy-soaring-weather/1.0",
         },
-      }
+      },
+      7000
     );
 
     if (!res.ok) return null;
@@ -798,14 +1239,248 @@ async function getMetarWind(icao: string) {
         ? Number(spdRaw)
         : 0;
 
+    const gustRaw = metar.wgst;
+    const gustKt =
+      typeof gustRaw === "number"
+        ? gustRaw
+        : typeof gustRaw === "string"
+        ? Number(gustRaw)
+        : null;
+
+    const rawText = typeof metar.rawOb === "string" ? metar.rawOb : "";
+    const parsedTempDew = rawText.match(/\s(M?\d{2})\/(M?\d{2})\b/u);
+    const parseSignedPair = (value: unknown, fallback: string | undefined) => {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string" && value.length > 0) {
+        const numeric = Number(value);
+        if (Number.isFinite(numeric)) return numeric;
+      }
+      if (!fallback) return null;
+      const normalized = fallback.startsWith("M") ? `-${fallback.slice(1)}` : fallback;
+      const numeric = Number(normalized);
+      return Number.isFinite(numeric) ? numeric : null;
+    };
+
+    const cloudLayerMatches = Array.from(
+      rawText.matchAll(/\b(FEW|SCT|BKN|OVC|VV)(\d{3})(?:CB|TCU)?\b/gu)
+    ) as RegExpMatchArray[];
+
+    const cloudLayers = cloudLayerMatches.map((match: RegExpMatchArray) => ({
+      cover: match[1],
+      baseFtAgl: Number(match[2]) * 100,
+      cloudType: match[3] ?? null,
+    }));
+
+    const ceilingLayer = cloudLayers.find(
+      (layer) => layer.cover === "BKN" || layer.cover === "OVC" || layer.cover === "VV"
+    );
+
+    const qnhFromRawQ = rawText.match(/\bQ(\d{4})\b/u);
+    const qnhFromRawA = rawText.match(/\bA(\d{4})\b/u);
+    const qnhHpa = qnhFromRawQ
+      ? Number(qnhFromRawQ[1])
+      : qnhFromRawA
+      ? Math.round((Number(qnhFromRawA[1]) / 100) * 33.8639)
+      : null;
+
+    const visField = metar.visib;
+    let visibilityM: number | null = null;
+
+    if (typeof visField === "number" && Number.isFinite(visField)) {
+      visibilityM = visField > 20 ? Math.round(visField) : Math.round(visField * 1609.34);
+    } else if (typeof visField === "string" && visField.length > 0) {
+      const normalized = visField.replace("+", "");
+      const asNumber = Number(normalized);
+      if (Number.isFinite(asNumber)) {
+        visibilityM = asNumber > 20 ? Math.round(asNumber) : Math.round(asNumber * 1609.34);
+      }
+    }
+
+    if (visibilityM === null) {
+      if (/\bCAVOK\b/u.test(rawText)) {
+        visibilityM = 10000;
+      } else {
+        const rawVis = rawText.match(/\b(\d{4})(?:NDV)?\b/u);
+        if (rawVis) {
+          const parsed = Number(rawVis[1]);
+          if (Number.isFinite(parsed) && parsed >= 50 && parsed <= 9999) {
+            visibilityM = parsed;
+          }
+        }
+      }
+    }
+
+    const weatherCodes = Array.from(
+      rawText.matchAll(/\b(?:-\+)?(?:TS|RA|SN|DZ|FG|BR|HZ|SH|GR|GS|FZRA|FZDZ)\b/gu)
+    ) as RegExpMatchArray[];
+
     return {
       speedKt: Number.isFinite(speedKt) ? speedKt : 0,
+      gustKt: gustKt !== null && Number.isFinite(gustKt) ? gustKt : null,
       directionDeg: Number.isFinite(directionDeg) ? directionDeg : 0,
-      rawText: metar.rawOb ?? "",
-    };
+      rawText,
+      temperatureC: parseSignedPair(metar.temp, parsedTempDew?.[1]),
+      dewPointC: parseSignedPair(metar.dewp, parsedTempDew?.[2]),
+      cloudLayers,
+      ceilingFtAgl: ceilingLayer?.baseFtAgl ?? null,
+      qnhHpa: qnhHpa && Number.isFinite(qnhHpa) ? qnhHpa : null,
+      visibilityM: visibilityM && Number.isFinite(visibilityM) ? visibilityM : null,
+      weatherCodes: weatherCodes.map((match) => match[0]),
+    } satisfies MetarObservation;
   } catch {
     return null;
   }
+}
+
+async function getTafBriefing(primaryIcao: string, fallbackIcao: string) {
+  try {
+    const response = await fetchWithTimeout(
+      `https://aviationweather.gov/api/data/taf?ids=${primaryIcao},${fallbackIcao}&format=json`,
+      {
+        next: { revalidate: 120 },
+        headers: {
+          "User-Agent": "beskydy-soaring-weather/1.0",
+        },
+      },
+      7000
+    );
+
+    if (!response.ok) return null;
+
+    const rows = await response.json();
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+
+    const primary = rows.find((row: { icaoId?: string }) => row?.icaoId === primaryIcao);
+    const chosen = primary ?? rows.find((row: { icaoId?: string }) => row?.icaoId === fallbackIcao) ?? rows[0];
+
+    const hasWindshear = Array.isArray(chosen?.fcsts)
+      ? chosen.fcsts.some(
+          (fcst: { wshearSpd?: number | null; wshearDir?: number | null; wshearHgt?: number | null }) =>
+            typeof fcst?.wshearSpd === "number" ||
+            typeof fcst?.wshearDir === "number" ||
+            typeof fcst?.wshearHgt === "number"
+        )
+      : false;
+
+    return {
+      sourceIcao: typeof chosen?.icaoId === "string" ? chosen.icaoId : fallbackIcao,
+      rawTaf: typeof chosen?.rawTAF === "string" ? chosen.rawTAF : "",
+      hasWindshear,
+    } satisfies TafBriefing;
+  } catch {
+    return null;
+  }
+}
+
+function decodeHtmlEntities(value: string) {
+  return value
+    .replace(/&nbsp;/giu, " ")
+    .replace(/&amp;/giu, "&")
+    .replace(/&quot;/giu, '"')
+    .replace(/&apos;/giu, "'")
+    .replace(/&lt;/giu, "<")
+    .replace(/&gt;/giu, ">")
+    .replace(/&deg;/giu, "°")
+    .replace(/&#(\d+);/gu, (_, code: string) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/giu, (_, code: string) =>
+      String.fromCharCode(Number.parseInt(code, 16))
+    );
+}
+
+function htmlToPlainText(value: string) {
+  return decodeHtmlEntities(
+    value
+      .replace(/<br\s*\/?>/giu, "\n")
+      .replace(/<\/\s*(p|div|tr|li|ul|table|h\d)\s*>/giu, "\n")
+      .replace(/<li[^>]*>/giu, "- ")
+      .replace(/<[^>]+>/gu, " ")
+  )
+    .replace(/[ \t]+\n/gu, "\n")
+    .replace(/\n{2,}/gu, "\n")
+    .replace(/[ \t]{2,}/gu, " ")
+    .trim();
+}
+
+function extractHtmlText(html: string, pattern: RegExp) {
+  const match = html.match(pattern);
+  if (!match?.[1]) return null;
+  const value = htmlToPlainText(match[1]);
+  return value.length > 0 ? value : null;
+}
+
+async function getOfficialAirportBriefing(): Promise<OfficialAirportBriefing | null> {
+  try {
+    const response = await fetchWithTimeout(
+      AIM_VFR_MANUAL_URL,
+      {
+        next: { revalidate: 1800 },
+      },
+      7000
+    );
+
+    if (!response.ok) return null;
+
+    const html = await response.text();
+    const circuitSection =
+      html.match(
+        /<span class="number">1\.3<\/span>Letištní okruhy([\s\S]*?)<p class="level2"><span class="number">1\.3\.1<\/span>/iu
+      )?.[1] ?? "";
+
+    const circuitDirections = Array.from(
+      circuitSection.matchAll(/<li>\s*([^<]+)\s*<\/li>/giu)
+    )
+      .map((match) => htmlToPlainText(match[1]))
+      .filter(Boolean);
+
+    const frequencyMatch = html.match(
+      /<div id="aerodrome-frekvence"[\s\S]*?<span>(.*?)<\/span>\s*([^<]+)/iu
+    );
+
+    const frequency = frequencyMatch
+      ? `${htmlToPlainText(frequencyMatch[1])} ${htmlToPlainText(frequencyMatch[2])}`.trim()
+      : null;
+
+    const runwayWarnings = [
+      extractHtmlText(html, /<span class="number">1\.1<\/span>([\s\S]*?)<\/p>/iu),
+      extractHtmlText(html, /<span class="number">1\.2<\/span>([\s\S]*?)<\/p>/iu),
+      extractHtmlText(html, /<span class="number">1\.4\.2<\/span>([\s\S]*?)<\/p>/iu),
+    ].filter((value): value is string => Boolean(value));
+
+    return {
+      category: extractHtmlText(html, /<div id="aerodrome-statut"[^>]*>([\s\S]*?)<\/div>/iu),
+      operation: extractHtmlText(html, /<div id="aerodrome-provoz"[^>]*>([\s\S]*?)<\/div>/iu),
+      frequency,
+      circuitAltitude: extractHtmlText(
+        html,
+        /<span class="number">1\.3\.1<\/span>Výška letu po okruhu je\s*([\s\S]*?)<\/p>/iu
+      ),
+      circuitDirections,
+      runwayWarnings,
+    } satisfies OfficialAirportBriefing;
+  } catch {
+    return null;
+  }
+}
+
+function getMetarCoverageLabel(cover: string, lang: Lang) {
+  const labels = {
+    cs: {
+      FEW: "malá oblačnost",
+      SCT: "polojasno až oblačno",
+      BKN: "oblačno",
+      OVC: "zataženo",
+      VV: "vertikální dohled",
+    },
+    en: {
+      FEW: "few",
+      SCT: "scattered",
+      BKN: "broken",
+      OVC: "overcast",
+      VV: "vertical visibility",
+    },
+  } as const;
+
+  return labels[lang][cover as keyof (typeof labels)["cs"]] ?? cover;
 }
 
 function getWindArrowFrom(deg: number) {
@@ -839,7 +1514,20 @@ function safeArrayValue(
   return typeof value === "number" && !Number.isNaN(value) ? value : fallback;
 }
 
-function findNearestHourIndex(times: string[]) {
+function sumRecentValues(arr: number[] | undefined, endIndex: number, hours: number) {
+  if (!arr?.length || endIndex < 0) return 0;
+
+  const startIndex = Math.max(0, endIndex - hours + 1);
+  let total = 0;
+
+  for (let index = startIndex; index <= endIndex; index += 1) {
+    total += safeArrayValue(arr, index, 0);
+  }
+
+  return Math.round(total * 10) / 10;
+}
+
+function findNearestHourIndex(times: number[]) {
   if (!times.length) return 0;
 
   const now = Date.now();
@@ -847,7 +1535,7 @@ function findNearestHourIndex(times: string[]) {
   let bestDiff = Infinity;
 
   for (let i = 0; i < times.length; i++) {
-    const ts = new Date(times[i]).getTime();
+    const ts = times[i] * 1000;
     const diff = Math.abs(ts - now);
 
     if (diff < bestDiff) {
@@ -859,19 +1547,45 @@ function findNearestHourIndex(times: string[]) {
   return bestIndex;
 }
 
-function formatHourMinute(dateString: string, locale: string) {
-  return new Date(dateString).toLocaleTimeString(locale, {
+function findLatestAvailableHourIndex(times: number[]) {
+  if (!times.length) return 0;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  for (let i = times.length - 1; i >= 0; i -= 1) {
+    if (times[i] <= nowSec) return i;
+  }
+
+  return 0;
+}
+
+function formatHourMinute(timestampSec: number, locale: string) {
+  return new Date(timestampSec * 1000).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: LKFR_TIME_ZONE,
   });
 }
 
-function getDateKey(dateString: string) {
-  const d = new Date(dateString);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+function getDateKey(timestampSec: number) {
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: LKFR_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  return fmt.format(new Date(timestampSec * 1000));
+}
+
+function getHourInPrague(timestampSec: number) {
+  const hour = new Intl.DateTimeFormat("en-GB", {
+    timeZone: LKFR_TIME_ZONE,
+    hour: "2-digit",
+    hour12: false,
+  }).format(new Date(timestampSec * 1000));
+
+  return Number(hour);
 }
 
 function getHazardColor(type: string) {
@@ -1326,7 +2040,7 @@ function buildPilotComment(params: {
 
   if (thermalStart !== "-" && thermalEnd !== "-") {
     parts.push(
-      `${t.pilotBestWindow} ${thermalStart}–${thermalEnd}, ${t.pilotPeakNear} ${thermalMax}`
+      `${t.pilotBestWindow} ${thermalStart}–${thermalEnd}; ${t.pilotPeakNear} ${thermalMax}`
     );
   }
 
@@ -1368,6 +2082,7 @@ function buildPilotComment(params: {
 
   return (
     parts
+      .filter(Boolean)
       .map((part) =>
         part && part.length > 0
           ? part.charAt(0).toUpperCase() + part.slice(1)
@@ -1383,7 +2098,7 @@ function getCoverageLabel(value: number, lang: Lang) {
     if (value >= 60) return "výrazná oblačnost";
     if (value >= 35) return "proměnlivá oblačnost";
     if (value >= 10) return "malá oblačnost";
-    return "skoro jasno";
+    return "převážně jasno";
   }
 
   if (value >= 85) return "overcast";
@@ -1391,6 +2106,98 @@ function getCoverageLabel(value: number, lang: Lang) {
   if (value >= 35) return "variable cloud";
   if (value >= 10) return "few clouds";
   return "mostly clear";
+}
+
+function toOktas(coverPercent: number) {
+  return Math.max(0, Math.min(8, Math.round((coverPercent / 100) * 8)));
+}
+
+function formatTranslation(template: string, values: Record<string, string | number>) {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
+}
+
+function translateAirportBriefing(briefing: OfficialAirportBriefing | null, lang: Lang): OfficialAirportBriefing | null {
+  if (!briefing || lang === "cs") return briefing;
+
+  // Translate category
+  const categoryMap: Record<string, string> = {
+    "Veřejné letiště": "Public aerodrome",
+    "Soukromé letiště": "Private aerodrome",
+    "Civilní letiště": "Civil aerodrome",
+  };
+
+  // Translate operation types
+  const operationMap: Record<string, string> = {
+    "Sportovní/letová činnost": "Sporting/flying activity",
+    "Letová aktivita": "Flying activity",
+    "Sportovní činnost": "Sporting activity",
+    "Schváleno pro veřejný provoz": "Approved for public operations",
+  };
+
+  // Translate circuit directions
+  const directionMap: Record<string, string> = {
+    "L": "L (left)",
+    "R": "R (right)",
+    "LH": "LH (left)",
+    "RH": "RH (right)",
+    "S": "N (north)",
+    "J": "S (south)",
+    "V": "E (east)",
+    "Z": "W (west)",
+  };
+
+  const translateRunwayWarning = (warning: string) => {
+    const normalized = warning.trim();
+
+    if (/Odstraňování\s+sněhu\s+z\s+pohybových\s+ploch\s+není\s+zajištěno\.?/iu.test(normalized)) {
+      return "Snow removal on movement areas is not provided.";
+    }
+
+    if (/Nepoužitelnost\s+RWY\s+po\s+dlouhotrvajících\s+deštích\.?/iu.test(normalized)) {
+      return "RWY may become unusable after prolonged rainfall.";
+    }
+
+    if (/Možnost\s+výskytu\s+nežádoucích\s+osob[\s\S]*RWY\s*08\/26/iu.test(normalized)) {
+      return "Possible presence of unauthorized persons crossing RWY 08/26 in the threshold and approach areas, and along the southern edge of the runway strip. Conduct takeoff, landing and taxi with increased caution.";
+    }
+
+    return warning;
+  };
+
+  return {
+    category: categoryMap[briefing.category ?? ""] ?? briefing.category,
+    operation: operationMap[briefing.operation ?? ""] ?? briefing.operation,
+    frequency: briefing.frequency,
+    circuitAltitude: briefing.circuitAltitude,
+    circuitDirections: briefing.circuitDirections.map(d => directionMap[d] ?? d),
+    runwayWarnings: briefing.runwayWarnings.map(translateRunwayWarning),
+  };
+}
+
+function getGaforLikeCategory(params: {
+  isWithinVfrDay: boolean;
+  visibilityM: number | null;
+  cloudBaseAglM: number;
+  hasStorm: boolean;
+  hasStrongWind: boolean;
+  hasRain: boolean;
+  hasOvercast: boolean;
+}) {
+  const { isWithinVfrDay, visibilityM, cloudBaseAglM, hasStorm, hasStrongWind, hasRain, hasOvercast } = params;
+
+  if (!isWithinVfrDay || hasStorm || (visibilityM !== null && visibilityM < 3000) || cloudBaseAglM < 300) {
+    return "X";
+  }
+
+  if ((visibilityM !== null && visibilityM < 5000) || cloudBaseAglM < 500 || hasStrongWind) {
+    return "M";
+  }
+
+  if ((visibilityM !== null && visibilityM < 8000) || cloudBaseAglM < 900 || hasRain || hasOvercast) {
+    return "D";
+  }
+
+  return "O";
 }
 
 function getSkyDescription(skyLabel: string, t: Translation) {
@@ -1418,47 +2225,63 @@ export default async function Home({
 }) {
   const params = await searchParams;
   const lang: Lang = params?.lang === "en" ? "en" : "cs";
+  const profileCfg = studentProfileCfg;
   const t = translations[lang];
 
-  const [data, metarWind] = await Promise.all([
+  const [data, metarWind, airportBriefingRaw, tafBriefing] = await Promise.all([
     getWeather(),
     getMetarWind("LKFR"),
+    getOfficialAirportBriefing(),
+    getTafBriefing("LKFR", "LKMT"),
   ]);
+
+  const airportBriefing = translateAirportBriefing(airportBriefingRaw, lang);
 
   if (!data) {
     return (
       <main className="container">
         <div className="topHeaderRow">
           <div>
-            <h1>{t.title}</h1>
+            <h1 className="titleWithLogo">
+              <img
+                src="/icon.svg"
+                alt="SPL Trainer logo"
+                className="topBrandLogo"
+                width={56}
+                height={56}
+              />
+              <span>{t.title}</span>
+            </h1>
             <h2>{t.subtitle}</h2>
           </div>
 
-          <div className="langSwitch">
-            <span className="langLabel">{t.language}:</span>
+          <div className="headerControls">
+            <div className="langSwitch">
+              <span className="langLabel">{t.language}:</span>
 
-            <Link
-              href={{ pathname: "/", query: { lang: "cs" } }}
-              className={`langButton ${lang === "cs" ? "active" : ""}`}
-            >
-              CZ
-            </Link>
+              <Link
+                href={{ pathname: "/", query: { lang: "cs" } }}
+                className={`langButton ${lang === "cs" ? "active" : ""}`}
+              >
+                CZ
+              </Link>
 
-            <Link
-              href={{ pathname: "/", query: { lang: "en" } }}
-              className={`langButton ${lang === "en" ? "active" : ""}`}
-            >
-              EN
-            </Link>
+              <Link
+                href={{ pathname: "/", query: { lang: "en" } }}
+                className={`langButton ${lang === "en" ? "active" : ""}`}
+              >
+                EN
+              </Link>
+            </div>
+
+
           </div>
         </div>
 
         <div className="card" style={{ marginTop: "18px" }}>
           <h3>⚠️ {t.modelForecast}</h3>
           <p style={{ lineHeight: 1.7, margin: 0 }}>
-            {lang === "cs"
-              ? "Modelová předpověď je dočasně nedostupná. Zkuste stránku za chvíli obnovit."
-              : "Model forecast is temporarily unavailable. Please refresh the page in a moment."}
+            {t.forecastUnavailable}
           </p>
         </div>
 
@@ -1475,25 +2298,11 @@ export default async function Home({
 
   const hasMetar = !!metarWind;
 
-  const now = new Date();
-
-  const formattedDate = now.toLocaleDateString(t.locale, {
-    weekday: "long",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-
-  const formattedTime = now.toLocaleTimeString(t.locale, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
   const currentIndex = findNearestHourIndex(data.hourly.time);
   const currentDateKey = getDateKey(data.hourly.time[currentIndex]);
 
   const dailyIndex = data.daily.sunrise.findIndex(
-    (s: string) => getDateKey(s) === currentDateKey
+    (s: number) => getDateKey(s) === currentDateKey
   );
 
   const sunriseRaw =
@@ -1501,11 +2310,14 @@ export default async function Home({
   const sunsetRaw =
     dailyIndex >= 0 ? data.daily.sunset[dailyIndex] : data.daily.sunset[0];
 
-  const sunriseTime = sunriseRaw ? new Date(sunriseRaw) : null;
-  const sunsetTime = sunsetRaw ? new Date(sunsetRaw) : null;
+  const vfrDayStartRaw = sunriseRaw + VFR_DAY_START_OFFSET_SEC;
+  const vfrDayEndRaw = sunsetRaw + VFR_DAY_END_OFFSET_SEC;
 
-  const sunriseLabel = sunriseRaw ? formatHourMinute(sunriseRaw, t.locale) : "-";
-  const sunsetLabel = sunsetRaw ? formatHourMinute(sunsetRaw, t.locale) : "-";
+  const vfrDayStartTime = vfrDayStartRaw ? new Date(vfrDayStartRaw * 1000) : null;
+  const vfrDayEndTime = vfrDayEndRaw ? new Date(vfrDayEndRaw * 1000) : null;
+
+  const vfrDayStartLabel = vfrDayStartRaw ? formatHourMinute(vfrDayStartRaw, t.locale) : "-";
+  const vfrDayEndLabel = vfrDayEndRaw ? formatHourMinute(vfrDayEndRaw, t.locale) : "-";
 
   const temperature = safeArrayValue(data.hourly.temperature_2m, currentIndex);
   const dewpoint = safeArrayValue(data.hourly.dew_point_2m, currentIndex);
@@ -1531,6 +2343,20 @@ export default async function Home({
     currentIndex,
     0
   );
+  const recentPrecipitation6h = sumRecentValues(data.hourly.precipitation, currentIndex, 6);
+  const recentPrecipitation12h = sumRecentValues(data.hourly.precipitation, currentIndex, 12);
+  const hasOfficialRainWarning =
+    airportBriefing?.runwayWarnings.some((warning) => /dešt|rain/iu.test(warning)) ?? false;
+  const hasOfficialSnowWarning =
+    airportBriefing?.runwayWarnings.some((warning) => /sněh|snow/iu.test(warning)) ?? false;
+  const runwayWetRisk =
+    hasOfficialRainWarning &&
+    (recentPrecipitation6h >= LKFR_LIMITS.runwayWet6hWarnMm ||
+      recentPrecipitation12h >= LKFR_LIMITS.runwayWet12hWarnMm);
+  const runwayVeryWetRisk =
+    hasOfficialRainWarning &&
+    (recentPrecipitation6h >= LKFR_LIMITS.runwayWet6hBadMm ||
+      recentPrecipitation12h >= LKFR_LIMITS.runwayWet12hBadMm);
 
   const modelSurfaceWindKmh = safeArrayValue(
     data.hourly.wind_speed_10m,
@@ -1555,12 +2381,33 @@ export default async function Home({
   const airportSurfaceWindArrow = getWindArrowFrom(airportSurfaceWindDir);
   const airportWindSourceLabel = hasMetar ? t.metarSource : t.modelSource;
   const modelSurfaceWindArrow = getWindArrowFrom(modelSurfaceWindDir);
+  const observedTemperature = hasMetar && metarWind!.temperatureC !== null
+    ? metarWind!.temperatureC
+    : temperature;
+  const observedDewPoint = hasMetar && metarWind!.dewPointC !== null
+    ? metarWind!.dewPointC
+    : dewpoint;
+  const runwaySnowRisk =
+    hasOfficialSnowWarning &&
+    ((observedTemperature < 2 && precipitation > 0.2) || recentPrecipitation12h >= 1.5);
+  const metarCloudLayers = hasMetar ? metarWind!.cloudLayers : [];
+  const hasMetarCloudLayers = metarCloudLayers.length > 0;
+  const metarQnh = hasMetar ? metarWind!.qnhHpa : null;
+  const metarQfe = metarQnh !== null ? Math.round(metarQnh - FIELD_ELEVATION_MSL / 8.3) : null;
+  const metarVisibility = hasMetar ? metarWind!.visibilityM : null;
+  const metarGust = hasMetar ? metarWind!.gustKt : null;
+  const metarPhenomena = hasMetar ? metarWind!.weatherCodes : [];
+  const metarCeiling = hasMetar ? metarWind!.ceilingFtAgl : null;
 
   const runwayHeading = 84;
   const runwayRotation = runwayHeading - 90;
   const angleDiff =
     ((airportSurfaceWindDir - runwayHeading + 540) % 360) - 180;
   const rad = (angleDiff * Math.PI) / 180;
+  const compassTicks = Array.from({ length: 36 }, (_, index) => ({
+    angle: index * 10,
+    major: index % 3 === 0,
+  }));
 
   const headwind = Math.round(airportSurfaceWindKt * Math.cos(rad));
   const crosswind = Math.round(airportSurfaceWindKt * Math.sin(rad));
@@ -1596,6 +2443,7 @@ export default async function Home({
 
   const lcl = Math.round(Math.max(0, 125 * spread));
   const thermalTop = lcl + 300;
+  const cloudBaseAglM = metarCeiling ? Math.round(metarCeiling * 0.3048) : lcl;
   const cloudBaseMSL = lcl + FIELD_ELEVATION_MSL;
 
   const rawPotential = rawThermalPotential(spread, radiation, thermalTop);
@@ -1652,10 +2500,11 @@ export default async function Home({
     return Number(estimateClimbFromScore(score).toFixed(1));
   });
 
-  const hours = data.hourly.time.map((tStr: string) =>
-    new Date(tStr).toLocaleTimeString(t.locale, {
+  const hours = data.hourly.time.map((ts: number) =>
+    new Date(ts * 1000).toLocaleTimeString(t.locale, {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: LKFR_TIME_ZONE,
     })
   );
 
@@ -1698,12 +2547,35 @@ export default async function Home({
     data.hourly.cloud_cover_high?.map((v: number) => Math.round(v)) ??
     Array(hours.length).fill(0);
 
-  const forecastTs = new Date(data.hourly.time[currentIndex]).getTime();
+  const forecastTs = data.hourly.time[currentIndex] * 1000;
   const isWithinVfrDay =
-    sunriseTime !== null &&
-    sunsetTime !== null &&
-    forecastTs >= sunriseTime.getTime() &&
-    forecastTs <= sunsetTime.getTime();
+    vfrDayStartTime !== null &&
+    vfrDayEndTime !== null &&
+    forecastTs >= vfrDayStartTime.getTime() &&
+    forecastTs <= vfrDayEndTime.getTime();
+
+  const vfrVisibilityOk = (metarVisibility ?? 10000) >= LKFR_LIMITS.vfrVisibilityGoodM;
+  const vfrCloudBaseOk = cloudBaseAglM >= LKFR_LIMITS.vfrCloudBaseGoodM;
+  const vfrWindOk =
+    airportSurfaceWindKt <= LKFR_LIMITS.vfrSurfaceWindMaxKt &&
+    crosswindAbs <= LKFR_LIMITS.vfrCrosswindMaxKt;
+  const vfrOverallOk = isWithinVfrDay && vfrVisibilityOk && vfrCloudBaseOk && vfrWindOk;
+  const vfrOverallMarginal =
+    isWithinVfrDay &&
+    (metarVisibility ?? 10000) >= LKFR_LIMITS.vfrVisibilityMarginalM &&
+    cloudBaseAglM >= LKFR_LIMITS.vfrCloudBaseMarginalM;
+
+  const vfrStatusLabel = vfrOverallOk
+    ? t.vfrSuitable
+    : vfrOverallMarginal
+    ? t.vfrMarginal
+    : t.vfrNotSuitable;
+
+  const vfrStatusClass = vfrOverallOk
+    ? "badgeGreen"
+    : vfrOverallMarginal
+    ? "badgeYellow"
+    : "badgeRed";
 
   const soaringIndexRaw = Math.round(
     clamp(
@@ -1728,15 +2600,15 @@ export default async function Home({
   if (expectedClimb > 2.0) climbRating = t.good;
   if (expectedClimb > 3.0) climbRating = t.strong;
 
-  const THERMAL_THRESHOLD = 1.2;
+  const THERMAL_THRESHOLD = profileCfg.thermalWindowThreshold;
 
-  const sunriseTs = sunriseTime ? sunriseTime.getTime() : null;
-  const sunsetTs = sunsetTime ? sunsetTime.getTime() : null;
+  const sunriseTs = vfrDayStartTime ? vfrDayStartTime.getTime() : null;
+  const sunsetTs = vfrDayEndTime ? vfrDayEndTime.getTime() : null;
 
   const vfrIndices = data.hourly.time
-    .map((tStr: string, i: number) => {
-      const ts = new Date(tStr).getTime();
-      const sameDay = getDateKey(tStr) === currentDateKey;
+    .map((tsSec: number, i: number) => {
+      const ts = tsSec * 1000;
+      const sameDay = getDateKey(tsSec) === currentDateKey;
       const withinVfr =
         sameDay &&
         sunriseTs !== null &&
@@ -1782,9 +2654,9 @@ export default async function Home({
   const thermalMax = hasUsableThermalWindow ? hours[thermalMaxIndex] : "-";
   const thermalEnd = hasUsableThermalWindow ? hours[thermalEndIndex] : "-";
 
-  const currentHourObj = new Date(data.hourly.time[currentIndex]);
-  const sunriseHourObj = sunriseTime ?? new Date();
-  const sunsetHourObj = sunsetTime ?? new Date();
+  const currentHour = getHourInPrague(data.hourly.time[currentIndex]);
+  const sunriseHour = sunriseRaw ? getHourInPrague(sunriseRaw) : 0;
+  const sunsetHour = sunsetRaw ? getHourInPrague(sunsetRaw) : 23;
 
   const sky = detectSkyType(
     {
@@ -1800,15 +2672,14 @@ export default async function Home({
       surfaceWind: airportSurfaceWindKt,
       wind850,
       isWithinVfrDay,
-      currentHour: currentHourObj.getHours(),
-      sunriseHour: sunriseHourObj.getHours(),
-      sunsetHour: sunsetHourObj.getHours(),
+      currentHour,
+      sunriseHour,
+      sunsetHour,
     },
     t
   );
 
   const hazards: {
-    icon: string;
     label: string;
     type: string;
     severity: number;
@@ -1820,28 +2691,33 @@ export default async function Home({
     cloudMid > 50 &&
     expectedClimb > 2.2
   ) {
-    hazards.push({ icon: "⛈", label: t.stormRisk, type: "storm", severity: 6 });
+    hazards.push({ label: t.stormRisk, type: "storm", severity: 6 });
   }
-  if (temperature < 0) {
-    hazards.push({ icon: "🧊", label: t.freezing, type: "ice", severity: 5 });
+  if (observedTemperature < 0) {
+    hazards.push({ label: t.freezing, type: "ice", severity: 5 });
   }
-  if (temperature < 2 && precipitation > 0.2) {
-    hazards.push({ icon: "❄", label: t.snow, type: "snow", severity: 5 });
+  if (observedTemperature < 2 && precipitation > 0.2) {
+    hazards.push({ label: t.snow, type: "snow", severity: 5 });
   }
-  if (airportSurfaceWindKt > 15 || wind850 > 22 || crosswindAbs > 12) {
+  if (
+    airportSurfaceWindKt > LKFR_LIMITS.strongWindSurfaceKt ||
+    wind850 > LKFR_LIMITS.strongWind850Kt ||
+    crosswindAbs > LKFR_LIMITS.strongWindCrosswindKt
+  ) {
     hazards.push({
-      icon: "💨",
       label: t.strongWind,
       type: "wind",
       severity: 4,
     });
   }
   if (precipitation > 0.2 || precipitationProbability > 45) {
-    hazards.push({ icon: "🌧", label: t.rain, type: "rain", severity: 3 });
+    hazards.push({ label: t.rain, type: "rain", severity: 3 });
+  }
+  if (runwayWetRisk) {
+    hazards.push({ label: t.runwayWetRisk, type: "rain", severity: 4 });
   }
   if (lcl < 500 || (cloudLow > 75 && radiation < 180)) {
     hazards.push({
-      icon: "☁",
       label: t.lowCloudBase,
       type: "cloud",
       severity: 2,
@@ -1849,7 +2725,6 @@ export default async function Home({
   }
   if (sky.overcast) {
     hazards.push({
-      icon: "🌫",
       label: t.overcastRisk,
       type: "overcast",
       severity: 1,
@@ -1858,8 +2733,7 @@ export default async function Home({
 
   if (sky.riskOd) {
     hazards.push({
-      icon: "🌦",
-      label: lang === "cs" ? "Přerůstání oblačnosti" : "Overdevelopment",
+      label: t.overdevelopmentLabel,
       type: "storm",
       severity: 5,
     });
@@ -1867,11 +2741,7 @@ export default async function Home({
 
   if (sky.label === t.skyHighCloudShield) {
     hazards.push({
-      icon: "🌥",
-      label:
-        lang === "cs"
-          ? "Útlum ohřevu vysokou oblačností"
-          : "Heating reduced by high cloud",
+      label: t.highCloudHeatingReducedLabel,
       type: "overcast",
       severity: 2,
     });
@@ -1885,11 +2755,19 @@ export default async function Home({
   const hasOvercast = hazards.some((h) => h.type === "overcast");
   const hasIce = hazards.some((h) => h.type === "ice");
   const hasSnow = hazards.some((h) => h.type === "snow");
+  const hasRunwaySnowRisk = runwaySnowRisk || hasSnow;
+
+  const hazardOccurrenceText =
+    hazards.length === 0
+      ? t.hazardOccurrenceLow
+      : formatTranslation(t.hazardOccurrenceCountLabel, { count: hazards.length });
 
   const operationalRisk = Math.round(
     clamp(
       (hasStorm ? 35 : 0) +
         (hasRain ? 18 : 0) +
+        (runwayWetRisk ? (runwayVeryWetRisk ? 24 : 12) : 0) +
+        (hasRunwaySnowRisk ? 28 : 0) +
         clamp(crosswindAbs * 2, 0, 20) +
         clamp(airportSurfaceWindKt > 0 ? airportSurfaceWindKt * 1.2 : 0, 0, 20) +
         clamp((sky.overcast ? 18 : 0) + (cloudLow > 70 ? 8 : 0), 0, 18),
@@ -1897,6 +2775,44 @@ export default async function Home({
       100
     )
   );
+
+  const hazardRiskText =
+    operationalRisk >= 60
+      ? t.occurrenceRiskHigh
+      : operationalRisk >= 35
+      ? t.occurrenceRiskMedium
+      : t.occurrenceRiskLow;
+
+  const gaforCategory = getGaforLikeCategory({
+    isWithinVfrDay,
+    visibilityM: metarVisibility,
+    cloudBaseAglM,
+    hasStorm,
+    hasStrongWind,
+    hasRain,
+    hasOvercast,
+  });
+
+  const gaforLabel =
+    gaforCategory === "O"
+      ? "O (open)"
+      : gaforCategory === "D"
+      ? "D (difficult)"
+      : gaforCategory === "M"
+      ? "M (marginal)"
+      : "X (closed)";
+
+  const gaforNote =
+    t.gaforLikeNote;
+
+  const instabilityIndex =
+    Math.round((6 - (spread * 0.75 + radiation / 260 - cloudLow / 130)) * 10) / 10;
+  const instabilityLabel =
+    instabilityIndex <= -2
+      ? t.instabilityStrong
+      : instabilityIndex <= 1
+      ? t.instabilitySlight
+      : t.instabilityStable;
 
   let flyingCondition = t.flyingWeak;
   if (effectiveThermalScore >= 60 && operationalRisk < 35) {
@@ -1930,9 +2846,12 @@ export default async function Home({
     semaphoreClass = "badgeRed";
     semaphoreNote = t.outsideVfrNote;
   } else if (
-    operationalRisk >= 70 ||
+    operationalRisk >= profileCfg.noGoOperationalRisk ||
     lcl < 350 ||
-    crosswindAbs > 18 ||
+    crosswindAbs > profileCfg.noGoCrosswind ||
+    airportSurfaceWindKt > profileCfg.noGoSurfaceWind ||
+    runwayVeryWetRisk ||
+    hasRunwaySnowRisk ||
     hasStorm ||
     hasIce ||
     hasSnow
@@ -1941,13 +2860,25 @@ export default async function Home({
     semaphoreClass = "badgeRed";
     semaphoreNote = t.semaphoreNoGoNote;
   } else if (
-    effectiveThermalScore >= 60 &&
-    operationalRisk < 35 &&
-    lcl > 800
+    effectiveThermalScore >= profileCfg.goMinThermalScore &&
+    operationalRisk < profileCfg.goMaxOperationalRisk &&
+    lcl > profileCfg.goMinLcl
   ) {
     semaphore = t.go;
     semaphoreClass = "badgeGreen";
     semaphoreNote = t.semaphoreGoNote;
+  }
+
+  if (semaphoreClass === "badgeGreen" && runwayWetRisk) {
+    semaphore = t.caution;
+    semaphoreClass = "badgeYellow";
+    semaphoreNote = t.runwayWetNote;
+  }
+
+  if (semaphoreClass === "badgeRed" && hasRunwaySnowRisk) {
+    semaphoreNote = t.runwaySnowNote;
+  } else if (semaphoreClass !== "badgeGreen" && runwayWetRisk) {
+    semaphoreNote = t.runwayWetNote;
   }
 
   let semaphoreCardClass = "semaphoreCard warn";
@@ -1961,16 +2892,32 @@ export default async function Home({
     semaphoreBadgeClass = "semaphoreBadge go";
   }
 
-  const forecastTimeLabel = data.hourly.time[currentIndex]
-    ? new Date(data.hourly.time[currentIndex]).toLocaleString(t.locale, {
+  const latestForecastIndex = findLatestAvailableHourIndex(data.hourly.time);
+  const latestForecastTimestamp = data.hourly.time[latestForecastIndex];
+  const latestForecastLocalLabel = latestForecastTimestamp
+    ? new Date(latestForecastTimestamp * 1000).toLocaleString(t.locale, {
         day: "2-digit",
         month: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: LKFR_TIME_ZONE,
       })
     : "n/a";
 
   let soaringClass = "badgeRed";
+
+  const runwayStateText = hasRunwaySnowRisk
+    ? t.runwaySnowNote
+    : runwayVeryWetRisk
+    ? t.runwayWetNote
+    : runwayWetRisk
+    ? t.runwayWetNote
+    : t.runwayNoSofteningSign;
+  const runwayStateClass = hasRunwaySnowRisk || runwayVeryWetRisk
+    ? "bad"
+    : runwayWetRisk
+    ? "warn"
+    : "go";
   if (displayedSoaringIndex > 30) soaringClass = "badgeYellow";
   if (displayedSoaringIndex > 50) soaringClass = "badgeGreen";
   if (displayedSoaringIndex > 70) soaringClass = "badgeBlue";
@@ -1979,10 +2926,9 @@ export default async function Home({
   if (flyingCondition.includes("🟢")) flyingClass = "badgeGreen";
   if (flyingCondition.includes("🔴")) flyingClass = "badgeRed";
 
-  let xcClass = "badgeRed";
-  if (xcPotential === t.moderate) xcClass = "badgeYellow";
-  if (xcPotential === t.xcPotentialGood) xcClass = "badgeGreen";
-  if (xcPotential === t.xcPotentialDay) xcClass = "badgeBlue";
+  let trainingWindClass = "badgeGreen";
+  if (crosswindAbs > 6) trainingWindClass = "badgeYellow";
+  if (crosswindAbs > 10 || airportSurfaceWindKt > 14) trainingWindClass = "badgeRed";
 
   const summaryParts: string[] = [];
   if (effectiveThermalScore < 30) summaryParts.push(t.summaryWeak);
@@ -1994,22 +2940,22 @@ export default async function Home({
   if (airportSurfaceWindKt > 12 || crosswindAbs > 10) summaryParts.push(t.summaryWindy);
   if (sky.convective) summaryParts.push(t.summaryCu);
   if (sky.label === t.skyCuStreets) {
-    summaryParts.push(lang === "cs" ? "Streets" : "Streets");
+    summaryParts.push(t.streetsLabel);
   }
   if (sky.label === t.skyBlueThermal) {
-    summaryParts.push(lang === "cs" ? "Modrá termika" : "Blue thermals");
+    summaryParts.push(t.blueThermalsLabel);
   }
   if (sky.label === t.skyWeakCu) {
-    summaryParts.push(lang === "cs" ? "Slabé Cu" : "Weak Cu");
+    summaryParts.push(t.weakCuLabel);
   }
   if (sky.label === t.skyOverdeveloped) {
-    summaryParts.push(lang === "cs" ? "Přerůstání" : "Overdevelopment");
+    summaryParts.push(t.overdevelopmentLabel);
   }
   if (sky.label === t.skyHighCloudShield) {
-    summaryParts.push(lang === "cs" ? "Vysoká oblačnost" : "High cloud");
+    summaryParts.push(t.highCloudLabel);
   }
   if (sky.label === t.skyDecaying) {
-    summaryParts.push(lang === "cs" ? "Vyhasínání dne" : "Day decay");
+    summaryParts.push(t.dayDecayLabel);
   }
   if (xcPotential === t.xcPotentialGood || xcPotential === t.xcPotentialDay) {
     summaryParts.push(t.summaryXc);
@@ -2041,38 +2987,105 @@ export default async function Home({
 
   const skyDescription = getSkyDescription(sky.label, t);
 
+  const allMotivationQuotes =
+    lang === "cs"
+      ? [
+          { text: "Štěstí přeje odvážným.", author: "Vergilius" },
+          { text: "Dobře začít je polovina díla.", author: "Aristotelés" },
+          {
+            text: "Neztrácej čas debatou o tom, jak být dobrým člověkem. Buď jím.",
+            author: "Marcus Aurelius",
+          },
+          { text: "Kde je vůle, tam je i cesta.", author: "přísloví" },
+          { text: "Kdo se bojí, nesmí do lesa.", author: "přísloví" },
+          { text: "Vítr je přítel toho, kdo ví, jak plachtit.", author: "neznámý" },
+          { text: "Obloha nemá stropu pro toho, kdo se odváží vzlétnout.", author: "neznámý" },
+        ]
+      : [
+          { text: "Fortune favors the brave.", author: "Virgil" },
+          { text: "Well begun is half done.", author: "Aristotle" },
+          {
+            text: "Waste no more time arguing what a good man should be. Be one.",
+            author: "Marcus Aurelius",
+          },
+          { text: "Where there is a will, there is a way.", author: "proverb" },
+          { text: "The sky is the limit for those who dare to fly.", author: "unknown" },
+          { text: "Wind is the friend of one who knows how to soar.", author: "unknown" },
+          { text: "Every flight begins with a single step of courage.", author: "unknown" },
+        ];
+
+  const todayDayOfYear = (() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    return Math.floor((now.getTime() - start.getTime()) / 86400000);
+  })();
+  const motivationQuote =
+    allMotivationQuotes[todayDayOfYear % allMotivationQuotes.length];
+
   return (
     <main className="container">
       <div className="topHeaderRow">
         <div>
-          <h1>{t.title}</h1>
+          <h1 className="titleWithLogo">
+            <img
+              src="/icon.svg"
+              alt="SPL Trainer logo"
+              className="topBrandLogo"
+              width={56}
+              height={56}
+            />
+            <span>{t.title}</span>
+          </h1>
           <h2>{t.subtitle}</h2>
         </div>
 
-        <div className="langSwitch">
-          <span className="langLabel">{t.language}:</span>
+        <div className="headerControls">
+          <div className="langSwitch">
+            <span className="langLabel">{t.language}:</span>
 
-          <Link
-            href={{ pathname: "/", query: { lang: "cs" } }}
-            className={`langButton ${lang === "cs" ? "active" : ""}`}
-          >
-            CZ
-          </Link>
+            <Link
+              href={{ pathname: "/", query: { lang: "cs" } }}
+              className={`langButton ${lang === "cs" ? "active" : ""}`}
+            >
+              CZ
+            </Link>
 
-          <Link
-            href={{ pathname: "/", query: { lang: "en" } }}
-            className={`langButton ${lang === "en" ? "active" : ""}`}
-          >
-            EN
-          </Link>
+            <Link
+              href={{ pathname: "/", query: { lang: "en" } }}
+              className={`langButton ${lang === "en" ? "active" : ""}`}
+            >
+              EN
+            </Link>
+          </div>
+
+
         </div>
       </div>
 
-      <p className="metaLine">
-        {formattedDate} • {t.updated} {formattedTime} {t.local} •{" "}
-        {t.forecastHour} {forecastTimeLabel} • {t.version} {APP_VERSION} •{" "}
-        {t.appUpdate} {APP_UPDATED}
-      </p>
+      <div className="metaLine appMetaStrip">
+        <span>
+          <LivePragueDateTime locale={t.locale} timeZone={LKFR_TIME_ZONE} />
+        </span>
+        <span>
+          {t.forecastHour}: {latestForecastLocalLabel} ({t.local})
+        </span>
+      </div>
+
+      <DesktopLayoutEnhancer
+        labels={{
+          editor: t.layoutEditor,
+          reset: t.layoutReset,
+          moveEarlier: t.layoutMoveEarlier,
+          moveLater: t.layoutMoveLater,
+          pickCard: t.layoutPickCard,
+          placeBefore: t.layoutPlaceBefore,
+          cardSelected: t.layoutCardSelected,
+          dragAndDrop: t.layoutDragAndDrop,
+          sizeSmall: t.layoutSizeSmall,
+          sizeMedium: t.layoutSizeMedium,
+          sizeLarge: t.layoutSizeLarge,
+        }}
+      />
 
       <div className="statusPills">
         <span className={`sourceBadge ${hasMetar ? "live" : "fallback"}`}>
@@ -2084,13 +3097,15 @@ export default async function Home({
         </span>
 
         <span className="statusPill">
-          {t.vfrDay}: {sunriseLabel} – {sunsetLabel}
+          {t.vfrDay}: {vfrDayStartLabel} – {vfrDayEndLabel}
         </span>
+
+        <span className={vfrStatusClass}>{vfrStatusLabel}</span>
       </div>
 
       <section className="topStatusCard">
         <div className="topStatusGrid">
-          <div className={semaphoreCardClass}>
+          <div className={`${semaphoreCardClass} topPilotCard`}>
             <div className="eyebrowLabel">{t.flightSemaphore}</div>
 
             <div className={semaphoreBadgeClass}>{semaphore}</div>
@@ -2131,13 +3146,18 @@ export default async function Home({
               <div className="metricDir">
                 {Math.round(airportSurfaceWindDir)}° {airportSurfaceWindArrow}
               </div>
-              <div className="metricSub">{airportWindSourceLabel}</div>
             </div>
 
-            <div className="metricCard">
-              <div className="metricLabel">{t.xc}</div>
-              <div className="metricValueLarge">{xcPotential}</div>
-              <div className={xcClass}>{t.potential}</div>
+            <div className="metricCard trainingCrosswindCard">
+              <div className="metricLabel">{t.crosswind}</div>
+              <div className="metricValueLarge">{crosswindAbs} kt</div>
+              <div className={trainingWindClass}>
+                {crosswindAbs > 10 || airportSurfaceWindKt > 14
+                  ? t.crosswindDemanding
+                  : crosswindAbs > 6
+                  ? t.crosswindCaution
+                  : t.crosswindSuitable}
+              </div>
             </div>
           </div>
         </div>
@@ -2146,105 +3166,28 @@ export default async function Home({
       <div className="summaryBox">{flightSummary}</div>
 
       <div className="card" style={{ marginBottom: "18px" }}>
-        <h3>🧭 {t.pilotComment}</h3>
+        <h3>
+          <Info size={18} /> {t.pilotComment}
+        </h3>
         <p style={{ lineHeight: 1.7, margin: 0 }}>{pilotComment}</p>
       </div>
 
-      <div className="grid" style={{ marginBottom: "18px" }}>
-        <div className="card runwayCard">
-          <h3>🛬 {t.airportConditions}</h3>
-
-          <div className="runwayVisualWrap">
-            <svg viewBox="0 0 360 250" className="runwaySvg">
-              <rect
-                x="0"
-                y="0"
-                width="360"
-                height="250"
-                rx="16"
-                fill="rgba(15,23,42,0.35)"
-              />
-
-              <text x="180" y="20" className="runwayNorthLabel">
-                N
-              </text>
-              <line x1="180" y1="26" x2="180" y2="46" className="runwayNorthLine" />
-
-              <g transform={`rotate(${runwayRotation} 180 130)`}>
-                <rect
-                  x="70"
-                  y="108"
-                  width="220"
-                  height="44"
-                  rx="8"
-                  className="runwayStrip"
-                />
-                <line
-                  x1="90"
-                  y1="130"
-                  x2="270"
-                  y2="130"
-                  className="runwayCenterMark"
-                />
-                <text x="92" y="100" className="runwayLabel">
-                  08
-                </text>
-                <text x="268" y="100" className="runwayLabel">
-                  26
-                </text>
-              </g>
-
-              <g transform={`rotate(${Math.round(airportSurfaceWindDir)} 180 130)`}>
-                <line x1="180" y1="48" x2="180" y2="95" className="windArrowLine" />
-                <polygon points="180,34 171,52 189,52" className="windArrowHead" />
-              </g>
-
-              <circle cx="180" cy="130" r="4.5" className="runwayCenterDot" />
-
-              <text
-                x="180"
-                y="212"
-                textAnchor="middle"
-                fontSize="13"
-                fill="#e2e8f0"
-              >
-                {Math.round(airportSurfaceWindDir)}° / {airportSurfaceWindKt} kt
-              </text>
-            </svg>
-          </div>
-
-          <div className="runwayReadout">
-            <div>
-              <strong>RWY:</strong> 08 / 26
-            </div>
-            <div>
-              <strong>{t.groundWind}:</strong> {Math.round(airportSurfaceWindDir)}° /{" "}
-              {airportSurfaceWindKt} kt
-            </div>
-            <div>
-              <strong>{t.sourceLabel}:</strong> {airportWindSourceLabel}
-            </div>
-            {!hasMetar && (
-              <div>
-                <strong>Info:</strong> {t.metarUnavailable}
-              </div>
-            )}
-            <div>
-              <strong>{headwind >= 0 ? t.headwind : t.tailwind}:</strong>{" "}
-              {Math.abs(headwind)} kt
-            </div>
-            <div
-              className={
-                crosswindAbs > 12 ? "crossBad" : crosswindAbs > 6 ? "crossWarn" : ""
-              }
-            >
-              <strong>{t.crosswind}:</strong> {crosswindAbs} kt
-            </div>
-          </div>
+      <div className="grid compactGrid priorityGrid" data-layout-group="priority" style={{ marginBottom: "18px" }}>
+        <div className="card compactCard highPriorityCard priorityCardConditions" data-layout-id="conditions" data-layout-default-size="s">
+          <h3>
+            <Plane size={18} /> {t.flyingConditions}
+          </h3>
+          <p className={flyingClass}>{flyingCondition}</p>
         </div>
 
-        <div className="card">
-          <h3>⚠️ {t.weatherRisks}</h3>
+        <div className="card compactCard highPriorityCard priorityCardRisks" data-layout-id="risks" data-layout-default-size="s">
+          <h3>
+            <Info size={18} /> {t.weatherRisks}
+          </h3>
+          <p style={{ marginTop: 0 }}>{hazardOccurrenceText}</p>
+          <p className={operationalRisk >= 60 ? "badgeRed" : operationalRisk >= 35 ? "badgeYellow" : "badgeGreen"}>
+            {hazardRiskText}
+          </p>
           {hazards.length === 0 ? (
             <p className="badgeGreen">{t.noSignificantHazards}</p>
           ) : (
@@ -2255,14 +3198,25 @@ export default async function Home({
                   className="hazardPill"
                   style={{ background: getHazardColor(h.type) }}
                 >
-                  {h.icon} {h.label}
+                  {h.label}
                 </span>
               ))}
             </div>
           )}
         </div>
 
-        <div className="card">
+        <div className="card compactCard highPriorityCard priorityCardSoaring" data-layout-id="soaring" data-layout-default-size="s">
+          <h3>
+            <Gauge size={18} /> {t.soaringIndex}
+          </h3>
+          <p className="big">{displayedSoaringIndex}</p>
+          <p className={soaringClass}>{soaringRating}</p>
+          <p style={{ marginTop: "8px" }}>
+            <strong>{t.liProxyLabel}:</strong> {instabilityIndex.toFixed(1)} ({instabilityLabel})
+          </p>
+        </div>
+
+        <div className="card compactCard mediumPriorityCard quarterPriorityCard priorityCardWindow" data-layout-id="window" data-layout-default-size="s">
           <h3>{t.bestSoaringWindow}</h3>
           <p>
             <strong>{t.start}:</strong> {thermalStart}
@@ -2275,60 +3229,81 @@ export default async function Home({
           </p>
         </div>
 
-        <div className="card">
-          <h3>
-            <Gauge size={18} /> {t.soaringIndex}
-          </h3>
-          <p className="big">{displayedSoaringIndex}</p>
-          <p className={soaringClass}>{soaringRating}</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Plane size={18} /> {t.flyingConditions}
-          </h3>
-          <p className={flyingClass}>{flyingCondition}</p>
-        </div>
-
-        <div className="card">
+        <div className="card compactCard wideCard lowPriorityCard priorityCardClouds" data-layout-id="clouds" data-layout-default-size="l">
           <h3>
             <Cloud size={18} /> {t.cloudLayers}
           </h3>
 
-          <div className="cloudLayersGrid">
-            {[
-              { label: t.lowLayer, value: cloudLow },
-              { label: t.middleLayer, value: cloudMid },
-              { label: t.highLayer, value: cloudHigh },
-            ].map((layer) => (
-              <div key={layer.label} className="cloudLayerItem">
+          {hasMetarCloudLayers ? (
+            <div className="cloudLayersGrid">
+              {metarCloudLayers.map((layer, index) => (
+                <div key={`${layer.cover}-${layer.baseFtAgl}-${index}`} className="cloudLayerItem">
+                  <div className="cloudLayerTop">
+                    <strong>{layer.cover}</strong>
+                    <span>{layer.baseFtAgl} ft AGL</span>
+                  </div>
+
+                  <div className="cloudLayerCaption">
+                    {getMetarCoverageLabel(layer.cover, lang)} • {Math.round(layer.baseFtAgl * 0.3048)} m AGL • {t.cloudCoverageLabel} {layer.cover === "FEW" ? "1-2" : layer.cover === "SCT" ? "3-4" : layer.cover === "BKN" ? "5-7" : "8"}/8
+                  </div>
+                  {layer.cloudType ? (
+                    <div className="cloudLayerCaption">
+                      {t.cloudTypeLabel}: {layer.cloudType}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+
+            </div>
+          ) : (
+            <div className="cloudLayersGrid">
+              {[
+                { label: t.lowLayer, value: cloudLow },
+                { label: t.middleLayer, value: cloudMid },
+                { label: t.highLayer, value: cloudHigh },
+              ].map((layer) => (
+                <div key={layer.label} className="cloudLayerItem">
+                  <div className="cloudLayerTop">
+                    <strong>{layer.label}</strong>
+                    <span>{layer.value} %</span>
+                  </div>
+
+                  <div className="cloudLayerBarWrap">
+                    <div
+                      className="cloudLayerBarFill"
+                      style={{ width: `${Math.max(4, layer.value)}%` }}
+                    />
+                  </div>
+
+                  <div className="cloudLayerCaption">
+                    {getCoverageLabel(layer.value, lang)} • {toOktas(layer.value)}/8
+                  </div>
+                </div>
+              ))}
+
+              <div className="cloudLayerItem">
                 <div className="cloudLayerTop">
-                  <strong>{layer.label}</strong>
-                  <span>{layer.value} %</span>
+                  <strong>{t.verticalDevelopmentLabel}</strong>
+                  <span>{sky.riskOd ? t.riskLabel : t.lowRiskLabel}</span>
                 </div>
-
-                <div className="cloudLayerBarWrap">
-                  <div
-                    className="cloudLayerBarFill"
-                    style={{ width: `${Math.max(4, layer.value)}%` }}
-                  />
-                </div>
-
                 <div className="cloudLayerCaption">
-                  {getCoverageLabel(layer.value, lang)}
+                  {sky.riskOd
+                    ? t.verticalDevelopmentRiskNote
+                    : t.verticalDevelopmentLowNote}
                 </div>
               </div>
-            ))}
-          </div>
+
+            </div>
+          )}
         </div>
 
-        <div className="card">
+        <div className="card compactCard mediumPriorityCard quarterPriorityCard priorityCardWind" data-layout-id="wind" data-layout-default-size="s">
           <h3>
             <Wind size={18} /> {t.windProfile}
           </h3>
           <p>
             {t.surface}: {modelSurfaceWindKt} kt {modelSurfaceWindArrow} (
-            {Math.round(modelSurfaceWindDir)}°) • {t.modelSource}
+            {Math.round(modelSurfaceWindDir)}°) • {t.forecastLabel}: {t.modelSource}
           </p>
           <p>
             850 hPa: {wind850} kt {wind850Arrow} ({Math.round(wind850Dir)}°)
@@ -2337,11 +3312,213 @@ export default async function Home({
             700 hPa: {wind700} kt {wind700Arrow} ({Math.round(wind700Dir)}°)
           </p>
         </div>
+
+        <div className="card compactCard wideCard highPriorityCard fullPriorityCard briefingCard priorityCardBriefing" data-layout-id="briefing" data-layout-default-size="m">
+          <h3>
+            <Info size={18} /> {t.operationalBriefing}
+          </h3>
+
+          <p className="briefingLead">{t.officialBriefingLead}</p>
+
+          <p className={gaforCategory === "X" ? "badgeRed" : gaforCategory === "M" ? "badgeYellow" : gaforCategory === "D" ? "badgeYellow" : "badgeGreen"}>
+            {t.gaforLikeLabel} {gaforLabel}
+          </p>
+          <p style={{ marginTop: 0, color: "#bfd0e6" }}>{gaforNote}</p>
+
+          <div className="briefingInfoCard">
+            <strong>{t.lkfrTrainingLimitsTitle}</strong>
+
+            <ul className="limitsList">
+              <li>
+                {formatTranslation(t.lkfrCrosswindLimitText, {
+                  crosswind: LKFR_LIMITS.vfrCrosswindMaxKt,
+                  surfaceWind: LKFR_LIMITS.vfrSurfaceWindMaxKt,
+                })}
+              </li>
+              <li>
+                {formatTranslation(t.lkfrVfrGoodText, {
+                  visibilityKm: LKFR_LIMITS.vfrVisibilityGoodM / 1000,
+                  cloudBase: LKFR_LIMITS.vfrCloudBaseGoodM,
+                })}
+              </li>
+              <li>
+                {formatTranslation(t.lkfrWetRunwayWarningText, {
+                  rain6h: LKFR_LIMITS.runwayWet6hWarnMm,
+                  rain12h: LKFR_LIMITS.runwayWet12hWarnMm,
+                })}
+              </li>
+              <li>
+                {formatTranslation(t.lkfrWetRunwayCriticalText, {
+                  rain6h: LKFR_LIMITS.runwayWet6hBadMm,
+                  rain12h: LKFR_LIMITS.runwayWet12hBadMm,
+                })}
+              </li>
+            </ul>
+
+            <span>
+              {t.lkfrDataSourceLabel}{" "}
+              <a className="briefingSourceLink" href={AIM_VFR_MANUAL_URL} target="_blank" rel="noopener noreferrer">
+                AIM VFR manual LKFR
+              </a>
+              {" · "}
+              <a className="briefingSourceLink" href={AISVIEW_URL} target="_blank" rel="noopener noreferrer">
+                AIS View
+              </a>
+            </span>
+
+            <span>
+              {t.meteoDataSourceNote}
+            </span>
+          </div>
+
+          <div className="briefingLinkGrid">
+            <a
+              href={AISVIEW_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              {t.openOfficialBriefing}
+            </a>
+
+            <a
+              href={AIM_VFR_MANUAL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              {t.openOfficialManual}
+            </a>
+
+            <a
+              href={AIM_VFR_TEXT_PDF_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              {t.openOfficialTextPdf}
+            </a>
+
+            <a
+              href={METAR_PAGE}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              {t.openMetar}
+            </a>
+          </div>
+        </div>
+
+        {tafBriefing?.rawTaf ? (
+          <div className="card compactCard wideCard highPriorityCard fullPriorityCard briefingCard" data-layout-id="taf" data-layout-default-size="m">
+            <h3>
+              <Info size={18} /> {t.tafLabel} ({tafBriefing.sourceIcao})
+            </h3>
+            <div className="briefingInfoCard">
+              <span style={{ wordBreak: "break-word", fontFamily: "monospace", fontSize: "0.9rem" }}>{tafBriefing.rawTaf}</span>
+              <span>
+                {t.windShearInTaf}: {tafBriefing.hasWindshear ? t.yes : t.no}
+              </span>
+            </div>
+          </div>
+        ) : null}
+
+        {airportBriefing ? (
+          <div className="card compactCard wideCard highPriorityCard fullPriorityCard briefingCard priorityCardOfficialAirport" data-layout-id="official" data-layout-default-size="m">
+            <div className="officialAirportBriefing standalone">
+              <h3 className="officialAirportHeading">
+                <NotebookPen size={18} /> {t.officialBriefing}
+              </h3>
+
+              <div className="officialAirportGrid">
+                {airportBriefing.category ? (
+                  <div>
+                    <strong>{t.airportCategoryLabel}:</strong> {airportBriefing.category}
+                  </div>
+                ) : null}
+
+                {airportBriefing.operation ? (
+                  <div>
+                    <strong>{t.airportOperationLabel}:</strong> {airportBriefing.operation}
+                  </div>
+                ) : null}
+
+                {airportBriefing.frequency ? (
+                  <div>
+                    <strong>{t.airportFrequencyLabel}:</strong> {airportBriefing.frequency}
+                  </div>
+                ) : null}
+
+                {airportBriefing.circuitDirections.length > 0 ? (
+                  <div>
+                    <strong>{t.trafficCircuitLabel}:</strong>{" "}
+                    {airportBriefing.circuitDirections.join(" • ")}
+                  </div>
+                ) : null}
+
+                {airportBriefing.circuitAltitude ? (
+                  <div>
+                    <strong>{t.circuitAltitudeLabel}:</strong> {airportBriefing.circuitAltitude}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="briefingInfoGrid">
+                <div className="briefingInfoCard">
+                  <strong>{t.currentNoticesLabel}</strong>
+                  <span>{t.officialSourceNote}</span>
+                </div>
+
+                <div className="briefingInfoCard">
+                  <strong>{t.atisStatusLabel}</strong>
+                  <span>{t.atisUnavailableNote}</span>
+                </div>
+
+                {airportBriefing.frequency ? (
+                  <div className="briefingInfoCard">
+                    <strong>{t.radioInfoLabel}</strong>
+                    <span>{airportBriefing.frequency}</span>
+                  </div>
+                ) : null}
+              </div>
+
+              {airportBriefing.runwayWarnings.length > 0 ? (
+                <ul className="officialNotesList">
+                  {airportBriefing.runwayWarnings.slice(0, 3).map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="card compactCard wideCard highPriorityCard fullPriorityCard briefingCard" data-layout-id="vpl4" data-layout-default-size="m">
+          <h3>
+            <Info size={18} /> {t.vpl4DocumentTitle}
+          </h3>
+          <Vpl4Viewer
+            src="/vpl4.pdf#toolbar=1&navpanes=0"
+            title="VPL-4"
+            expandLabel={t.vpl4Expand}
+            collapseLabel={t.vpl4Collapse}
+            openLabel={t.vpl4OpenFullscreen}
+            closeLabel={t.vpl4CloseFullscreen}
+            missingLabel={t.vpl4Missing}
+          />
+        </div>
+
       </div>
 
       <section className="chartSection" style={{ marginBottom: "18px" }}>
         <div className="chartCard">
-          <h3 style={{ marginBottom: "14px" }}>📈 {t.modelForecast}</h3>
+          <h3 style={{ marginBottom: "14px" }}>
+            <Gauge size={18} /> {t.modelForecast}
+          </h3>
+          <p style={{ margin: "-2px 0 12px", color: "#a9bbd3", fontSize: "0.86rem" }}>
+            {t.allTimesUtc}
+          </p>
           <div className="chartWrap">
             <WeatherChart
               lang={lang}
@@ -2349,6 +3526,8 @@ export default async function Home({
                 today: t.today,
                 tomorrow: t.tomorrow,
                 dayPlus2: t.dayPlus2,
+                flightDayStart: t.flightDayStart,
+                flightDayEnd: t.flightDayEnd,
                 sunrise: t.sunrise,
                 sunset: t.sunset,
                 currentForecastHour: t.currentForecastHour,
@@ -2362,10 +3541,7 @@ export default async function Home({
                 cloudLow: t.lowLayer,
                 cloudMid: t.middleLayer,
                 cloudHigh: t.highLayer,
-                axesLegendTitle:
-                  lang === "cs"
-                    ? "Osy a datové vrstvy grafu"
-                    : "Chart axes and data layers",
+                axesLegendTitle: t.chartAxesLegendTitle,
               }}
               data={{
                 labels: hours,
@@ -2392,70 +3568,17 @@ export default async function Home({
         </div>
       </section>
 
-      <div className="grid" style={{ marginBottom: "18px" }}>
-        <div className="card">
-          <h3>
-            <Cloud size={18} /> {t.skyType}
-          </h3>
-          <p className={`big ${sky.className}`}>{sky.label}</p>
-          <p className="small">{t.thermalSkyEstimate}</p>
-          <p style={{ marginTop: "10px", lineHeight: 1.6 }}>{skyDescription}</p>
-        </div>
 
-        <div className="card">
-          <h3>
-            <Cloud size={18} /> {t.cloudBaseAgl}
-          </h3>
-          <p className="big">{lcl} m</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <MapPinned size={18} /> {t.cloudBaseMsl}
-          </h3>
-          <p className="big">{cloudBaseMSL} m</p>
-          <p>
-            {t.fieldElevation}: {FIELD_ELEVATION_MSL} m AMSL
-          </p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <ArrowUp size={18} /> {t.thermalTop}
-          </h3>
-          <p className="big">{thermalTop} m</p>
-          <p className="small">{t.heuristic}</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Wind size={18} /> {t.thermalDrift}
-          </h3>
-          <p className="big">{thermalDrift} kt</p>
-        </div>
-
-        <div className="card">
-          <h3>
-            <Thermometer size={18} /> {t.spread}
-          </h3>
-          <p className="big">{spread.toFixed(1)} °C</p>
-        </div>
-
-        <div className="card">
+      <div className="grid compactGrid dataGrid" data-layout-group="data" style={{ marginBottom: "18px" }}>
+        <div className="card compactCard mediumPriorityCard" data-layout-id="weather" data-layout-default-size="s">
           <h3>
             <Thermometer size={18} /> {t.weather}
           </h3>
           <p>
-            {t.temperature}: {temperature.toFixed(1)} °C
+            {t.temperature}: {observedTemperature.toFixed(1)} °C
           </p>
           <p>
-            {t.dewPoint}: {dewpoint.toFixed(1)} °C
-          </p>
-          <p>
-            {t.clouds}: {clouds} %
-          </p>
-          <p>
-            {t.lowMidHigh}: {cloudLow} / {cloudMid} / {cloudHigh} %
+            {t.dewPoint}: {observedDewPoint.toFixed(1)} °C
           </p>
           <p>
             {t.sunHeating}: {Math.round(radiation)} W/m²
@@ -2465,53 +3588,127 @@ export default async function Home({
           </p>
         </div>
 
-        <div className="card">
-          <h3>{t.metarInfo}</h3>
-          <p>{t.checkCurrentWeather}</p>
-
-          <p style={{ color: "#dbe7fb", marginTop: "8px" }}>
-            <strong>{t.sourceLabel}:</strong>{" "}
-            {hasMetar ? t.metarSource : t.metarUnavailable}
-          </p>
-
-          {hasMetar && metarWind?.rawText ? (
-            <p style={{ color: "#dbe7fb", fontSize: "0.85rem" }}>
-              <strong>RAW:</strong> {metarWind.rawText}
-            </p>
-          ) : (
-            <p style={{ color: "#cbd5e1", fontSize: "0.9rem" }}>
-              {t.metarUnavailable}
-            </p>
-          )}
-
-          <a
-            href={AIRPORT_WEBCAM}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="briefingLink"
-            style={{ marginTop: "10px", display: "inline-flex" }}
-          >
-            📷 Webkamera LKFR
-          </a>
+        <div className="card compactCard" data-layout-id="sky" data-layout-default-size="s">
+          <h3>
+            <Cloud size={18} /> {t.skyType}
+          </h3>
+          <p className={`big ${sky.className}`}>{sky.label}</p>
+          <p className="small">{t.thermalSkyEstimate}</p>
+          <p style={{ marginTop: "10px", lineHeight: 1.6 }}>{skyDescription}</p>
         </div>
+
+        <div className="card compactCard" data-layout-id="cloud-base-agl" data-layout-default-size="s">
+          <h3>
+            <Cloud size={18} /> {t.cloudBaseAgl}
+          </h3>
+          <p className="big">
+            {metarCeiling ? `${Math.round(metarCeiling * 0.3048)} m` : `${lcl} m`}
+          </p>
+          <p className="small">
+            {metarCeiling
+              ? `${t.observedLabel}: ${t.metarSource}`
+              : `${t.forecastLabel}: ${t.modelSource}`}
+          </p>
+        </div>
+
+        <div className="card compactCard" data-layout-id="cloud-base-msl" data-layout-default-size="s">
+          <h3>
+            <MapPinned size={18} /> {t.cloudBaseMsl}
+          </h3>
+          <p className="big">{cloudBaseMSL} m</p>
+          <p>
+            {t.fieldElevation}: {FIELD_ELEVATION_MSL} m AMSL
+          </p>
+        </div>
+
+        <div className="card compactCard" data-layout-id="thermal-top" data-layout-default-size="s">
+          <h3>
+            <ArrowUp size={18} /> {t.thermalTop}
+          </h3>
+          <p className="big">{thermalTop} m</p>
+          <p className="small">{t.heuristic}</p>
+        </div>
+
+        <div className="card compactCard" data-layout-id="thermal-drift" data-layout-default-size="s">
+          <h3>
+            <Wind size={18} /> {t.thermalDrift}
+          </h3>
+          <p className="big">{thermalDrift} kt</p>
+        </div>
+
+        <div className="card compactCard" data-layout-id="spread" data-layout-default-size="s">
+          <h3>
+            <Thermometer size={18} /> {t.spread}
+          </h3>
+          <p className="big">{spread.toFixed(1)} °C</p>
+        </div>
+        <div className="card compactCard wideCard highPriorityCard" data-layout-id="metar-embed" data-layout-default-size="m">
+          <h3>
+            <Info size={18} /> {t.metarInfo}
+          </h3>
+
+          <div className="metarEmbedWrap">
+            <a
+              href="https://metar-taf.com/metar/LKFR"
+              id="metartaf-JAeaR16D"
+              className="metarEmbedRoot"
+            >
+              METAR Frydlant Airfield
+            </a>
+            <Script
+              src="https://metar-taf.com/embed-js/LKFR?qnh=hPa&rh=rh&target=JAeaR16D"
+              strategy="afterInteractive"
+              crossOrigin="anonymous"
+            />
+          </div>
+        </div>
+
+
       </div>
 
-      <div className="grid" style={{ marginBottom: "18px" }}>
-        <div className="card">
+      <div className="grid compactGrid utilityGrid" data-layout-group="utility" style={{ marginBottom: "18px" }}>
+        <div className="card compactCard wideCard" data-layout-id="motivation" data-layout-default-size="m">
+          <h3>
+            <Star size={18} /> {lang === "cs" ? "Denní motivace" : "Daily motivation"}
+          </h3>
+
+          <div
+            style={{
+              padding: "10px 12px",
+              borderRadius: "12px",
+              background: "rgba(255,255,255,0.04)",
+            }}
+          >
+            <p style={{ margin: "0 0 6px 0", fontStyle: "italic", lineHeight: 1.5 }}>
+              &ldquo;{motivationQuote.text}&rdquo;
+            </p>
+            <p className="small" style={{ margin: 0 }}>
+              — {motivationQuote.author}
+            </p>
+          </div>
+        </div>
+
+        <div className="card compactCard commentsCard wideCard" data-layout-id="comments" data-layout-default-size="m">
+          <h3>
+            <MessageSquare size={18} /> {t.pilotCommentsTitle}
+          </h3>
+          <CommentThread lang={lang} storageKey="lkfr-public-comments" />
+        </div>
+
+        <div className="card compactCard" data-layout-id="rating" data-layout-default-size="s">
+          <h3>
+            <Star size={18} /> {t.appRating}
+          </h3>
+
+          <AppRating note={t.rateNote} lang={lang} storageKey="lkfr-app-rating" />
+        </div>
+
+        <div className="card compactCard" data-layout-id="quick-links" data-layout-default-size="s">
           <h3>
             <Camera size={18} /> {t.quickLinks}
           </h3>
 
           <div className="quickLinksColumn">
-            <a
-              href={METAR_PAGE}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="briefingLink"
-            >
-              {t.openMetar}
-            </a>
-
             <a
               href={AIRPORT_WEBSITE}
               target="_blank"
@@ -2520,16 +3717,19 @@ export default async function Home({
             >
               {t.openWebsite}
             </a>
+
+            <a
+              href={SPL_TRAINER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="briefingLink"
+            >
+              {t.openSplTrainer}
+            </a>
+
           </div>
         </div>
 
-        <div className="card">
-          <h3>
-            <Star size={18} /> {t.appRating}
-          </h3>
-
-          <AppRating note={t.rateNote} lang={lang} storageKey="lkfr-app-rating" />
-        </div>
       </div>
 
       <footer className="card disclaimerCard">
@@ -2539,6 +3739,17 @@ export default async function Home({
         </h3>
         <p style={{ margin: 0, lineHeight: 1.7 }}>{t.disclaimerText}</p>
       </footer>
+
+      <div className="appFooter" aria-label="App footer logo">
+        <div className="appFooterBrand">
+          <img
+            src="/icon.svg"
+            alt="Beskydy Soaring Weather logo"
+            className="appFooterLogo"
+          />
+          <span className="appFooterName">Beskydy Soaring Weather</span>
+        </div>
+      </div>
     </main>
   );
 }

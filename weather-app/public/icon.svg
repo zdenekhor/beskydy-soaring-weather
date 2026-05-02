@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SPL LKFR">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1f3f"/>
+      <stop offset="1" stop-color="#0a3a57"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <path d="M84 316h344" stroke="#9fd3ff" stroke-width="20" stroke-linecap="round"/>
+  <path d="M110 342h292" stroke="#6ec7a9" stroke-width="14" stroke-linecap="round"/>
+  <path d="M116 214c26-40 70-64 118-64 56 0 106 34 128 86 16-8 34-12 52-12 40 0 72 30 72 66s-34 66-76 66H146c-48 0-86-34-86-76 0-38 30-68 68-70z" fill="#d5ecff" fill-opacity="0.9"/>
+  <path d="M198 250l70-58 54 38" stroke="#1c4f80" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="256" y="468" text-anchor="middle" font-family="Verdana, sans-serif" font-size="56" font-weight="700" fill="#f2fbff">LKFR</text>
+</svg>

@@ -33,9 +33,17 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Android signing (never commit secrets)
+android/signing.properties
+android/*.jks
+android/*.keystore
+android/app/*.jks
+android/app/*.keystore
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env*.local
