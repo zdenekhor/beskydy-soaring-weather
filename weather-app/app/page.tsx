@@ -2875,9 +2875,9 @@ export default async function Home({
     semaphoreNote = t.runwayWetNote;
   }
 
-  if (semaphoreClass === "badgeRed" && hasRunwaySnowRisk) {
+  if (semaphoreClass === "badgeRed" && hasRunwaySnowRisk && !hasStorm) {
     semaphoreNote = t.runwaySnowNote;
-  } else if (semaphoreClass !== "badgeGreen" && runwayWetRisk) {
+  } else if (semaphoreClass !== "badgeGreen" && runwayWetRisk && !hasStorm) {
     semaphoreNote = t.runwayWetNote;
   }
 

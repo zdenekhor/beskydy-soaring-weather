@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,6 +16,8 @@ import {
   type Plugin,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+
+const LkfrMap = dynamic(() => import("./LkfrMap"), { ssr: false });
 
 ChartJS.register(
   CategoryScale,
@@ -240,6 +243,78 @@ function withAlpha(color: string, alpha: number) {
   return color.replace(/rgba\(([^)]+),\s*[^,]+\)$/u, `rgba($1, ${alpha})`);
 }
 
+// ── Soaring-suitability score ────────────────────────────────────────────────
+// Returns a value in [0, 1] where 1 = ideal conditions for soaring at LKFR.
+// Weights: thermal 35 %, cloud-base 25 %, surface wind 20 %, temp 10 %, humidity 10 %
+function computeSoaringScore(
+  temp: number,
+  dewPoint: number,
+  thermal: number,
+  lcl: number,
+  windSurface: number
+): number {
+  // Thermal strength m/s → 0..1
+  const thermalScore = Math.min(1, Math.max(0, thermal / 2.0));
+
+  // Cloud base AGL → 0..1
+  const lclScore =
+    lcl < 400 ? 0 :
+    lcl < 900  ? ((lcl - 400) / 500) * 0.4 :
+    lcl < 1600 ? 0.4 + ((lcl - 900) / 700) * 0.4 :
+    lcl < 2600 ? 0.8 + ((lcl - 1600) / 1000) * 0.2 : 1.0;
+
+  // Surface wind kt → lower is better
+  const windScore =
+    windSurface <= 8  ? 1.0 :
+    windSurface <= 16 ? 1.0 - ((windSurface - 8) / 8) * 0.55 :
+    windSurface <= 25 ? 0.45 - ((windSurface - 16) / 9) * 0.45 : 0;
+
+  // Temperature °C → 0..1
+  const tempScore =
+    temp < 8  ? 0 :
+    temp < 18 ? ((temp - 8) / 10) * 0.8 :
+    temp < 32 ? 0.8 + ((temp - 18) / 14) * 0.2 : 1.0;
+
+  // Dew-point spread (T − Td) → lower spread = more humid = worse thermals
+  const spread = temp - dewPoint;
+  const humScore =
+    spread < 2  ? 0 :
+    spread < 5  ? ((spread - 2) / 3) * 0.5 :
+    spread < 12 ? 0.5 + ((spread - 5) / 7) * 0.5 : 1.0;
+
+  return (
+    0.35 * thermalScore +
+    0.25 * lclScore +
+    0.20 * windScore +
+    0.10 * tempScore +
+    0.10 * humScore
+  );
+}
+
+// Maps score [0,1] to an RGB colour: red → orange → yellow → light-green → green
+function scoreToRgb(score: number): [number, number, number] {
+  const stops: Array<[number, [number, number, number]]> = [
+    [0.00, [160,  38,  38]],
+    [0.25, [210, 108,  28]],
+    [0.50, [215, 190,  28]],
+    [0.75, [108, 190,  48]],
+    [1.00, [ 45, 195,  78]],
+  ];
+  for (let i = 1; i < stops.length; i++) {
+    const [s0, c0] = stops[i - 1];
+    const [s1, c1] = stops[i];
+    if (score <= s1) {
+      const t = (score - s0) / (s1 - s0);
+      return [
+        Math.round(c0[0] + t * (c1[0] - c0[0])),
+        Math.round(c0[1] + t * (c1[1] - c0[1])),
+        Math.round(c0[2] + t * (c1[2] - c0[2])),
+      ];
+    }
+  }
+  return stops[stops.length - 1][1];
+}
+
 function findFirstIndexAtOrAfter(values: number[], target: number) {
   if (!values.length) return -1;
 
@@ -261,6 +336,173 @@ function findLastIndexAtOrBefore(values: number[], target: number) {
 }
 
 const BARB_LEGEND_ITEMS = [0, 5, 10, 15, 20, 25, 30, 50, 60, 100];
+
+// ── Soaring Map ──────────────────────────────────────────────────────────────
+type SoaringMapProps = {
+  lang: Lang;
+  visibleSeries: {
+    times: number[];
+    temperature: number[];
+    dewPoint: number[];
+    thermal: number[];
+    lcl: number[];
+    windSurface: number[];
+  };
+  pickLabels: string[];
+  flightDayStartIndex: number;
+  flightDayEndIndex: number;
+  activeIndex: number;
+  onHover: (i: number | null) => void;
+};
+
+function SoaringMap({
+  lang,
+  visibleSeries,
+  pickLabels,
+  flightDayStartIndex,
+  flightDayEndIndex,
+  activeIndex,
+  onHover,
+}: SoaringMapProps) {
+  const n = pickLabels.length;
+  if (!n) return null;
+
+  const cells = Array.from({ length: n }, (_, i) => {
+    const score = computeSoaringScore(
+      visibleSeries.temperature[i] ?? 15,
+      visibleSeries.dewPoint[i] ?? 10,
+      visibleSeries.thermal[i] ?? 0,
+      visibleSeries.lcl[i] ?? 0,
+      visibleSeries.windSurface[i] ?? 0
+    );
+    const [r, g, b] = scoreToRgb(score);
+    return { score, r, g, b };
+  });
+
+  const activeScore = cells[activeIndex]?.score ?? 0;
+  const activePct = Math.round(activeScore * 100);
+  const activeLabel =
+    activeScore >= 0.72
+      ? lang === "cs" ? "výborné" : "excellent"
+      : activeScore >= 0.48
+      ? lang === "cs" ? "průměrné" : "fair"
+      : activeScore >= 0.28
+      ? lang === "cs" ? "slabé" : "poor"
+      : lang === "cs" ? "nevhodné" : "unsuitable";
+  const { r: ar, g: ag, b: ab } = cells[activeIndex] ?? { r: 160, g: 38, b: 38 };
+
+  return (
+    <div style={{ marginBottom: "10px" }}>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: "5px",
+        gap: "8px",
+      }}>
+        <span style={{ fontSize: "0.78rem", color: "#7a96b2", fontWeight: 600, whiteSpace: "nowrap" }}>
+          {lang === "cs" ? "Mapa vhodnosti pro plachtění" : "Soaring suitability map"}
+        </span>
+        <span style={{
+          fontSize: "0.78rem",
+          fontWeight: 700,
+          color: `rgb(${ar},${ag},${ab})`,
+          background: `rgba(${ar},${ag},${ab},0.12)`,
+          borderRadius: "6px",
+          padding: "2px 8px",
+          whiteSpace: "nowrap",
+          border: `1px solid rgba(${ar},${ag},${ab},0.3)`,
+        }}>
+          {pickLabels[activeIndex] ?? "-"} — {activePct} % ({activeLabel})
+        </span>
+      </div>
+
+      {/* Heatmap cells */}
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          height: "38px",
+          borderRadius: "8px",
+          overflow: "hidden",
+          cursor: "crosshair",
+        }}
+        onMouseLeave={() => onHover(null)}
+      >
+        {cells.map(({ score, r, g, b }, i) => {
+          const inFlight =
+            flightDayStartIndex >= 0 &&
+            flightDayEndIndex >= 0 &&
+            i >= flightDayStartIndex &&
+            i <= flightDayEndIndex;
+          const isActive = i === activeIndex;
+          return (
+            <div
+              key={i}
+              onMouseEnter={() => onHover(i)}
+              onTouchStart={() => onHover(i)}
+              style={{
+                flex: 1,
+                background: `rgba(${r},${g},${b},${inFlight ? 0.82 : 0.28})`,
+                position: "relative",
+                outline: isActive ? `2px solid rgba(${r},${g},${b},0.95)` : undefined,
+                outlineOffset: isActive ? "-2px" : undefined,
+                transition: "outline 0.1s",
+              }}
+            >
+              {/* score tick mark at top */}
+              <div style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: `${Math.round(score * 100)}%`,
+                background: `rgba(${r},${g},${b},0.22)`,
+              }} />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Hour labels – only show every Nth to avoid crowding */}
+      <div style={{ display: "flex", width: "100%", marginTop: "2px" }}>
+        {pickLabels.map((lbl, i) => {
+          const step = n > 24 ? 4 : n > 16 ? 3 : n > 10 ? 2 : 1;
+          const show = i % step === 0;
+          return (
+            <div key={i} style={{
+              flex: 1,
+              fontSize: "0.66rem",
+              color: "#5a7a96",
+              textAlign: "center",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              opacity: show ? 1 : 0,
+            }}>
+              {show ? lbl : ""}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Gradient legend */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+        <div style={{
+          flex: 1,
+          height: "6px",
+          borderRadius: "3px",
+          background: "linear-gradient(to right, rgb(160,38,38), rgb(210,108,28), rgb(215,190,28), rgb(108,190,48), rgb(45,195,78))",
+        }} />
+        <div style={{ display: "flex", gap: "10px", fontSize: "0.68rem", whiteSpace: "nowrap" }}>
+          <span style={{ color: "rgb(180,80,80)" }}>{lang === "cs" ? "nevhodné" : "poor"}</span>
+          <span style={{ color: "rgb(210,185,40)" }}>{lang === "cs" ? "průměrné" : "fair"}</span>
+          <span style={{ color: "rgb(45,185,70)" }}>{lang === "cs" ? "výborné" : "excellent"}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function WindBarbSvg({ spd, color = "#a9bbd3" }: { spd: number; color?: string }) {
   const staffLen = 26;
@@ -440,6 +682,20 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   const activeCloudMid = visibleSeries.cloudMid[safeActiveIndex] ?? 0;
   const activeCloudHigh = visibleSeries.cloudHigh[safeActiveIndex] ?? 0;
 
+    const activeSoaringScore = computeSoaringScore(
+      activeTemperature, activeDewPoint, activeThermal, activeLcl, activeWindSurface
+    );
+    const activeSoaringPct = Math.round(activeSoaringScore * 100);
+    const activeSoaringLabel =
+      activeSoaringScore >= 0.72
+        ? lang === "cs" ? "výborné" : "excellent"
+        : activeSoaringScore >= 0.48
+        ? lang === "cs" ? "průměrné" : "fair"
+        : activeSoaringScore >= 0.28
+        ? lang === "cs" ? "slabé" : "poor"
+        : lang === "cs" ? "nevhodné" : "unsuitable";
+    const [activeSoaringR, activeSoaringG, activeSoaringB] = scoreToRgb(activeSoaringScore);
+
   const chartData = useMemo<ChartData<"line">>(
     () => ({
       labels: pickLabels,
@@ -552,6 +808,42 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
       ],
     }),
     [activeAxis, labelsText, pickLabels, visibleSeries]
+  );
+
+  const soaringScorePlugin = useMemo<Plugin<"line">>(
+    () => ({
+      id: "soaringScore",
+      beforeDatasetsDraw(chart) {
+        const { ctx, chartArea, scales } = chart;
+        if (!chartArea || !scales.x) return;
+        const n = pickLabels.length;
+        if (!n) return;
+
+        ctx.save();
+        for (let i = 0; i < n; i++) {
+          const score = computeSoaringScore(
+            visibleSeries.temperature[i] ?? 15,
+            visibleSeries.dewPoint[i] ?? 10,
+            visibleSeries.thermal[i] ?? 0,
+            visibleSeries.lcl[i] ?? 0,
+            visibleSeries.windSurface[i] ?? 0
+          );
+          const x0 =
+            i === 0
+              ? chartArea.left
+              : (scales.x.getPixelForValue(i - 1) + scales.x.getPixelForValue(i)) / 2;
+          const x1 =
+            i === n - 1
+              ? chartArea.right
+              : (scales.x.getPixelForValue(i) + scales.x.getPixelForValue(i + 1)) / 2;
+          const [r, g, b] = scoreToRgb(score);
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.13)`;
+          ctx.fillRect(x0, chartArea.top, x1 - x0, chartArea.bottom - chartArea.top);
+        }
+        ctx.restore();
+      },
+    }),
+    [pickLabels.length, visibleSeries]
   );
 
   const windDirectionPlugin = useMemo<Plugin<"line">>(
@@ -974,6 +1266,27 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         </div>
       </div>
 
+
+      <LkfrMap
+        lang={lang}
+        score={activeSoaringScore}
+        scoreLabel={activeSoaringLabel}
+        scorePct={activeSoaringPct}
+        r={activeSoaringR}
+        g={activeSoaringG}
+        b={activeSoaringB}
+      />
+
+      <SoaringMap
+        lang={lang}
+        visibleSeries={visibleSeries}
+        pickLabels={pickLabels}
+        flightDayStartIndex={flightDayStartIndex}
+        flightDayEndIndex={flightDayEndIndex}
+        activeIndex={safeActiveIndex}
+        onHover={(i) => setHoveredPointIndex(i)}
+      />
+
       {isMobile ? (
         <div className="chartMobileToggleRow">
           <button
@@ -1059,7 +1372,34 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
             onMouseLeave={() => setHoveredPointIndex(null)}
             onTouchEnd={() => setHoveredPointIndex(null)}
           >
-            <Line data={chartData} options={options} plugins={[windDirectionPlugin]} />
+            <Line data={chartData} options={options} plugins={[soaringScorePlugin, windDirectionPlugin]} />
+          </div>
+
+          {/* Soaring suitability colour-strip legend */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginTop: "6px",
+            marginBottom: "2px",
+            fontSize: "0.75rem",
+            color: "#7a96b2",
+          }}>
+            <span style={{ whiteSpace: "nowrap" }}>
+              {lang === "cs" ? "Podmínky pro plachtění:" : "Soaring suitability:"}
+            </span>
+            <div style={{
+              flex: 1,
+              height: "11px",
+              borderRadius: "5px",
+              background: "linear-gradient(to right, rgb(160,38,38), rgb(210,108,28), rgb(215,190,28), rgb(108,190,48), rgb(45,195,78))",
+              minWidth: "80px",
+            }} />
+            <span style={{ display: "flex", gap: "14px", whiteSpace: "nowrap" }}>
+              <span style={{ color: "rgb(160,78,78)" }}>{lang === "cs" ? "nevhodné" : "poor"}</span>
+              <span style={{ color: "rgb(215,190,28)" }}>{lang === "cs" ? "průměrné" : "fair"}</span>
+              <span style={{ color: "rgb(45,195,78)" }}>{lang === "cs" ? "výborné" : "excellent"}</span>
+            </span>
           </div>
 
           <details className="windBarbLegend" style={{ marginTop: "12px" }}>
