@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   description: "Predpoved pocasi pro LKFR a hodnoceni podminek pro plachtare SPL.",
   applicationName: "Počasí LKFR",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
   appleWebApp: {
     capable: true,
     title: "Počasí LKFR",

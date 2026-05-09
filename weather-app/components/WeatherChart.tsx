@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
+import LkfrMap from "./LkfrMap";
+import DayUsabilityWindow from "./DayUsabilityWindow";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -16,8 +17,6 @@ import {
   type Plugin,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-
-const LkfrMap = dynamic(() => import("./LkfrMap"), { ssr: false });
 
 ChartJS.register(
   CategoryScale,
@@ -579,6 +578,7 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   const [hoveredPointIndex, setHoveredPointIndex] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileGraphOpen, setMobileGraphOpen] = useState(false);
+  const [dayUsabilityOpen, setDayUsabilityOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -659,6 +659,8 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   const flightDayEndLabel =
     typeof flightDayEndTs === "number" ? formatHm(flightDayEndTs, lang) : "-";
 
+  const dayButtons = [labelsText.today, labelsText.tomorrow, labelsText.dayPlus2];
+
   const flightDayStartIndex =
     typeof flightDayStartTs === "number"
       ? findFirstIndexAtOrAfter(visibleSeries.times, flightDayStartTs)
@@ -682,19 +684,31 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   const activeCloudMid = visibleSeries.cloudMid[safeActiveIndex] ?? 0;
   const activeCloudHigh = visibleSeries.cloudHigh[safeActiveIndex] ?? 0;
 
-    const activeSoaringScore = computeSoaringScore(
-      activeTemperature, activeDewPoint, activeThermal, activeLcl, activeWindSurface
-    );
-    const activeSoaringPct = Math.round(activeSoaringScore * 100);
-    const activeSoaringLabel =
-      activeSoaringScore >= 0.72
-        ? lang === "cs" ? "výborné" : "excellent"
-        : activeSoaringScore >= 0.48
-        ? lang === "cs" ? "průměrné" : "fair"
-        : activeSoaringScore >= 0.28
-        ? lang === "cs" ? "slabé" : "poor"
-        : lang === "cs" ? "nevhodné" : "unsuitable";
-    const [activeSoaringR, activeSoaringG, activeSoaringB] = scoreToRgb(activeSoaringScore);
+  const activeSoaringScore = computeSoaringScore(
+    activeTemperature,
+    activeDewPoint,
+    activeThermal,
+    activeLcl,
+    activeWindSurface
+  );
+  const activeSoaringPct = Math.round(activeSoaringScore * 100);
+  const activeSoaringLabel =
+    activeSoaringScore >= 0.72
+      ? lang === "cs"
+        ? "výborné"
+        : "excellent"
+      : activeSoaringScore >= 0.48
+      ? lang === "cs"
+        ? "průměrné"
+        : "fair"
+      : activeSoaringScore >= 0.28
+      ? lang === "cs"
+        ? "slabé"
+        : "poor"
+      : lang === "cs"
+      ? "nevhodné"
+      : "unsuitable";
+  const [activeSoaringR, activeSoaringG, activeSoaringB] = scoreToRgb(activeSoaringScore);
 
   const chartData = useMemo<ChartData<"line">>(
     () => ({
@@ -1164,7 +1178,6 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
     [activeAxis]
   );
 
-  const dayButtons = [labelsText.today, labelsText.tomorrow, labelsText.dayPlus2];
   const mobileToggleLabel =
     lang === "cs"
       ? mobileGraphOpen
@@ -1285,6 +1298,28 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         flightDayEndIndex={flightDayEndIndex}
         activeIndex={safeActiveIndex}
         onHover={(i) => setHoveredPointIndex(i)}
+      />
+
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          className="chartToggleButton"
+          onClick={() => setDayUsabilityOpen(true)}
+        >
+          {lang === "cs" ? "Otevřít využitelnost dne" : "Open day usability"}
+        </button>
+      </div>
+
+      <DayUsabilityWindow
+        lang={lang}
+        open={dayUsabilityOpen}
+        onClose={() => setDayUsabilityOpen(false)}
+        dayLabel={dayButtons[selectedDay] ?? "-"}
+        pickLabels={pickLabels}
+        visibleSeries={visibleSeries}
+        activeIndex={safeActiveIndex}
+        flightDayStartIndex={flightDayStartIndex}
+        flightDayEndIndex={flightDayEndIndex}
       />
 
       {isMobile ? (

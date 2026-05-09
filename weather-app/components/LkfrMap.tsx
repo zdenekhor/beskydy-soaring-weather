@@ -20,6 +20,9 @@ type Props = {
   scoreLabel: string;     // e.g. "výborné"
   scorePct: number;       // 0–100
   r: number; g: number; b: number; // RGB of score colour
+  height?: number | string;
+  outerRadiusM?: number | null;
+  title?: string;
 };
 
 function loadLeaflet(): Promise<void> {
@@ -44,10 +47,22 @@ function loadLeaflet(): Promise<void> {
   });
 }
 
-export default function LkfrMap({ lang, score, scoreLabel, scorePct, r, g, b }: Props) {
+export default function LkfrMap({
+  lang,
+  score,
+  scoreLabel,
+  scorePct,
+  r,
+  g,
+  b,
+  height = 320,
+  outerRadiusM = null,
+  title,
+}: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
   const circleRef = useRef<any>(null);
+  const outerCircleRef = useRef<any>(null);
   const controlRef = useRef<any>(null);
 
   // Init map once
@@ -80,6 +95,17 @@ export default function LkfrMap({ lang, score, scoreLabel, scorePct, r, g, b }: 
         fillOpacity: 0.08,
         weight: 2,
       }).addTo(map);
+
+      if (outerRadiusM && outerRadiusM > RADIUS_M) {
+        outerCircleRef.current = L.circle([LKFR_LAT, LKFR_LNG], {
+          radius: outerRadiusM,
+          color: `rgba(${r},${g},${b},0.72)`,
+          fillColor: `rgba(${r},${g},${b},0.04)`,
+          fillOpacity: 0.03,
+          weight: 1.2,
+          dashArray: "7 8",
+        }).addTo(map);
+      }
 
       // Airport marker
       const airportIcon = L.divIcon({
@@ -125,7 +151,16 @@ export default function LkfrMap({ lang, score, scoreLabel, scorePct, r, g, b }: 
       leafletMapRef.current = map;
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      controlRef.current = null;
+      circleRef.current = null;
+      outerCircleRef.current = null;
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -141,7 +176,13 @@ export default function LkfrMap({ lang, score, scoreLabel, scorePct, r, g, b }: 
     }
     const el = document.getElementById("lkfr-score-ctrl");
     if (el) el.innerHTML = buildScoreHtml(score, scoreLabel, scorePct, r, g, b, lang);
-  }, [score, scoreLabel, scorePct, r, g, b, lang]);
+    if (outerCircleRef.current && outerRadiusM && outerRadiusM > RADIUS_M) {
+      outerCircleRef.current.setStyle({
+        color,
+        fillColor: color,
+      });
+    }
+  }, [score, scoreLabel, scorePct, r, g, b, lang, outerRadiusM]);
 
   return (
     <div style={{ marginBottom: "12px" }}>
@@ -151,13 +192,13 @@ export default function LkfrMap({ lang, score, scoreLabel, scorePct, r, g, b }: 
         fontWeight: 600,
         marginBottom: "6px",
       }}>
-        {lang === "cs" ? "LKFR – Frýdlant nad Ostravicí (okruh 10 km)" : "LKFR – Frýdlant nad Ostravicí (10 km radius)"}
+        {title ?? (lang === "cs" ? "LKFR – Frýdlant nad Ostravicí (okruh 10 km)" : "LKFR – Frýdlant nad Ostravicí (10 km radius)")}
       </div>
       <div
         ref={mapRef}
         style={{
           width: "100%",
-          height: "320px",
+          height: typeof height === "number" ? `${height}px` : height,
           borderRadius: "12px",
           overflow: "hidden",
           border: "1px solid rgba(148,163,184,0.12)",
