@@ -60,6 +60,7 @@ export default function LkfrMap({
   title,
 }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
+  const veilRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<any>(null);
   const circleRef = useRef<any>(null);
   const outerCircleRef = useRef<any>(null);
@@ -182,6 +183,10 @@ export default function LkfrMap({
         fillColor: color,
       });
     }
+    if (veilRef.current) {
+      veilRef.current.style.background = `rgba(${r},${g},${b},${0.06 + score * 0.12})`;
+      veilRef.current.style.boxShadow = `inset 0 0 60px rgba(${r},${g},${b},${0.08 + score * 0.10})`;
+    }
   }, [score, scoreLabel, scorePct, r, g, b, lang, outerRadiusM]);
 
   return (
@@ -201,10 +206,26 @@ export default function LkfrMap({
           height: typeof height === "number" ? `${height}px` : height,
           borderRadius: "12px",
           overflow: "hidden",
-          border: "1px solid rgba(148,163,184,0.12)",
+          border: `1px solid rgba(${r},${g},${b},0.28)`,
           background: "#0f172a",
+          position: "relative",
         }}
-      />
+      >
+        {/* Colored veil overlay */}
+        <div
+          ref={veilRef}
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "12px",
+            pointerEvents: "none",
+            zIndex: 400,
+            background: `rgba(${r},${g},${b},${0.06 + score * 0.12})`,
+            boxShadow: `inset 0 0 60px rgba(${r},${g},${b},${0.08 + score * 0.10})`,
+            transition: "background 0.4s ease, box-shadow 0.4s ease",
+          }}
+        />
+      </div>
     </div>
   );
 }
