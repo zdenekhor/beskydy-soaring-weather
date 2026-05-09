@@ -290,20 +290,26 @@ function computeSoaringScore(
   );
 }
 
-// Maps score [0,1] to an RGB colour: red → orange → yellow → light-green → green
+const SCORE_COLOR_STOPS: Array<[number, [number, number, number]]> = [
+  [0.0, [150, 34, 44]],
+  [0.12, [183, 52, 40]],
+  [0.24, [214, 84, 31]],
+  [0.38, [227, 130, 29]],
+  [0.52, [224, 182, 36]],
+  [0.66, [183, 208, 48]],
+  [0.8, [110, 197, 61]],
+  [0.9, [65, 191, 82]],
+  [1.0, [34, 176, 104]],
+];
+
 function scoreToRgb(score: number): [number, number, number] {
-  const stops: Array<[number, [number, number, number]]> = [
-    [0.00, [160,  38,  38]],
-    [0.25, [210, 108,  28]],
-    [0.50, [215, 190,  28]],
-    [0.75, [108, 190,  48]],
-    [1.00, [ 45, 195,  78]],
-  ];
-  for (let i = 1; i < stops.length; i++) {
-    const [s0, c0] = stops[i - 1];
-    const [s1, c1] = stops[i];
-    if (score <= s1) {
-      const t = (score - s0) / (s1 - s0);
+  const clamped = Math.min(1, Math.max(0, score));
+
+  for (let i = 1; i < SCORE_COLOR_STOPS.length; i++) {
+    const [s0, c0] = SCORE_COLOR_STOPS[i - 1];
+    const [s1, c1] = SCORE_COLOR_STOPS[i];
+    if (clamped <= s1) {
+      const t = (clamped - s0) / (s1 - s0);
       return [
         Math.round(c0[0] + t * (c1[0] - c0[0])),
         Math.round(c0[1] + t * (c1[1] - c0[1])),
@@ -311,7 +317,12 @@ function scoreToRgb(score: number): [number, number, number] {
       ];
     }
   }
-  return stops[stops.length - 1][1];
+
+  return SCORE_COLOR_STOPS[SCORE_COLOR_STOPS.length - 1][1];
+}
+
+function buildScoreGradient() {
+  return `linear-gradient(to right, ${SCORE_COLOR_STOPS.map(([stop, [r, g, b]]) => `rgb(${r},${g},${b}) ${Math.round(stop * 100)}%`).join(", ")})`;
 }
 
 function findFirstIndexAtOrAfter(values: number[], target: number) {
@@ -378,6 +389,14 @@ function SoaringMap({
     return { score, r, g, b };
   });
 
+  // Slice to flight day only
+  const dayStart = flightDayStartIndex >= 0 ? flightDayStartIndex : 0;
+  const dayEnd = flightDayEndIndex >= 0 ? Math.min(flightDayEndIndex, n - 1) : n - 1;
+  const dayCells = cells.slice(dayStart, dayEnd + 1);
+  const dayLabels = pickLabels.slice(dayStart, dayEnd + 1);
+  const dayN = dayCells.length;
+  const dayActiveIndex = Math.max(0, Math.min(activeIndex - dayStart, dayN - 1));
+
   const activeScore = cells[activeIndex]?.score ?? 0;
   const activePct = Math.round(activeScore * 100);
   const activeLabel =
@@ -421,52 +440,67 @@ function SoaringMap({
         style={{
           display: "flex",
           width: "100%",
-          height: "38px",
-          borderRadius: "8px",
+          height: "56px",
+          borderRadius: "12px",
           overflow: "hidden",
           cursor: "crosshair",
+          border: "1px solid rgba(148, 163, 184, 0.12)",
+          background: "rgba(255,255,255,0.02)",
         }}
         onMouseLeave={() => onHover(null)}
       >
-        {cells.map(({ score, r, g, b }, i) => {
-          const inFlight =
-            flightDayStartIndex >= 0 &&
-            flightDayEndIndex >= 0 &&
-            i >= flightDayStartIndex &&
-            i <= flightDayEndIndex;
-          const isActive = i === activeIndex;
+        {dayCells.map(({ score, r, g, b }, i) => {
+          const isActive = i === dayActiveIndex;
           return (
             <div
               key={i}
-              onMouseEnter={() => onHover(i)}
-              onTouchStart={() => onHover(i)}
+              onMouseEnter={() => onHover(dayStart + i)}
+              onTouchStart={() => onHover(dayStart + i)}
               style={{
                 flex: 1,
-                background: `rgba(${r},${g},${b},${inFlight ? 0.82 : 0.28})`,
+                background: `linear-gradient(180deg, rgba(${r},${g},${b},0.9) 0%, rgba(${r},${g},${b},0.68) 100%)`,
+                // all visible cells are flight-day cells
                 position: "relative",
-                outline: isActive ? `2px solid rgba(${r},${g},${b},0.95)` : undefined,
+                outline: isActive ? `2px solid rgba(${r},${g},${b},0.98)` : undefined,
                 outlineOffset: isActive ? "-2px" : undefined,
-                transition: "outline 0.1s",
+                transition: "outline 0.12s, transform 0.12s",
+                transform: isActive ? "translateY(-1px)" : "none",
               }}
             >
-              {/* score tick mark at top */}
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 48%)",
+              }} />
               <div style={{
                 position: "absolute",
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: `${Math.round(score * 100)}%`,
-                background: `rgba(${r},${g},${b},0.22)`,
+                height: `${Math.max(12, Math.round(score * 100))}%`,
+                background: `rgba(${r},${g},${b},0.28)`,
               }} />
+              {isActive ? (
+                <div style={{
+                  position: "absolute",
+                  top: 6,
+                  left: "50%",
+                  width: "2px",
+                  height: "calc(100% - 12px)",
+                  transform: "translateX(-50%)",
+                  background: "rgba(255,255,255,0.7)",
+                  boxShadow: "0 0 10px rgba(255,255,255,0.18)",
+                }} />
+              ) : null}
             </div>
           );
         })}
       </div>
 
       {/* Hour labels – only show every Nth to avoid crowding */}
-      <div style={{ display: "flex", width: "100%", marginTop: "2px" }}>
-        {pickLabels.map((lbl, i) => {
-          const step = n > 24 ? 4 : n > 16 ? 3 : n > 10 ? 2 : 1;
+      <div style={{ display: "flex", width: "100%", marginTop: "6px" }}>
+        {dayLabels.map((lbl, i) => {
+          const step = dayN > 24 ? 4 : dayN > 16 ? 3 : dayN > 10 ? 2 : 1;
           const show = i % step === 0;
           return (
             <div key={i} style={{
@@ -485,12 +519,12 @@ function SoaringMap({
       </div>
 
       {/* Gradient legend */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "6px" }}>
         <div style={{
           flex: 1,
-          height: "6px",
-          borderRadius: "3px",
-          background: "linear-gradient(to right, rgb(160,38,38), rgb(210,108,28), rgb(215,190,28), rgb(108,190,48), rgb(45,195,78))",
+          height: "8px",
+          borderRadius: "999px",
+          background: buildScoreGradient(),
         }} />
         <div style={{ display: "flex", gap: "10px", fontSize: "0.68rem", whiteSpace: "nowrap" }}>
           <span style={{ color: "rgb(180,80,80)" }}>{lang === "cs" ? "nevhodné" : "poor"}</span>
@@ -1426,8 +1460,8 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
             <div style={{
               flex: 1,
               height: "11px",
-              borderRadius: "5px",
-              background: "linear-gradient(to right, rgb(160,38,38), rgb(210,108,28), rgb(215,190,28), rgb(108,190,48), rgb(45,195,78))",
+              borderRadius: "999px",
+              background: buildScoreGradient(),
               minWidth: "80px",
             }} />
             <span style={{ display: "flex", gap: "14px", whiteSpace: "nowrap" }}>

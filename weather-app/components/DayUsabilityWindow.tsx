@@ -91,20 +91,26 @@ function computeSoaringScore(
   );
 }
 
-function scoreToRgb(score: number): [number, number, number] {
-  const stops: Array<[number, [number, number, number]]> = [
-    [0, [160, 38, 38]],
-    [0.25, [210, 108, 28]],
-    [0.5, [215, 190, 28]],
-    [0.75, [108, 190, 48]],
-    [1, [45, 195, 78]],
-  ];
+const SCORE_COLOR_STOPS: Array<[number, [number, number, number]]> = [
+  [0.0, [150, 34, 44]],
+  [0.12, [183, 52, 40]],
+  [0.24, [214, 84, 31]],
+  [0.38, [227, 130, 29]],
+  [0.52, [224, 182, 36]],
+  [0.66, [183, 208, 48]],
+  [0.8, [110, 197, 61]],
+  [0.9, [65, 191, 82]],
+  [1.0, [34, 176, 104]],
+];
 
-  for (let i = 1; i < stops.length; i += 1) {
-    const [s0, c0] = stops[i - 1];
-    const [s1, c1] = stops[i];
-    if (score <= s1) {
-      const t = (score - s0) / (s1 - s0);
+function scoreToRgb(score: number): [number, number, number] {
+  const clamped = Math.min(1, Math.max(0, score));
+
+  for (let i = 1; i < SCORE_COLOR_STOPS.length; i += 1) {
+    const [s0, c0] = SCORE_COLOR_STOPS[i - 1];
+    const [s1, c1] = SCORE_COLOR_STOPS[i];
+    if (clamped <= s1) {
+      const t = (clamped - s0) / (s1 - s0);
       return [
         Math.round(c0[0] + t * (c1[0] - c0[0])),
         Math.round(c0[1] + t * (c1[1] - c0[1])),
@@ -113,7 +119,11 @@ function scoreToRgb(score: number): [number, number, number] {
     }
   }
 
-  return stops[stops.length - 1][1];
+  return SCORE_COLOR_STOPS[SCORE_COLOR_STOPS.length - 1][1];
+}
+
+function buildScoreGradient() {
+  return `linear-gradient(to right, ${SCORE_COLOR_STOPS.map(([stop, [r, g, b]]) => `rgb(${r},${g},${b}) ${Math.round(stop * 100)}%`).join(", ")})`;
 }
 
 function withAlpha(color: string, alpha: number) {
@@ -132,6 +142,7 @@ export default function DayUsabilityWindow({
   flightDayEndIndex,
 }: Props) {
   const [isMobile, setIsMobile] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -151,6 +162,11 @@ export default function DayUsabilityWindow({
   }, [open, onClose]);
 
   useEffect(() => {
+    if (!open) return;
+    setFocusedIndex(activeIndex);
+  }, [activeIndex, open]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     const media = window.matchMedia("(max-width: 720px)");
@@ -161,6 +177,11 @@ export default function DayUsabilityWindow({
 
     return () => media.removeEventListener("change", update);
   }, []);
+
+  const currentIndex =
+    focusedIndex !== null && focusedIndex >= 0 && focusedIndex < pickLabels.length
+      ? focusedIndex
+      : activeIndex;
 
   const rows = useMemo(() => {
     return pickLabels.map((_, index) => {
@@ -186,12 +207,19 @@ export default function DayUsabilityWindow({
     });
   }, [pickLabels, visibleSeries]);
 
-  const activeScore = rows[activeIndex]?.overall ?? 0;
-  const activeTemp = visibleSeries.temperature[activeIndex] ?? 0;
-  const activeDewPoint = visibleSeries.dewPoint[activeIndex] ?? 0;
-  const activeThermal = visibleSeries.thermal[activeIndex] ?? 0;
-  const activeLcl = visibleSeries.lcl[activeIndex] ?? 0;
-  const activeWind = visibleSeries.windSurface[activeIndex] ?? 0;
+  // Slice to flight day only
+  const dayStart = flightDayStartIndex >= 0 ? flightDayStartIndex : 0;
+  const dayEnd = flightDayEndIndex >= 0 ? Math.min(flightDayEndIndex, pickLabels.length - 1) : pickLabels.length - 1;
+  const dayLabels = pickLabels.slice(dayStart, dayEnd + 1);
+  const dayRows = rows.slice(dayStart, dayEnd + 1);
+  const dayCurrentIndex = Math.max(0, Math.min(currentIndex - dayStart, dayLabels.length - 1));
+
+  const activeScore = rows[currentIndex]?.overall ?? 0;
+  const activeTemp = visibleSeries.temperature[currentIndex] ?? 0;
+  const activeDewPoint = visibleSeries.dewPoint[currentIndex] ?? 0;
+  const activeThermal = visibleSeries.thermal[currentIndex] ?? 0;
+  const activeLcl = visibleSeries.lcl[currentIndex] ?? 0;
+  const activeWind = visibleSeries.windSurface[currentIndex] ?? 0;
   const activeScorePct = Math.round(activeScore * 100);
   const activeScoreLabel =
     activeScore >= 0.72
@@ -253,16 +281,16 @@ export default function DayUsabilityWindow({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: `150px repeat(${pickLabels.length}, minmax(${isMobile ? 24 : 30}px, 1fr))`,
+          gridTemplateColumns: `150px repeat(${dayLabels.length}, minmax(${isMobile ? 24 : 30}px, 1fr))`,
           gap: "4px",
-          minWidth: `${150 + pickLabels.length * (isMobile ? 28 : 34)}px`,
+          minWidth: `${150 + dayLabels.length * (isMobile ? 28 : 34)}px`,
           alignItems: "stretch",
         }}
       >
         <div style={matrixHeaderStyle(lang)}>
           {lang === "cs" ? "Faktor / hodina" : "Factor / hour"}
         </div>
-        {pickLabels.map((label) => (
+        {dayLabels.map((label) => (
           <div
             key={label}
             style={{
@@ -289,10 +317,9 @@ export default function DayUsabilityWindow({
             lang={lang}
             label={row.label}
             rowKey={row.key as FragmentRowKey}
-            rows={rows}
-            activeIndex={activeIndex}
-            flightDayStartIndex={flightDayStartIndex}
-            flightDayEndIndex={flightDayEndIndex}
+            rows={dayRows}
+            activeIndex={dayCurrentIndex}
+            onFocusIndex={(i) => setFocusedIndex(dayStart + i)}
           />
         ))}
       </div>
@@ -353,7 +380,7 @@ export default function DayUsabilityWindow({
           <DetailItem label={lang === "cs" ? "Termika" : "Thermal"} value={`${activeThermal.toFixed(1)} m/s`} />
           <DetailItem label={lang === "cs" ? "Základna" : "Cloud base"} value={`${Math.round(activeLcl)} m AGL`} />
           <DetailItem label={lang === "cs" ? "Vítr" : "Wind"} value={`${Math.round(activeWind)} kt`} />
-          <DetailItem label={lang === "cs" ? "Čas" : "Hour"} value={pickLabels[activeIndex] ?? "-"} />
+          <DetailItem label={lang === "cs" ? "Čas" : "Hour"} value={pickLabels[currentIndex] ?? "-"} />
         </div>
       </div>
 
@@ -367,6 +394,13 @@ export default function DayUsabilityWindow({
       >
         <div style={panelTitleStyle()}>{lang === "cs" ? "Legenda" : "Legend"}</div>
         <div style={{ display: "grid", gap: 10 }}>
+          <div
+            style={{
+              height: 8,
+              borderRadius: 999,
+              background: buildScoreGradient(),
+            }}
+          />
           {[
             { label: lang === "cs" ? "nevhodné" : "poor", color: "rgb(160,38,38)" },
             { label: lang === "cs" ? "průměrné" : "fair", color: "rgb(215,190,28)" },
@@ -550,8 +584,7 @@ type FragmentRowProps = {
   rowKey: FragmentRowKey;
   rows: Array<{ factors: Record<string, number>; overall: number }>;
   activeIndex: number;
-  flightDayStartIndex: number;
-  flightDayEndIndex: number;
+  onFocusIndex: (index: number) => void;
 };
 
 function FragmentRow({
@@ -560,8 +593,7 @@ function FragmentRow({
   rowKey,
   rows,
   activeIndex,
-  flightDayStartIndex,
-  flightDayEndIndex,
+  onFocusIndex,
 }: FragmentRowProps) {
   return (
     <>
@@ -578,22 +610,26 @@ function FragmentRow({
       {rows.map((entry, index) => {
         const value = rowKey === "overall" ? entry.overall : entry.factors[rowKey];
         const [r, g, b] = scoreToRgb(value);
-        const inFlight = index >= flightDayStartIndex && index <= flightDayEndIndex && flightDayStartIndex >= 0;
         const isActive = index === activeIndex;
 
         return (
           <div
             key={`${rowKey}-${index}`}
             title={`${label}: ${Math.round(value * 100)} %`}
+            onMouseEnter={() => onFocusIndex(index)}
+            onTouchStart={() => onFocusIndex(index)}
+            onClick={() => onFocusIndex(index)}
             style={{
-              minHeight: 38,
+              minHeight: rowKey === "overall" ? 48 : 40,
               borderRadius: 10,
-              background: `rgba(${r}, ${g}, ${b}, ${inFlight ? 0.82 : 0.28})`,
+              background: `linear-gradient(180deg, rgba(${r}, ${g}, ${b}, 0.92) 0%, rgba(${r}, ${g}, ${b}, 0.72) 100%)`,
               border: isActive
-                ? `2px solid rgba(${r}, ${g}, ${b}, 0.95)`
+                ? `2px solid rgba(${r}, ${g}, ${b}, 0.98)`
                 : "1px solid rgba(148, 163, 184, 0.12)",
               boxShadow: isActive ? `0 0 0 2px rgba(${r}, ${g}, ${b}, 0.16)` : undefined,
-              opacity: inFlight ? 1 : 0.72,
+              cursor: "pointer",
+              transition: "transform 0.12s, border-color 0.12s, box-shadow 0.12s",
+              transform: isActive ? "translateY(-1px)" : "none",
             }}
           />
         );
