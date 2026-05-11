@@ -1,1 +1,13 @@
-{}
+{
+	"name": "beskydy-soaring-weather",
+	"private": true,
+	"workspaces": [
+		"weather-app"
+	],
+	"scripts": {
+		"dev": "npm --workspace weather-app run dev",
+		"build": "npm --workspace weather-app run build",
+		"start": "npm --workspace weather-app run start",
+		"lint": "npm --workspace weather-app run lint"
+	}
+}

@@ -78,6 +78,12 @@ type Props = {
   data: ChartInputData;
 };
 
+type ConvectiveOutlookItem = {
+  label: string;
+  scorePct: number;
+  peakThermal: number;
+};
+
 const colors = {
   temp: "rgba(199, 167, 108, 0.95)",
   dew: "rgba(122, 156, 176, 0.95)",
@@ -694,6 +700,56 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
     typeof flightDayEndTs === "number" ? formatHm(flightDayEndTs, lang) : "-";
 
   const dayButtons = [labelsText.today, labelsText.tomorrow, labelsText.dayPlus2];
+
+  const convectiveOutlook = useMemo<ConvectiveOutlookItem[]>(() => {
+    return dayKeys.slice(0, 3).map((dayKey, dayIndex) => {
+      const indices = data.times
+        .map((ts, i) => ({ ts, i }))
+        .filter((row) => getDateKey(row.ts) === dayKey)
+        .map((row) => row.i);
+
+      if (!indices.length) {
+        return {
+          label: dayButtons[dayIndex] ?? `D+${dayIndex}`,
+          scorePct: 0,
+          peakThermal: 0,
+        };
+      }
+
+      const sunriseTs = data.sunrise[dayIndex];
+      const sunsetTs = data.sunset[dayIndex];
+      const dayStartTs =
+        typeof sunriseTs === "number" ? sunriseTs + VFR_DAY_START_OFFSET_SEC : Number.NEGATIVE_INFINITY;
+      const dayEndTs =
+        typeof sunsetTs === "number" ? sunsetTs + VFR_DAY_END_OFFSET_SEC : Number.POSITIVE_INFINITY;
+
+      const daylight = indices.filter((i) => {
+        const ts = data.times[i];
+        return ts >= dayStartTs && ts <= dayEndTs;
+      });
+
+      const evalIndices = daylight.length > 0 ? daylight : indices;
+
+      const scores = evalIndices.map((i) =>
+        computeSoaringScore(
+          data.temperature[i] ?? 0,
+          data.dewPoint[i] ?? 0,
+          data.thermal[i] ?? 0,
+          data.lcl[i] ?? 0,
+          data.windSurface[i] ?? 0
+        )
+      );
+
+      const avgScore = scores.reduce((sum, value) => sum + value, 0) / scores.length;
+      const peakThermal = Math.max(...evalIndices.map((i) => data.thermal[i] ?? 0));
+
+      return {
+        label: dayButtons[dayIndex] ?? `D+${dayIndex}`,
+        scorePct: Math.round(avgScore * 100),
+        peakThermal: Number(peakThermal.toFixed(1)),
+      };
+    });
+  }, [data, dayButtons, dayKeys]);
 
   const flightDayStartIndex =
     typeof flightDayStartTs === "number"
@@ -1349,6 +1405,7 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
         open={dayUsabilityOpen}
         onClose={() => setDayUsabilityOpen(false)}
         dayLabel={dayButtons[selectedDay] ?? "-"}
+        convectiveOutlook={convectiveOutlook}
         pickLabels={pickLabels}
         visibleSeries={visibleSeries}
         activeIndex={safeActiveIndex}
@@ -1490,7 +1547,7 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 fontSize: "10px", color: "#5a8ab0",
               }}>?</span>
-              {lang === "cs" ? "Legenda větrných barbů (WMO)" : "Wind barb legend (WMO)"}
+              {lang === "cs" ? "Legenda větrných praporků (WMO, kt)" : "Wind barb legend (WMO)"}
             </summary>
 
             <div style={{
@@ -1530,7 +1587,7 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
                 lineHeight: 1.5,
               }}>
                 {lang === "cs"
-                  ? "Hůlka míří ke zdroji větru. Každý paprsek = 10 kt · půl paprsek = 5 kt · plný klín = 50 kt."
+                  ? "Hůlka míří ke směru, odkud vítr vane. Jeden praporek = 10 kt, půl praporku = 5 kt, klín = 50 kt. Nejde o Beaufortovu stupnici."
                   : "Staff points toward wind origin. Full barb = 10 kt · half barb = 5 kt · pennant = 50 kt."}
               </p>
             </div>

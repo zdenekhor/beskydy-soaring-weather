@@ -583,7 +583,7 @@ const translations: Record<Lang, Translation> = {
     runwayWetNote:
       "Travnatá RWY LKFR je po vydatnějších srážkách provozně citlivá. Ověř aktuální použitelnost v oficiálním briefingu.",
     runwaySnowNote:
-      "LKFR nemá zajištěné odstraňování sněhu z pohybových ploch. Před letem ověř SNOWTAM / oficiální briefing.",
+      "V zimních podmínkách LKFR nemá zajištěné odstraňování sněhu z pohybových ploch. Před letem ověř SNOWTAM / oficiální briefing.",
     runwayNoSofteningSign:
       "Bez modelového náznaku rozbahnění; přesto ověř oficiální briefing.",
     gustsLabel: "Nárazy",
@@ -921,7 +921,7 @@ const translations: Record<Lang, Translation> = {
     runwayWetNote:
       "The LKFR grass runway is operationally sensitive after heavier rain. Verify actual usability in the official briefing.",
     runwaySnowNote:
-      "LKFR does not provide snow removal on movement areas. Verify SNOWTAM / official briefing before flight.",
+      "In winter conditions, LKFR does not provide snow removal on movement areas. Verify SNOWTAM / official briefing before flight.",
     runwayNoSofteningSign:
       "No model-derived sign of a soft runway; still verify the official briefing.",
     gustsLabel: "Gusts",
@@ -2345,18 +2345,12 @@ export default async function Home({
   );
   const recentPrecipitation6h = sumRecentValues(data.hourly.precipitation, currentIndex, 6);
   const recentPrecipitation12h = sumRecentValues(data.hourly.precipitation, currentIndex, 12);
-  const hasOfficialRainWarning =
-    airportBriefing?.runwayWarnings.some((warning) => /dešt|rain/iu.test(warning)) ?? false;
-  const hasOfficialSnowWarning =
-    airportBriefing?.runwayWarnings.some((warning) => /sněh|snow/iu.test(warning)) ?? false;
   const runwayWetRisk =
-    hasOfficialRainWarning &&
-    (recentPrecipitation6h >= LKFR_LIMITS.runwayWet6hWarnMm ||
-      recentPrecipitation12h >= LKFR_LIMITS.runwayWet12hWarnMm);
+    recentPrecipitation6h >= LKFR_LIMITS.runwayWet6hWarnMm ||
+    recentPrecipitation12h >= LKFR_LIMITS.runwayWet12hWarnMm;
   const runwayVeryWetRisk =
-    hasOfficialRainWarning &&
-    (recentPrecipitation6h >= LKFR_LIMITS.runwayWet6hBadMm ||
-      recentPrecipitation12h >= LKFR_LIMITS.runwayWet12hBadMm);
+    recentPrecipitation6h >= LKFR_LIMITS.runwayWet6hBadMm ||
+    recentPrecipitation12h >= LKFR_LIMITS.runwayWet12hBadMm;
 
   const modelSurfaceWindKmh = safeArrayValue(
     data.hourly.wind_speed_10m,
@@ -2387,16 +2381,15 @@ export default async function Home({
   const observedDewPoint = hasMetar && metarWind!.dewPointC !== null
     ? metarWind!.dewPointC
     : dewpoint;
-  const runwaySnowRisk =
-    hasOfficialSnowWarning &&
-    ((observedTemperature < 2 && precipitation > 0.2) || recentPrecipitation12h >= 1.5);
+  const metarPhenomena = hasMetar ? metarWind!.weatherCodes : [];
+  const hasMetarSnowPhenomena = metarPhenomena.some((code) => /SN|SG|GS|PL|FZRA|FZDZ/i.test(code));
+  const runwaySnowRisk = hasMetarSnowPhenomena;
   const metarCloudLayers = hasMetar ? metarWind!.cloudLayers : [];
   const hasMetarCloudLayers = metarCloudLayers.length > 0;
   const metarQnh = hasMetar ? metarWind!.qnhHpa : null;
   const metarQfe = metarQnh !== null ? Math.round(metarQnh - FIELD_ELEVATION_MSL / 8.3) : null;
   const metarVisibility = hasMetar ? metarWind!.visibilityM : null;
   const metarGust = hasMetar ? metarWind!.gustKt : null;
-  const metarPhenomena = hasMetar ? metarWind!.weatherCodes : [];
   const metarCeiling = hasMetar ? metarWind!.ceilingFtAgl : null;
 
   const runwayHeading = 84;
@@ -2696,7 +2689,7 @@ export default async function Home({
   if (observedTemperature < 0) {
     hazards.push({ label: t.freezing, type: "ice", severity: 5 });
   }
-  if (observedTemperature < 2 && precipitation > 0.2) {
+  if (hasMetarSnowPhenomena) {
     hazards.push({ label: t.snow, type: "snow", severity: 5 });
   }
   if (

@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 
 // LKFR – Frýdlant nad Ostravicí
-const LKFR_LAT = 49.5591;
-const LKFR_LNG = 18.3536;
+const LKFR_LAT = 49.592;
+const LKFR_LNG = 18.359;
 const RADIUS_M = 10_000;
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -20,30 +20,79 @@ type Props = {
   scoreLabel: string;     // e.g. "výborné"
   scorePct: number;       // 0–100
   r: number; g: number; b: number; // RGB of score colour
+  convectiveOutlook?: Array<{
+    label: string;
+    scorePct: number;
+    peakThermal: number;
+  }>;
   height?: number | string;
   outerRadiusM?: number | null;
   title?: string;
 };
 
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
+}
+
 function loadLeaflet(): Promise<void> {
   return new Promise((resolve) => {
     if (typeof window === "undefined") return;
-    if (window.L) { resolve(); return; }
 
-    // CSS
-    if (!document.getElementById("leaflet-css")) {
-      const link = document.createElement("link");
-      link.id = "leaflet-css";
-      link.rel = "stylesheet";
-      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-      document.head.appendChild(link);
-    }
+    const ensureCss = () =>
+      new Promise<void>((resolveCss) => {
+        const existing = document.getElementById("leaflet-css") as HTMLLinkElement | null;
 
-    // JS
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-    script.onload = () => resolve();
-    document.head.appendChild(script);
+        if (existing) {
+          if (existing.dataset.loaded === "true") {
+            resolveCss();
+            return;
+          }
+
+          existing.addEventListener("load", () => {
+            existing.dataset.loaded = "true";
+            resolveCss();
+          }, { once: true });
+
+          // Fallback for cases when stylesheet is already attached and usable.
+          if (existing.sheet) {
+            existing.dataset.loaded = "true";
+            resolveCss();
+          }
+          return;
+        }
+
+        const link = document.createElement("link");
+        link.id = "leaflet-css";
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        link.addEventListener("load", () => {
+          link.dataset.loaded = "true";
+          resolveCss();
+        }, { once: true });
+        document.head.appendChild(link);
+      });
+
+    const ensureJs = () =>
+      new Promise<void>((resolveJs) => {
+        if (window.L) {
+          resolveJs();
+          return;
+        }
+
+        const existing = document.getElementById("leaflet-js") as HTMLScriptElement | null;
+        if (existing) {
+          existing.addEventListener("load", () => resolveJs(), { once: true });
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.id = "leaflet-js";
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.addEventListener("load", () => resolveJs(), { once: true });
+        document.head.appendChild(script);
+      });
+
+    Promise.all([ensureCss(), ensureJs()]).then(() => resolve());
   });
 }
 
@@ -55,6 +104,7 @@ export default function LkfrMap({
   r,
   g,
   b,
+  convectiveOutlook = [],
   height = 320,
   outerRadiusM = null,
   title,
@@ -65,11 +115,15 @@ export default function LkfrMap({
   const circleRef = useRef<any>(null);
   const outerCircleRef = useRef<any>(null);
   const controlRef = useRef<any>(null);
+  const controlElementRef = useRef<HTMLDivElement | null>(null);
 
   // Init map once
   useEffect(() => {
     if (!mapRef.current) return;
     let cancelled = false;
+
+    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+    let handleResize: (() => void) | null = null;
 
     loadLeaflet().then(() => {
       if (cancelled || !mapRef.current || leafletMapRef.current) return;
@@ -131,8 +185,7 @@ export default function LkfrMap({
       const ScoreControl = L.Control.extend({
         options: { position: "topright" },
         onAdd() {
-          const div = L.DomUtil.create("div");
-          div.id = "lkfr-score-ctrl";
+          const div = L.DomUtil.create("div") as HTMLDivElement;
           div.innerHTML = buildScoreHtml(score, scoreLabel, scorePct, r, g, b, lang);
           div.style.cssText = `
             background:rgba(10,18,32,0.88);
@@ -144,17 +197,30 @@ export default function LkfrMap({
             box-shadow:0 2px 10px rgba(0,0,0,0.5);
           `;
           L.DomEvent.disableClickPropagation(div);
+          controlElementRef.current = div;
           return div;
         },
       });
       controlRef.current = new ScoreControl().addTo(map);
+
+      const invalidate = () => {
+        map.invalidateSize({ pan: false, animate: false });
+      };
+
+      handleResize = invalidate;
+      requestAnimationFrame(() => requestAnimationFrame(invalidate));
+      resizeTimeout = setTimeout(invalidate, 160);
+      window.addEventListener("resize", handleResize);
 
       leafletMapRef.current = map;
     });
 
     return () => {
       cancelled = true;
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      if (handleResize) window.removeEventListener("resize", handleResize);
       controlRef.current = null;
+      controlElementRef.current = null;
       circleRef.current = null;
       outerCircleRef.current = null;
       if (leafletMapRef.current) {
@@ -175,8 +241,9 @@ export default function LkfrMap({
         fillColor: color,
       });
     }
-    const el = document.getElementById("lkfr-score-ctrl");
-    if (el) el.innerHTML = buildScoreHtml(score, scoreLabel, scorePct, r, g, b, lang);
+    if (controlElementRef.current) {
+      controlElementRef.current.innerHTML = buildScoreHtml(score, scoreLabel, scorePct, r, g, b, lang);
+    }
     if (outerCircleRef.current && outerRadiusM && outerRadiusM > RADIUS_M) {
       outerCircleRef.current.setStyle({
         color,
@@ -209,6 +276,7 @@ export default function LkfrMap({
           border: `1px solid rgba(${r},${g},${b},0.28)`,
           background: "#0f172a",
           position: "relative",
+          isolation: "isolate",
         }}
       >
         {/* Colored veil overlay */}
@@ -226,6 +294,56 @@ export default function LkfrMap({
           }}
         />
       </div>
+
+      {convectiveOutlook.length ? (
+        <div
+          style={{
+            marginTop: "10px",
+            border: "1px solid rgba(148, 163, 184, 0.18)",
+            borderRadius: "10px",
+            padding: "8px 10px",
+            background: "rgba(8, 15, 29, 0.62)",
+          }}
+        >
+          <div style={{ fontSize: "0.72rem", color: "#7a96b2", fontWeight: 600, marginBottom: 6 }}>
+            {lang === "cs" ? "Konvektivní změna (dnes/zítra/pozítří)" : "Convective change (today/tomorrow/day+2)"}
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+              gap: 8,
+            }}
+          >
+            {convectiveOutlook.slice(0, 3).map((item) => {
+              const level = clamp01(item.scorePct / 100);
+              const rr = Math.round(160 - level * 120);
+              const gg = Math.round(70 + level * 125);
+              const bb = Math.round(60 + level * 40);
+
+              return (
+                <div
+                  key={item.label}
+                  style={{
+                    borderRadius: 8,
+                    padding: "8px",
+                    border: `1px solid rgba(${rr}, ${gg}, ${bb}, 0.45)`,
+                    background: "rgba(255,255,255,0.03)",
+                    display: "grid",
+                    gap: 5,
+                  }}
+                >
+                  <div style={{ fontSize: "0.73rem", color: "#dbe7fb", fontWeight: 700 }}>{item.label}</div>
+                  <div style={{ fontSize: "0.72rem", color: `rgb(${rr}, ${gg}, ${bb})`, fontWeight: 700 }}>
+                    {item.scorePct} %
+                  </div>
+                  <div style={{ fontSize: "0.68rem", color: "#8fa8c2" }}>{item.peakThermal.toFixed(1)} m/s</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

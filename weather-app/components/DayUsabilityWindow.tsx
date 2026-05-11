@@ -28,6 +28,11 @@ type Props = {
   open: boolean;
   onClose: () => void;
   dayLabel: string;
+  convectiveOutlook: Array<{
+    label: string;
+    scorePct: number;
+    peakThermal: number;
+  }>;
   pickLabels: string[];
   visibleSeries: VisibleSeries;
   activeIndex: number;
@@ -135,6 +140,7 @@ export default function DayUsabilityWindow({
   open,
   onClose,
   dayLabel,
+  convectiveOutlook,
   pickLabels,
   visibleSeries,
   activeIndex,
@@ -142,6 +148,7 @@ export default function DayUsabilityWindow({
   flightDayEndIndex,
 }: Props) {
   const [isMobile, setIsMobile] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -170,13 +177,22 @@ export default function DayUsabilityWindow({
     if (typeof window === "undefined") return;
 
     const media = window.matchMedia("(max-width: 720px)");
+    const compactMedia = window.matchMedia("(max-width: 1180px)");
     const update = () => setIsMobile(media.matches);
+    const updateCompact = () => setIsCompact(compactMedia.matches);
 
     update();
+    updateCompact();
     media.addEventListener("change", update);
+    compactMedia.addEventListener("change", updateCompact);
 
-    return () => media.removeEventListener("change", update);
+    return () => {
+      media.removeEventListener("change", update);
+      compactMedia.removeEventListener("change", updateCompact);
+    };
   }, []);
+
+  const useSingleColumnLayout = isCompact;
 
   const currentIndex =
     focusedIndex !== null && focusedIndex >= 0 && focusedIndex < pickLabels.length
@@ -257,7 +273,8 @@ export default function DayUsabilityWindow({
         r={r}
         g={g}
         b={b}
-        height={isMobile ? 230 : 420}
+        convectiveOutlook={convectiveOutlook}
+        height={isMobile ? 230 : useSingleColumnLayout ? 320 : 420}
         outerRadiusM={20_000}
         title={
           lang === "cs"
@@ -281,9 +298,9 @@ export default function DayUsabilityWindow({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: `150px repeat(${dayLabels.length}, minmax(${isMobile ? 24 : 30}px, 1fr))`,
+          gridTemplateColumns: `142px repeat(${dayLabels.length}, minmax(${isMobile ? 24 : useSingleColumnLayout ? 26 : 30}px, 1fr))`,
           gap: "4px",
-          minWidth: `${150 + dayLabels.length * (isMobile ? 28 : 34)}px`,
+          minWidth: `${142 + dayLabels.length * (isMobile ? 28 : useSingleColumnLayout ? 30 : 34)}px`,
           alignItems: "stretch",
         }}
       >
@@ -434,9 +451,15 @@ export default function DayUsabilityWindow({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 70,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: "100%",
+        height: "100%",
+        zIndex: 5000,
         background: "rgba(2, 6, 23, 0.94)",
-        padding: isMobile ? "8px" : "12px",
+        padding: isMobile ? "8px" : useSingleColumnLayout ? "10px" : "12px",
         display: "flex",
         flexDirection: "column",
         gap: isMobile ? "8px" : "12px",
@@ -477,7 +500,7 @@ export default function DayUsabilityWindow({
         </div>
       </div>
 
-      {isMobile ? (
+      {useSingleColumnLayout ? (
         <>
           {mapPanel}
           {matrixPanel}
