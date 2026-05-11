@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import LkfrMap from "./LkfrMap";
 import DayUsabilityWindow from "./DayUsabilityWindow";
+import { useVarioSound } from "./useVarioSound";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -619,6 +620,13 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   const [isMobile, setIsMobile] = useState(false);
   const [mobileGraphOpen, setMobileGraphOpen] = useState(false);
   const [dayUsabilityOpen, setDayUsabilityOpen] = useState(false);
+
+  // Vario sound — active only while the user hovers the chart / soaring map
+  const varioThermal =
+    hoveredPointIndex !== null
+      ? (visibleSeries.thermal[hoveredPointIndex] ?? null)
+      : null;
+  const { soundEnabled, toggleSound } = useVarioSound(varioThermal);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1308,6 +1316,19 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
           <span className="chartMarker sunset">
             {labelsText.flightDayEnd}: {flightDayEndLabel}
           </span>
+
+          <button
+            type="button"
+            className="chartToggleButton"
+            title={soundEnabled
+              ? (lang === "cs" ? "Vypnout vario zvuk" : "Disable vario sound")
+              : (lang === "cs" ? "Zapnout vario zvuk" : "Enable vario sound")}
+            onClick={toggleSound}
+            aria-pressed={soundEnabled}
+            style={{ fontSize: "1rem", padding: "2px 8px", lineHeight: 1 }}
+          >
+            {soundEnabled ? "🔊" : "🔇"}
+          </button>
         </div>
       </div>
 

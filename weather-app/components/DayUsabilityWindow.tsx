@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import LkfrMap from "./LkfrMap";
+import { useVarioSound } from "./useVarioSound";
 
 type Lang = "cs" | "en";
 
@@ -150,6 +151,8 @@ export default function DayUsabilityWindow({
   const [isMobile, setIsMobile] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  // true when user is actively hovering the matrix (for vario sound only)
+  const [isHoveringMatrix, setIsHoveringMatrix] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -230,6 +233,10 @@ export default function DayUsabilityWindow({
   const dayRows = rows.slice(dayStart, dayEnd + 1);
   const dayCurrentIndex = Math.max(0, Math.min(currentIndex - dayStart, dayLabels.length - 1));
 
+  // Vario sound – only while the user hovers the matrix
+  const varioThermal = isHoveringMatrix ? (visibleSeries.thermal[currentIndex] ?? null) : null;
+  const { soundEnabled, toggleSound } = useVarioSound(varioThermal);
+
   const activeScore = rows[currentIndex]?.overall ?? 0;
   const activeTemp = visibleSeries.temperature[currentIndex] ?? 0;
   const activeDewPoint = visibleSeries.dewPoint[currentIndex] ?? 0;
@@ -294,6 +301,7 @@ export default function DayUsabilityWindow({
         padding: isMobile ? "8px" : "12px",
         overflowX: "auto",
       }}
+      onMouseLeave={() => setIsHoveringMatrix(false)}
     >
       <div
         style={{
@@ -336,7 +344,7 @@ export default function DayUsabilityWindow({
             rowKey={row.key as FragmentRowKey}
             rows={dayRows}
             activeIndex={dayCurrentIndex}
-            onFocusIndex={(i) => setFocusedIndex(dayStart + i)}
+            onFocusIndex={(i) => { setIsHoveringMatrix(true); setFocusedIndex(dayStart + i); }}
           />
         ))}
       </div>
@@ -489,6 +497,18 @@ export default function DayUsabilityWindow({
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", width: isMobile ? "100%" : "auto" }}>
+          <button
+            type="button"
+            className="chartToggleButton"
+            title={soundEnabled
+              ? (lang === "cs" ? "Vypnout vario zvuk" : "Disable vario sound")
+              : (lang === "cs" ? "Zapnout vario zvuk" : "Enable vario sound")}
+            onClick={toggleSound}
+            aria-pressed={soundEnabled}
+            style={{ fontSize: "1rem", padding: "2px 8px", lineHeight: 1 }}
+          >
+            {soundEnabled ? "🔊" : "🔇"}
+          </button>
           <button
             type="button"
             className="chartToggleButton"
