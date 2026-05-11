@@ -621,13 +621,6 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   const [mobileGraphOpen, setMobileGraphOpen] = useState(false);
   const [dayUsabilityOpen, setDayUsabilityOpen] = useState(false);
 
-  // Vario sound — active only while the user hovers the chart / soaring map
-  const varioThermal =
-    hoveredPointIndex !== null
-      ? (visibleSeries.thermal[hoveredPointIndex] ?? null)
-      : null;
-  const { soundEnabled, toggleSound } = useVarioSound(varioThermal);
-
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -683,6 +676,13 @@ export default function WeatherChart({ lang, labelsText, data }: Props) {
   );
 
   const visibleCurrentIndex = visibleIndices.indexOf(data.currentIndex);
+
+  // Vario sound — active only while the user hovers the chart / soaring map
+  const varioThermal =
+    hoveredPointIndex !== null
+      ? (visibleSeries.thermal[hoveredPointIndex] ?? null)
+      : null;
+  const { soundEnabled, toggleSound } = useVarioSound(varioThermal);
 
   const activePointIndex =
     hoveredPointIndex !== null
