@@ -1,5 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
+  "buildCommand": "cd weather-app && npm install && npm run build",
+  "devCommand": "cd weather-app && npm run dev",
+  "outputDirectory": "weather-app/.next",
   "framework": "nextjs"
 }
