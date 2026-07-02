@@ -1,8 +1,6 @@
 import Link from "next/link";
 import Script from "next/script";
 import AppRating from "../components/AppRating";
-import CommentThread from "../components/CommentThread";
-import DesktopLayoutEnhancer from "../components/desktop-layout-enhancer";
 
 import LivePragueDateTime from "../components/LivePragueDateTime";
 import Vpl4Viewer from "../components/vpl4-viewer";
@@ -13,13 +11,10 @@ import {
   Plane,
   Gauge,
   Thermometer,
-  ArrowUp,
-  MapPinned,
   Camera,
   Info,
   NotebookPen,
   Star,
-  MessageSquare,
 } from "lucide-react";
 
 type ForecastData = {
@@ -221,7 +216,6 @@ type Translation = {
   chartAxesLegendTitle: string;
   phenomenaLabel: string;
   webcamLinkLabel: string;
-  pilotCommentsTitle: string;
   vfrSuitable: string;
   vfrMarginal: string;
   vfrNotSuitable: string;
@@ -614,7 +608,6 @@ const translations: Record<Lang, Translation> = {
     chartAxesLegendTitle: "Osy a datové vrstvy grafu",
     phenomenaLabel: "Jevy",
     webcamLinkLabel: "Webkamera LKFR",
-    pilotCommentsTitle: "Komentáře pilotů",
     vfrSuitable: "VFR: vyhovuje",
     vfrMarginal: "VFR: hraniční",
     vfrNotSuitable: "VFR: nevyhovuje",
@@ -952,7 +945,6 @@ const translations: Record<Lang, Translation> = {
     chartAxesLegendTitle: "Chart axes and data layers",
     phenomenaLabel: "Phenomena",
     webcamLinkLabel: "LKFR webcam",
-    pilotCommentsTitle: "Pilot comments",
     vfrSuitable: "VFR: suitable",
     vfrMarginal: "VFR: marginal",
     vfrNotSuitable: "VFR: not suitable",
@@ -2958,62 +2950,7 @@ export default async function Home({
     ? t.outsideVfrNote
     : summaryParts.join(" • ");
 
-  const pilotComment = buildPilotComment({
-    semaphore,
-    expectedClimb,
-    lcl,
-    thermalStart,
-    thermalMax,
-    thermalEnd,
-    wind: airportSurfaceWindKt,
-    crosswindAbs,
-    skyType: sky.label,
-    xcPotential,
-    operationalRisk,
-    hasRain,
-    hasStorm,
-    hasOvercast,
-    hasStrongWind,
-    t,
-    isWithinVfrDay,
-  });
-
   const skyDescription = getSkyDescription(sky.label, t);
-
-  const allMotivationQuotes =
-    lang === "cs"
-      ? [
-          { text: "Štěstí přeje odvážným.", author: "Vergilius" },
-          { text: "Dobře začít je polovina díla.", author: "Aristotelés" },
-          {
-            text: "Neztrácej čas debatou o tom, jak být dobrým člověkem. Buď jím.",
-            author: "Marcus Aurelius",
-          },
-          { text: "Kde je vůle, tam je i cesta.", author: "přísloví" },
-          { text: "Kdo se bojí, nesmí do lesa.", author: "přísloví" },
-          { text: "Vítr je přítel toho, kdo ví, jak plachtit.", author: "neznámý" },
-          { text: "Obloha nemá stropu pro toho, kdo se odváží vzlétnout.", author: "neznámý" },
-        ]
-      : [
-          { text: "Fortune favors the brave.", author: "Virgil" },
-          { text: "Well begun is half done.", author: "Aristotle" },
-          {
-            text: "Waste no more time arguing what a good man should be. Be one.",
-            author: "Marcus Aurelius",
-          },
-          { text: "Where there is a will, there is a way.", author: "proverb" },
-          { text: "The sky is the limit for those who dare to fly.", author: "unknown" },
-          { text: "Wind is the friend of one who knows how to soar.", author: "unknown" },
-          { text: "Every flight begins with a single step of courage.", author: "unknown" },
-        ];
-
-  const todayDayOfYear = (() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 0);
-    return Math.floor((now.getTime() - start.getTime()) / 86400000);
-  })();
-  const motivationQuote =
-    allMotivationQuotes[todayDayOfYear % allMotivationQuotes.length];
 
   return (
     <main className="container">
@@ -3064,22 +3001,6 @@ export default async function Home({
         </span>
       </div>
 
-      <DesktopLayoutEnhancer
-        labels={{
-          editor: t.layoutEditor,
-          reset: t.layoutReset,
-          moveEarlier: t.layoutMoveEarlier,
-          moveLater: t.layoutMoveLater,
-          pickCard: t.layoutPickCard,
-          placeBefore: t.layoutPlaceBefore,
-          cardSelected: t.layoutCardSelected,
-          dragAndDrop: t.layoutDragAndDrop,
-          sizeSmall: t.layoutSizeSmall,
-          sizeMedium: t.layoutSizeMedium,
-          sizeLarge: t.layoutSizeLarge,
-        }}
-      />
-
       <div className="statusPills">
         <span className={`sourceBadge ${hasMetar ? "live" : "fallback"}`}>
           {t.sourceLabel}: {airportWindSourceLabel}
@@ -3099,8 +3020,6 @@ export default async function Home({
       <section className="topStatusCard">
         <div className="topStatusGrid">
           <div className={`${semaphoreCardClass} topPilotCard`}>
-            <div className="eyebrowLabel">{t.flightSemaphore}</div>
-
             <div className={semaphoreBadgeClass}>{semaphore}</div>
 
             <div className="semaphoreTitle">{t.flightSemaphore}</div>
@@ -3158,13 +3077,6 @@ export default async function Home({
 
       <div className="summaryBox">{flightSummary}</div>
 
-      <div className="card" style={{ marginBottom: "18px" }}>
-        <h3>
-          <Info size={18} /> {t.pilotComment}
-        </h3>
-        <p style={{ lineHeight: 1.7, margin: 0 }}>{pilotComment}</p>
-      </div>
-
       <div className="grid compactGrid priorityGrid" data-layout-group="priority" style={{ marginBottom: "18px" }}>
         <div className="card compactCard highPriorityCard priorityCardConditions" data-layout-id="conditions" data-layout-default-size="s">
           <h3>
@@ -3206,6 +3118,9 @@ export default async function Home({
           <p className={soaringClass}>{soaringRating}</p>
           <p style={{ marginTop: "8px" }}>
             <strong>{t.liProxyLabel}:</strong> {instabilityIndex.toFixed(1)} ({instabilityLabel})
+          </p>
+          <p style={{ marginTop: "8px" }}>
+            {t.baseAgl}: {metarCeiling ? `${Math.round(metarCeiling * 0.3048)} m` : `${lcl} m`} • {t.thermalTop}: {thermalTop} m
           </p>
         </div>
 
@@ -3303,6 +3218,9 @@ export default async function Home({
           </p>
           <p>
             700 hPa: {wind700} kt {wind700Arrow} ({Math.round(wind700Dir)}°)
+          </p>
+          <p>
+            {t.thermalDrift}: {thermalDrift} kt
           </p>
         </div>
 
@@ -3579,6 +3497,9 @@ export default async function Home({
           <p>
             {t.precipitation}: {precipitation.toFixed(1)} mm
           </p>
+          <p>
+            {t.spread}: {spread.toFixed(1)} °C
+          </p>
         </div>
 
         <div className="card compactCard" data-layout-id="sky" data-layout-default-size="s">
@@ -3590,51 +3511,6 @@ export default async function Home({
           <p style={{ marginTop: "10px", lineHeight: 1.6 }}>{skyDescription}</p>
         </div>
 
-        <div className="card compactCard" data-layout-id="cloud-base-agl" data-layout-default-size="s">
-          <h3>
-            <Cloud size={18} /> {t.cloudBaseAgl}
-          </h3>
-          <p className="big">
-            {metarCeiling ? `${Math.round(metarCeiling * 0.3048)} m` : `${lcl} m`}
-          </p>
-          <p className="small">
-            {metarCeiling
-              ? `${t.observedLabel}: ${t.metarSource}`
-              : `${t.forecastLabel}: ${t.modelSource}`}
-          </p>
-        </div>
-
-        <div className="card compactCard" data-layout-id="cloud-base-msl" data-layout-default-size="s">
-          <h3>
-            <MapPinned size={18} /> {t.cloudBaseMsl}
-          </h3>
-          <p className="big">{cloudBaseMSL} m</p>
-          <p>
-            {t.fieldElevation}: {FIELD_ELEVATION_MSL} m AMSL
-          </p>
-        </div>
-
-        <div className="card compactCard" data-layout-id="thermal-top" data-layout-default-size="s">
-          <h3>
-            <ArrowUp size={18} /> {t.thermalTop}
-          </h3>
-          <p className="big">{thermalTop} m</p>
-          <p className="small">{t.heuristic}</p>
-        </div>
-
-        <div className="card compactCard" data-layout-id="thermal-drift" data-layout-default-size="s">
-          <h3>
-            <Wind size={18} /> {t.thermalDrift}
-          </h3>
-          <p className="big">{thermalDrift} kt</p>
-        </div>
-
-        <div className="card compactCard" data-layout-id="spread" data-layout-default-size="s">
-          <h3>
-            <Thermometer size={18} /> {t.spread}
-          </h3>
-          <p className="big">{spread.toFixed(1)} °C</p>
-        </div>
         <div className="card compactCard wideCard highPriorityCard" data-layout-id="metar-embed" data-layout-default-size="m">
           <h3>
             <Info size={18} /> {t.metarInfo}
@@ -3660,34 +3536,6 @@ export default async function Home({
       </div>
 
       <div className="grid compactGrid utilityGrid" data-layout-group="utility" style={{ marginBottom: "18px" }}>
-        <div className="card compactCard wideCard" data-layout-id="motivation" data-layout-default-size="m">
-          <h3>
-            <Star size={18} /> {lang === "cs" ? "Denní motivace" : "Daily motivation"}
-          </h3>
-
-          <div
-            style={{
-              padding: "10px 12px",
-              borderRadius: "12px",
-              background: "rgba(255,255,255,0.04)",
-            }}
-          >
-            <p style={{ margin: "0 0 6px 0", fontStyle: "italic", lineHeight: 1.5 }}>
-              &ldquo;{motivationQuote.text}&rdquo;
-            </p>
-            <p className="small" style={{ margin: 0 }}>
-              — {motivationQuote.author}
-            </p>
-          </div>
-        </div>
-
-        <div className="card compactCard commentsCard wideCard" data-layout-id="comments" data-layout-default-size="m">
-          <h3>
-            <MessageSquare size={18} /> {t.pilotCommentsTitle}
-          </h3>
-          <CommentThread lang={lang} storageKey="lkfr-public-comments" />
-        </div>
-
         <div className="card compactCard" data-layout-id="rating" data-layout-default-size="s">
           <h3>
             <Star size={18} /> {t.appRating}
