@@ -3137,7 +3137,7 @@ export default async function Home({
           </p>
         </div>
 
-        <div className="card compactCard wideCard lowPriorityCard priorityCardClouds" data-layout-id="clouds" data-layout-default-size="l">
+        <div className="card compactCard lowPriorityCard priorityCardClouds" data-layout-id="clouds" data-layout-default-size="l">
           <h3>
             <Cloud size={18} /> {t.cloudLayers}
           </h3>
@@ -3544,7 +3544,7 @@ export default async function Home({
           <AppRating note={t.rateNote} lang={lang} storageKey="lkfr-app-rating" />
         </div>
 
-        <div className="card compactCard" data-layout-id="quick-links" data-layout-default-size="s">
+        <div className="card compactCard wideCard" data-layout-id="quick-links" data-layout-default-size="s">
           <h3>
             <Camera size={18} /> {t.quickLinks}
           </h3>
