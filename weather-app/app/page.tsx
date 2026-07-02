@@ -3511,7 +3511,10 @@ export default async function Home({
           <p style={{ marginTop: "10px", lineHeight: 1.6 }}>{skyDescription}</p>
         </div>
 
-        <div className="card compactCard wideCard highPriorityCard" data-layout-id="metar-embed" data-layout-default-size="m">
+      </div>
+
+      <div className="grid compactGrid utilityGrid" data-layout-group="utility" style={{ marginBottom: "18px" }}>
+        <div className="card compactCard highPriorityCard" data-layout-id="metar-embed" data-layout-default-size="m">
           <h3>
             <Info size={18} /> {t.metarInfo}
           </h3>
@@ -3532,10 +3535,6 @@ export default async function Home({
           </div>
         </div>
 
-
-      </div>
-
-      <div className="grid compactGrid utilityGrid" data-layout-group="utility" style={{ marginBottom: "18px" }}>
         <div className="card compactCard" data-layout-id="rating" data-layout-default-size="s">
           <h3>
             <Star size={18} /> {t.appRating}
@@ -3544,7 +3543,7 @@ export default async function Home({
           <AppRating note={t.rateNote} lang={lang} storageKey="lkfr-app-rating" />
         </div>
 
-        <div className="card compactCard wideCard" data-layout-id="quick-links" data-layout-default-size="s">
+        <div className="card compactCard" data-layout-id="quick-links" data-layout-default-size="s">
           <h3>
             <Camera size={18} /> {t.quickLinks}
           </h3>
